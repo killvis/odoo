@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from unittest.mock import patch
 
@@ -83,7 +84,6 @@ class TestLead2opportunity2win(TestCrmCommon):
 
     def test_lead2opportunity2win(self):
         """ Tests for Test Lead 2 opportunity 2 win """
-        CrmLead2OpportunityPartnerMass = self.env['crm.lead2opportunity.partner.mass']
         default_stage_id = self.stage_gen_1.id
 
         crm_case_2 = self.env['crm.lead'].create({
@@ -116,14 +116,12 @@ class TestLead2opportunity2win(TestCrmCommon):
         self.assertEqual(crm_case_3.partner_id.id, self.contact_2.id, 'Partner mismatch!')
         self.assertEqual(crm_case_3.stage_id.id, default_stage_id, 'Stage of opportunity is incorrect!')
 
-        # Now I schedule meeting with customer.
-        crm_case_3.action_schedule_meeting()
-
-        # After communicated  with customer, I put some notes with contract details.
-        crm_case_3.message_post(subject='Test note', body='Détails envoyés par le client sur ​​le FAX pour la qualité')
-
         # I convert mass lead into opportunity customer.
-        mass = CrmLead2OpportunityPartnerMass.with_user(self.user_sales_manager).with_context({'active_model': 'crm.lead', 'active_ids': [crm_case_13.id, crm_case_2.id], 'active_id': crm_case_13.id}).create({
+        mass = self.env['crm.lead2opportunity.partner.mass'].with_user(self.user_sales_manager).with_context({
+            'active_model': 'crm.lead',
+            'active_ids': [crm_case_13.id, crm_case_2.id],
+            'active_id': crm_case_13.id}
+        ).create({
             'user_ids': [(6, 0, self.env.ref('base.user_root').ids)],
             'team_id': self.env.ref("sales_team.team_sales_department").id
         })
@@ -149,7 +147,6 @@ class TestLead2opportunity2win(TestCrmCommon):
 
     def test_lead2opportunity_assign_salesmen(self):
         """ Tests for Test Lead2opportunity Assign Salesmen """
-        CrmLead2OpportunityPartnerMass = self.env['crm.lead2opportunity.partner.mass']
         LeadSaleman = self.env['crm.lead'].with_user(self.user_sales_manager)
         default_stage_id = self.stage_gen_1.id
 
@@ -213,8 +210,11 @@ class TestLead2opportunity2win(TestCrmCommon):
         salesmen_ids = [test_res_user_01.id, test_res_user_02.id, test_res_user_03.id, test_res_user_04.id]
 
         # Salesman create a mass convert wizard and convert all the leads.
-        additionnal_context = {'active_model': 'crm.lead', 'active_ids': lead_ids, 'active_id': test_crm_lead_01.id}
-        mass = CrmLead2OpportunityPartnerMass.with_user(self.user_sales_manager).with_context(**additionnal_context).create({
+        mass = self.env['crm.lead2opportunity.partner.mass'].with_user(self.user_sales_manager).with_context({
+            'active_model': 'crm.lead',
+            'active_ids': lead_ids,
+            'active_id': test_crm_lead_01.id}
+        ).create({
             'user_ids': [(6, 0, salesmen_ids)],
             'team_id': self.env.ref("sales_team.team_sales_department").id,
             'deduplicate': False,
