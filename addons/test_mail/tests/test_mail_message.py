@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import base64
+from unittest.mock import patch
 
 from odoo.addons.test_mail.tests import common
 from odoo.addons.test_mail.tests.common import mail_new_test_user
+from odoo.addons.test_mail.models.test_mail_models import MailTestSimple
 from odoo.exceptions import AccessError, except_orm
 from odoo.tools import mute_logger
 from odoo.tests import tagged
@@ -290,6 +292,17 @@ class TestMessageAccess(common.BaseFunctionalTest, common.MockEmails):
     def test_mail_message_access_create_reply(self):
         self.message.write({'partner_ids': [(4, self.user_employee.partner_id.id)]})
         self.env['mail.message'].sudo(self.user_employee).create({'model': 'mail.channel', 'res_id': self.group_private.id, 'body': 'Test', 'parent_id': self.message.id})
+
+    def test_mail_message_portal_user_access_parent_message(self):
+        message = self.test_record.message_post(
+            body='<p>This is First Message</p>', subject='Subject',
+            message_type='comment', subtype='mail.mt_note')
+        with patch.object(MailTestSimple, 'check_access_rights', return_value=True):
+            # parent message is accessible to references notification mail values
+            # for _notify method
+            self.test_record.sudo(self.user_portal).message_post(
+                body='<p>This is Second Message</p>', subject='Subject', parent_id=message.id,
+                partner_ids=[self.user_admin.partner_id.id], message_type='comment', subtype='mail.mt_comment')
 
     # --------------------------------------------------
     # WRITE
