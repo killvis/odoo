@@ -542,7 +542,7 @@ class PosSession(models.Model):
         price = order_line.price_unit * (1 - (order_line.discount or 0.0) / 100.0)
         taxes = tax_ids.compute_all(price_unit=price, quantity=order_line.qty, currency=self.currency_id, is_refund=order_line.qty<0).get('taxes', [])
         date_order = order_line.order_id.date_order
-        taxes = [{'date_order': date_order, **tax} for tax in taxes]
+        taxes = [{'date_order': date_order, **tax} for tax in taxes if abs(tax['amount']) > 0]
         return {
             'date_order': order_line.order_id.date_order,
             'income_account_id': get_income_account(order_line).id,
