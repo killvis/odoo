@@ -6,7 +6,7 @@
 
                 <t t-foreach="picking.move_lines" t-as="move">
                     <t t-foreach="move.move_line_ids" t-as="move_line">
-                        <t t-if="move_line.product_uom_id.category_id.measure_type == 'unit'">
+                        <t t-if="move_line.product_uom_id.category_id == env.ref('uom.product_uom_categ_unit')">
                             <t t-set="qty" t-value="int(move_line.qty_done)"/>
                         </t>
                         <t t-else="">
@@ -42,7 +42,7 @@
                     <t t-foreach="docs" t-as="picking">
                         <t t-foreach="picking.move_lines" t-as="move">
                             <t t-foreach="move.move_line_ids" t-as="move_line">
-                                <t t-if="move_line.product_uom_id.category_id.measure_type == 'unit'">
+                                <t t-if="move_line.product_uom_id.category_id == env.ref('uom.product_uom_categ_unit')">
                                     <t t-set="qty" t-value="int(move_line.qty_done)"/>
                                 </t>
                                 <t t-else="">
