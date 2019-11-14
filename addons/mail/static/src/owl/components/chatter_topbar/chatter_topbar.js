@@ -15,6 +15,7 @@ class ChatterTopbar extends Component {
         this.storeProps = useStore((state, props) => {
             const thread = state.threads[props.threadLocalId];
             return {
+                areAttachmentsLoaded: thread && thread.areAttachmentsLoaded,
                 attachmentsAmount: thread && thread.attachmentLocalIds
                     ? thread.attachmentLocalIds.length
                     : 0,

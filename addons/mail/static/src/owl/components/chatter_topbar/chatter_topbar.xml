@@ -20,9 +20,13 @@
                 <button class="btn btn-link o_ChatterTopbar_buttonAttachments"
                         t-on-click.prevent.stop="_onClickAttachments">
                     <i class="fa fa-paperclip"/>
-                    <!-- TODO s'inspirer de threadCache pour afficher loader tant que tous les attachments sont pas fetchés -->
-                    <!-- TODO action loadThreadCache -->
-                    <span class="o_ChatterTopbar_buttonCount o_ChatterTopbar_buttonAttachmentsCount" t-esc="storeProps.attachmentsAmount"/>
+                    <t t-if="storeProps.areAttachmentsLoaded">
+                        <span class="o_ChatterTopbar_buttonCount o_ChatterTopbar_buttonAttachmentsCount"
+                              t-esc="storeProps.attachmentsAmount"/>
+                    </t>
+                    <t t-else="">
+                        <i class="o_ChatterTopbar_buttonAttachmentsCountLoader fa fa-spinner fa-spin"/>
+                    </t>
                 </button>
             </div>
             <div class="o_ChatterTopbar_rightSection">

@@ -17,7 +17,7 @@ QUnit.module('ChatterTopbar', {
         this.createThread = async ({ _model, id }, { fetchAttachments=false }={}) => {
             const threadLocalId = this.env.store.dispatch('_createThread', { _model, id });
             if (fetchAttachments) {
-                await this.env.store.dispatch('fetchThreadAttachments', threadLocalId);
+                await this.env.store.dispatch('_fetchThreadAttachments', threadLocalId);
             }
             return threadLocalId;
         };

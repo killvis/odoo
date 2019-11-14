@@ -420,7 +420,7 @@ const actions = {
             // dispatch('_updateThread', threadLocalId, { name: name } );
             threadLocalId = thread.localId;
         }
-        dispatch('fetchThreadAttachments', threadLocalId);
+        dispatch('_fetchThreadAttachments', threadLocalId);
         return threadLocalId;
     },
     /**
@@ -1787,6 +1787,7 @@ const actions = {
             throw new Error('thread must always have `model` and `id`');
         }
         const thread = {
+            areAttachmentsLoaded: false,
             attachmentLocalIds: [],
             cacheLocalIds: [],
             channel_type,
@@ -1947,6 +1948,41 @@ const actions = {
                 im_status: null,
             });
         }
+    },
+    /**
+     * Fetch attachments linked to a record. Useful for populating the store
+     * with these attachments, which are used by attachment box in the chatter.
+     *
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.env
+     * @param {Object} param0.state
+     * @param {string} threadLocalId
+     */
+    async _fetchThreadAttachments(
+        { dispatch, env, state },
+        threadLocalId
+    ) {
+        const thread = state.threads[threadLocalId];
+        const attachmentsData = await env.rpc({
+            model: 'ir.attachment',
+            method: 'search_read',
+            domain: [
+                ['res_id', '=', thread.id],
+                ['res_model', '=', thread._model],
+            ],
+            fields: ['id', 'name', 'mimetype'],
+        });
+        const attachmentLocalIds = [];
+        for (const attachmentData of attachmentsData) {
+            attachmentLocalIds.push(await dispatch('_insertAttachment', Object.assign({
+                res_id: thread.id,
+                res_model: thread.model,
+                threadLocalIds: [threadLocalId],
+            }, attachmentData)));
+        }
+        await dispatch('_updateThread', threadLocalId, { attachmentLocalIds, areAttachmentsLoaded: true });
+        return attachmentLocalIds;
     },
     /**
      * @private
