@@ -35,6 +35,46 @@ class ChatterTopbar extends Component {
     _onClickAttachments(ev) {
         this.trigger('o-chatter-topbar-select-attachment');
     }
+
+    /**
+     * @private
+     * @param {Event} ev
+     */
+    _onClickFollow(ev) {
+        this.trigger('o-chatter-topbar-follow');
+    }
+
+    /**
+     * @private
+     * @param {Event} ev
+     */
+    _onClickFollowers(ev) {
+        this.trigger('o-chatter-topbar-show-followers');
+    }
+
+    /**
+     * @private
+     * @param {Event} ev
+     */
+    _onClickLogNote(ev) {
+        this.trigger('o-chatter-topbar-log-note');
+    }
+
+    /**
+     * @private
+     * @param {Event} ev
+     */
+    _onClickScheduleActivity(ev) {
+        this.trigger('o-chatter-topbar-schedule-activity');
+    }
+
+    /**
+     * @private
+     * @param {Event} ev
+     */
+    _onClickSendMessage(ev) {
+        this.trigger('o-chatter-topbar-send-message');
+    }
 }
 
 ChatterTopbar.props = {

@@ -4,13 +4,16 @@
     <t t-name="mail.component.ChatterTopbar" owl="1">
         <div class="o_ChatterTopbar">
             <div class="o_ChatterTopbar_leftSection">
-                <button class="btn btn-link o_ChatterTopbar_buttonSendMessage">
+                <button class="btn btn-link o_ChatterTopbar_buttonSendMessage"
+                        t-on-click.prevent.stop="_onClickSendMessage">
                     Send message
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonLogNote">
+                <button class="btn btn-link o_ChatterTopbar_buttonLogNote"
+                        t-on-click.prevent.stop="_onClickLogNote">
                     Log note
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonScheduleActivity">
+                <button class="btn btn-link o_ChatterTopbar_buttonScheduleActivity"
+                        t-on-click.prevent.stop="_onClickSchedule">
                     <i class="fa fa-clock-o"/>
                     Schedule activity
                 </button>
@@ -23,10 +26,12 @@
                 </button>
             </div>
             <div class="o_ChatterTopbar_rightSection">
-                <button class="btn btn-link o_ChatterTopbar_buttonFollow">
+                <button class="btn btn-link o_ChatterTopbar_buttonFollow"
+                        t-on-click.prevent.stop="_onClickFollow">
                     Follow
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonFollowers">
+                <button class="btn btn-link o_ChatterTopbar_buttonFollowers"
+                        t-on-click.prevent.stop="_onClickFollowers">
                     <i class="fa fa-user"/>
                     <span class="o_ChatterTopbar_buttonCount o_ChatterTopbar_buttonFollowersCount pl-1" t-esc="storeProps.followersAmount"/>
                 </button>
