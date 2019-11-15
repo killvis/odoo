@@ -18,10 +18,12 @@ import odoo
 from odoo import http, models, fields, _
 from odoo.http import request
 from odoo.tools import OrderedSet
+from odoo.addons import website
 from odoo.addons.http_routing.models.ir_http import slug, _guess_mimetype
 from odoo.addons.web.controllers.main import Binary
 from odoo.addons.portal.controllers.portal import pager as portal_pager
 from odoo.addons.portal.controllers.web import Home
+from odoo.addons.web_editor.controllers.main import Web_Editor
 
 logger = logging.getLogger(__name__)
 
@@ -458,6 +460,23 @@ class Website(Home):
                     return action_res
 
         return request.redirect('/')
+
+
+class WebsiteEditor(Web_Editor):
+
+    def _get_default_snippet_thumbnail(self, snippet_class=None):
+        if snippet_class:
+            for path in website.__path__:
+                if os.path.isfile(path + '/static/src/img/snippets_thumbs/%s.png' % snippet_class):
+                    return '/website/static/src/img/snippets_thumbs/%s.png' % snippet_class
+        return super()._get_default_snippet_thumbnail()
+
+    def _snippet_save_view_values_hook(self, app_name):
+        res = super()._snippet_save_view_values_hook(app_name)
+        # Only add the website id for website-related module
+        if app_name.startswith('website'):
+            res['website_id'] = request.website.id
+        return res
 
 
 # ------------------------------------------------------
