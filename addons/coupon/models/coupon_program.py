@@ -158,3 +158,19 @@ class CouponProgram(models.Model):
             domain = safe_eval(self.rule_products_domain) + [('id', 'in', products.ids)]
             return self.env['product.product'].search(domain)
         return products
+
+    def _generate_coupons(self, partner_id):
+        '''Generate coupons that can be used in the next order for the given partner_id.'''
+        generated_coupons = self.env['coupon.coupon']
+        for program in self:
+            generated_coupons |= self.env['coupon.coupon'].create({
+                'program_id': self.id,
+                'partner_id': partner_id,
+            })
+        return generated_coupons
+
+    def get_number_usage(self):
+        '''This returns the total number of usage of this program.'''
+        self.ensure_one()
+        return 0
+
