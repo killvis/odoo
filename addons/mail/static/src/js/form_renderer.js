@@ -2,6 +2,7 @@ odoo.define('mail.form_renderer', function (require) {
 "use strict";
 
 var Chatter = require('mail.Chatter');
+var OwlChatter = require('mail.component.Chatter');
 var FormRenderer = require('web.FormRenderer');
 
 /**
@@ -9,6 +10,14 @@ var FormRenderer = require('web.FormRenderer');
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
+    dependencies: ['owl'],
+    on_attach_callback: function () {
+        this.chatter_component.__callMounted();
+    },
+    on_detach_callback: function () {
+        this.chatter_component.__callWillUnmount();
+    },
+
     /**
      * @override
      */
@@ -16,6 +25,8 @@ FormRenderer.include({
         this._super.apply(this, arguments);
         this.mailFields = params.mailFields;
         this.chatter = undefined;
+        this.chatter_component = undefined;
+        OwlChatter.env = this.call('owl', 'getEnv');
     },
 
     //--------------------------------------------------------------------------
@@ -43,6 +54,22 @@ FormRenderer.include({
     //--------------------------------------------------------------------------
 
     /**
+     * @private
+     */
+    async _mount() {
+        const props = { id: this.state.res_id, model: this.state.model };
+        if (this.chatter_component) {
+            this.chatter_component.destroy();
+            this.chatter_component = undefined;
+        }
+        this.chatter_component = new OwlChatter(null, props);
+        // FIXME loading a lot of messages that should not
+        // FIXME scroll to top is active
+        // FIXME postMessage in the thread to refresh chatter directly
+        await this.chatter_component.mount(this.$el[0]);
+    },
+
+    /**
      * Overrides the function that renders the nodes to return the chatter's $el
      * for the 'oe_chatter' div node.
      *
@@ -50,27 +77,20 @@ FormRenderer.include({
      * @private
      */
     _renderNode: function (node) {
-        var self = this;
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            if (!this.chatter) {
-                this.chatter = new Chatter(this, this.state, this.mailFields, {
-                    isEditable: this.activeActions.edit,
-                    viewType: 'form',
-                });
-
-                var $temporaryParentDiv = $('<div>');
-                this.defs.push(this.chatter.appendTo($temporaryParentDiv).then(function () {
-                    self.chatter.$el.unwrap();
-                    self._handleAttributes(self.chatter.$el, node);
-                }));
-                return $temporaryParentDiv;
-            } else {
-                this.chatter.update(this.state);
-                return this.chatter.$el;
-            }
+            return;
         } else {
             return this._super.apply(this, arguments);
         }
+    },
+
+    /**
+     * @override
+     * @private
+     */
+    async _renderView() {
+        await this._super.apply(this, arguments);
+        await this._mount();
     },
 });
 

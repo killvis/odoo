@@ -6,6 +6,11 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+
+    .o_ChatterTopbar_buttonSendMessage{
+        padding: 0 16px;
+        border-left: none !important;
+    }
 }
 
 .o_ChatterTopbar_buttonCount {

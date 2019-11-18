@@ -36,14 +36,8 @@ class Chatter extends Component {
         this._threadRef = useRef('thread');
     }
 
-    mounted() {
-        // TODO {xdu}
-        // Need to say to the underlying Thread that there is no long polling
-        // So when doing message_post, you need to do a read on the record and
-        // then verify in the message_ids if there are missing messages or not
-        // and then make a message_format call for each message (including the
-        // one posted)
-        this.storeDispatch('initChatter', {
+    async willStart() {
+        await this.storeDispatch('initChatter', {
             model: this.props.model,
             id: this.props.id,
         });
@@ -97,7 +91,7 @@ Chatter.components = { AttachmentBox, ChatterTopbar, Composer, Thread };
 
 Chatter.props = {
     id: Number,
-    model: String
+    model: String,
 };
 
 Chatter.template = 'mail.component.Chatter';

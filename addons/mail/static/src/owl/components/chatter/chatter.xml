@@ -31,6 +31,7 @@
                     hasComposer="false"
                     hasLongPolling="false"
                     haveMessagesAuthorRedirect="true"
+                    order="'desc'"
                     threadLocalId="storeProps.threadLocalId"
                     t-ref="thread"
                 />

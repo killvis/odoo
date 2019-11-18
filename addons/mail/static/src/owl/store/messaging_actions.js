@@ -1903,6 +1903,8 @@ const actions = {
             return domain.concat([['needaction', '=', false]]);
         } else if (thread.localId === 'mail.box_moderation') {
             return domain.concat([['need_moderation', '=', true]]);
+        } else {
+            return domain.concat([['model', '=', thread._model], ['res_id', '=', thread.id]]);
         }
         return domain;
     },
