@@ -12,7 +12,6 @@
                 <MessageList
                     class="o_Thread_messageList"
                     domain="props.domain"
-                    hasLongPolling="props.hasLongPolling"
                     hasSquashCloseMessages="props.hasSquashCloseMessages"
                     haveMessagesAuthorRedirect="props.haveMessagesAuthorRedirect"
                     haveMessagesMarkAsReadIcon="props.haveMessagesMarkAsReadIcon"

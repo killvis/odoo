@@ -411,7 +411,7 @@ const actions = {
      */
     async initChatter({ dispatch, getters }, { model, id }) {
         let threadLocalId;
-        const thread = getters.thread({ _model: model, id });
+        const thread = getters.thread({_model: model, id });
         if (!thread) {
             // TODO {xdu} maybe here add the name of the thread
             threadLocalId = await dispatch('_createThread', { _model: model, id });
@@ -534,6 +534,26 @@ const actions = {
             dispatch('openThread', threadLocalId, { resetDiscussDomain: true });
         }
     },
+    async loadNewMessagesOnThread(
+        { dispatch, env, state },
+        threadLocalId,
+        { searchDomain=[] }={}
+    ){
+        const stringifiedDomain = JSON.stringify(searchDomain);
+        const thread = state.threads[threadLocalId];
+        const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
+        const threadCache = state.threadCaches[threadCacheLocalId];
+        const lastMessageId = Math.max(
+            ...threadCache.messageLocalIds.map(messageLocalId =>
+                state.messages[messageLocalId].id
+            )
+        );
+        const additionalDomain = ['id', '>', lastMessageId];
+        await dispatch('_loadMoreMessagesOnThread', threadLocalId, {
+            additionalDomain,
+            searchDomain,
+        });
+    },
     /**
      * @param {Object} param0
      * @param {function} param0.dispatch
@@ -552,32 +572,17 @@ const actions = {
         const thread = state.threads[threadLocalId];
         const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
         const threadCache = state.threadCaches[threadCacheLocalId];
-        let domain = searchDomain.length ? searchDomain : [];
-        domain = dispatch('_extendMessageDomainWithThreadDomain', {
-            domain,
-            threadLocalId,
-        });
-        if (
-            threadCache.isAllHistoryLoaded &&
-            threadCache.isLoadingMore
-        ) {
+        if (threadCache.isAllHistoryLoaded && threadCache.isLoadingMore) {
             return;
         }
-        threadCache.isLoadingMore = true;
         const minMessageId = Math.min(
             ...threadCache.messageLocalIds.map(messageLocalId =>
                 state.messages[messageLocalId].id
             )
         );
-        domain = [['id', '<', minMessageId]].concat(domain);
-        const messagesData = await env.rpc({
-            model: 'mail.message',
-            method: 'message_fetch',
-            args: [domain],
-            kwargs: dispatch('_getThreadFetchMessagesKwargs', threadLocalId),
-        }, { shadow: true });
-        dispatch('_handleThreadLoaded', threadLocalId, {
-            messagesData,
+        const additionalDomain = ['id', '<', minMessageId];
+        await dispatch('_loadMoreMessagesOnThread', threadLocalId, {
+            additionalDomain,
             searchDomain,
         });
     },
@@ -3144,6 +3149,43 @@ const actions = {
             threadLocalId,
         });
         threadCache.isLoading = true;
+        const messagesData = await env.rpc({
+            model: 'mail.message',
+            method: 'message_fetch',
+            args: [domain],
+            kwargs: dispatch('_getThreadFetchMessagesKwargs', threadLocalId),
+        }, { shadow: true });
+        dispatch('_handleThreadLoaded', threadLocalId, {
+            messagesData,
+            searchDomain,
+        });
+    },
+    /**
+     * @private
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.env
+     * @param {Object} param0.state
+     * @param {string} threadLocalId
+     * @param {Object} [param2]
+     * @param {Array} [param2.searchDomain=[]]
+     */
+    async _loadMoreMessagesOnThread(
+        { dispatch, env, state },
+        threadLocalId,
+        { additionalDomain=[], searchDomain=[] }={}
+    ) {
+        let domain = searchDomain.length ? searchDomain : [];
+        domain = dispatch('_extendMessageDomainWithThreadDomain', {
+            domain,
+            threadLocalId,
+        });
+        domain = [additionalDomain].concat(domain);
+        const stringifiedDomain = JSON.stringify(searchDomain);
+        const thread = state.threads[threadLocalId];
+        const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
+        const threadCache = state.threadCaches[threadCacheLocalId];
+        threadCache.isLoadingMore = true;
         const messagesData = await env.rpc({
             model: 'mail.message',
             method: 'message_fetch',

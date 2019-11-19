@@ -16,6 +16,7 @@
                         class="o_Chatter_composer"
                         composerLocalId="storeProps.composerLocalId"
                         isLog="state.composerIsLog"
+                        t-on-o-message-posted="_onComposerMessagePosted"
                         t-ref="composer"
                     />
                 </t>
@@ -29,7 +30,6 @@
                     class="o_Chatter_thread"
                     domain="storeProps.domain"
                     hasComposer="false"
-                    hasLongPolling="false"
                     haveMessagesAuthorRedirect="true"
                     order="'desc'"
                     threadLocalId="storeProps.threadLocalId"

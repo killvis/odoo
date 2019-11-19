@@ -470,7 +470,6 @@ MessageList.components = { Message };
 
 MessageList.defaultProps = {
     domain: [],
-    hasLongPolling: true,
     hasSquashCloseMessages: false,
     haveMessagesAuthorRedirect: false,
     haveMessagesMarkAsReadIcon: false,
@@ -481,10 +480,6 @@ MessageList.defaultProps = {
 MessageList.props = {
     domain: {
         type: Array,
-    },
-    hasLongPolling: {
-        type: Boolean,
-        optional: true
     },
     hasSquashCloseMessages: {
         type: Boolean,

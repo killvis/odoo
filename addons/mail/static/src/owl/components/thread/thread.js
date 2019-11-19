@@ -170,7 +170,6 @@ Thread.defaultProps = {
     composerAttachmentsDetailsMode: 'auto',
     domain: [],
     hasComposer: false,
-    hasLongPolling: true,
     hasSquashCloseMessages: false,
     haveMessagesAuthorRedirect: false,
     haveMessagesMarkAsReadIcon: false,
@@ -197,10 +196,6 @@ Thread.props = {
     hasComposerSendButton: {
         type: Boolean,
         optional: true,
-    },
-    hasLongPolling: {
-        type: Boolean,
-        optional: true
     },
     hasSquashCloseMessages: {
         type: Boolean,

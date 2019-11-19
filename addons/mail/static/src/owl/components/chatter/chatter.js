@@ -43,6 +43,13 @@ class Chatter extends Component {
         });
     }
 
+    mounted(){
+        this.storeDispatch('initChatter', {
+            model: this.props.model,
+            id: this.props.id,
+        });
+    }
+
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
@@ -59,6 +66,10 @@ class Chatter extends Component {
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
+
+    _onComposerMessagePosted(){
+        this.storeDispatch('loadNewMessagesOnThread', this.storeProps.threadLocalId);
+    }
 
     /**
      * @private
