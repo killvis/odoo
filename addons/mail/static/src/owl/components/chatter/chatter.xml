@@ -12,13 +12,15 @@
                     t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
                 />
                 <t t-if="storeProps.composerLocalId and state.isComposerVisible">
-                    <Composer
-                        class="o_Chatter_composer"
-                        composerLocalId="storeProps.composerLocalId"
-                        isLog="state.composerIsLog"
-                        t-on-o-message-posted="_onComposerMessagePosted"
-                        t-ref="composer"
-                    />
+                    <div class="o_Chatter_composerContainer">
+                        <Composer
+                            class="o_Chatter_composer"
+                            composerLocalId="storeProps.composerLocalId"
+                            isLog="state.composerIsLog"
+                            t-on-o-message-posted="_onComposerMessagePosted"
+                            t-ref="composer"
+                        />
+                    </div>
                 </t>
                 <t t-if="state.isAttachmentBoxVisible">
                     <AttachmentBox
