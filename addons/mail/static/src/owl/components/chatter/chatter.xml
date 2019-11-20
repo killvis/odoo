@@ -16,6 +16,7 @@
                         <Composer
                             class="o_Chatter_composer"
                             composerLocalId="storeProps.composerLocalId"
+                            isExpandable="true"
                             isLog="state.composerIsLog"
                             t-on-o-message-posted="_onComposerMessagePosted"
                             t-ref="composer"
