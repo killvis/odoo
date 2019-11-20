@@ -1670,6 +1670,12 @@ const actions = {
                     attachmentLocalId,
                     messageLocalId,
                 });
+                for (const threadLocalId of message.threadLocalIds) {
+                    dispatch('_linkAttachmentToThread',
+                        threadLocalId,
+                        attachmentLocalId,
+                    );
+                }
             }
         }
         return message.localId;
