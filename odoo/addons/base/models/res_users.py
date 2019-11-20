@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import contextlib
 
+import base64
 import pytz
 import datetime
 import ipaddress
@@ -21,7 +22,8 @@ from odoo.exceptions import AccessDenied, AccessError, UserError, ValidationErro
 from odoo.http import request
 from odoo.osv import expression
 from odoo.service.db import check_super
-from odoo.tools import partition, collections, lazy_property
+from odoo.tools import partition, collections, lazy_property, image_process
+from odoo.modules.module import get_module_resource
 
 _logger = logging.getLogger(__name__)
 
@@ -469,8 +471,22 @@ class Users(models.Model):
         return super(Users, self)._search(args, offset=offset, limit=limit, order=order, count=count,
                                           access_rights_uid=access_rights_uid)
 
+    @api.model
+    def _get_default_image(self):
+        """ Get a default image when the user is created without image
+
+            Inspired to _get_default_image method in
+            https://github.com/odoo/odoo/blob/11.0/odoo/addons/base/res/res_partner.py
+        """
+        image_path = get_module_resource('base', 'static/img', 'avatar.png')
+        image = base64.b64encode(open(image_path, 'rb').read())
+        return image_process(image, colorize=True)
+
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if not('image_1920' in vals and vals['image_1920']):
+                vals.update(image_1920=str(self._get_default_image(), 'utf-8'))
         users = super(Users, self).create(vals_list)
         for user in users:
             user.partner_id.write({'company_id': user.company_id.id, 'active': user.active})
