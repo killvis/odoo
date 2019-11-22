@@ -302,6 +302,37 @@
             groups="base.group_no_one"/>
 
         <!-- EVENT.SPONSOR VIEWS -->
+        <record id="event_sponsor_view_kanban" model="ir.ui.view">
+            <field name="name">event.sponsor.view.kanban</field>
+            <field name="model">event.sponsor</field>
+            <field name="arch" type="xml">
+                <kanban>
+                    <field name="id"/>
+                    <field name="url"/>
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="event_id"/>
+                    <field name="image_128"/>
+                    <field name="sponsor_type_id"/>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click overflow-hidden">
+                                <div class="row my-auto">
+                                    <img t-att-src="kanban_image('event.sponsor', 'image_128', record.id.raw_value)" alt="Sponsor image" class="col-4"/>
+                                    <div class="col-8">
+                                        <h1 class="o_kanban_record_title"><field name="name"/></h1>
+                                        <div>Level: <field name="sponsor_type_id"/></div>
+                                        <field name="email"/>
+                                        <field name="url" widget="url" attrs="{'invisible': [('url', '=', False)]}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
         <record model="ir.ui.view" id="view_event_sponsor_tree">
             <field name="name">event.sponsor.tree</field>
             <field name="model">event.sponsor</field>
@@ -311,6 +342,38 @@
                     <field name="url"/>
                     <field name="sponsor_type_id"/>
                 </tree>
+            </field>
+        </record>
+
+        <record id="event_sponsor_view_form" model="ir.ui.view">
+            <field name="name">event.sponsor.view.form</field>
+            <field name="model">event.sponsor</field>
+            <field name="arch" type="xml">
+                <form editable="bottom">
+                    <sheet>
+                        <field name="image_128" widget="image" nolabel="1" class="oe_avatar float-right"/>
+                        <div class="oe_title">
+                            <h1><field name="partner_id"/></h1>
+                            <field name="event_id"/>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="url" widget="url"/>
+                                <field name="email" widget="email"/>
+                                <field name="partner_id"/>
+                            </group>
+                            <group>
+                                <field name="sponsor_type_id"/>
+                                <field name="phone" widget="phone"/>
+                                <field name="mobile" widget="phone"/>
+                            </group>
+                        </group>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers"/>
+                        <field name="message_ids" widget="mail_thread"/>
+                    </div>
+                </form>
             </field>
         </record>
 
@@ -326,9 +389,9 @@
         </record>
 
         <record model="ir.actions.act_window" id="action_event_sponsor_from_event">
-            <field name="name">Event Tracks</field>
+            <field name="name">Sponsor</field>
             <field name="res_model">event.sponsor</field>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">kanban,tree,form</field>
             <field name="context">{'search_default_event_id': active_id, 'default_event_id': active_id}</field>
         </record>
 
@@ -351,7 +414,7 @@
             <field name="name">Tracks Tag</field>
             <field name="model">event.track.tag</field>
             <field name="arch" type="xml">
-                <tree string="Event Track Tag" editable="bottom">
+                <tree string="Event Track Tag">
                     <field name="name"/>
                 </tree>
             </field>
