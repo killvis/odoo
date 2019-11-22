@@ -205,8 +205,7 @@
 .o_Composer_button {
 
     &:focus {
-        box-shadow: none;
-        background-color: gray('200');
+        box-shadow: 0 0 0 0.2rem rgba(38, 174, 172, 0.5);
     }
 
     &.o-open {

@@ -7,23 +7,40 @@
     flex-direction: row;
     justify-content: space-between;
 
-    .o_ChatterTopbar_buttonSendMessage{
+    .o_ChatterTopbar_buttonAttachmentsCountLoader {
+        margin-left: 2px;
+    }
+
+    .o_ChatterTopbar_buttonCount {
+        padding-left: 0.25rem !important;
+    }
+
+    .o_ChatterTopbar_buttonSendMessage {
         padding: 0 16px;
         border-left: none !important;
     }
+
+    .o_ChatterTopbar_leftSection {
+        display: flex;
+    }
 }
 
-.o_ChatterTopbar_buttonCount {
-    padding-left: 0.25rem !important;
-}
 
-.o_ChatterTopbar_buttonAttachmentsCountLoader{
-    margin-left: 2px;
-}
 
 // ------------------------------------------------------------------
 // Style
 // ------------------------------------------------------------------
+
+.o_ChatterTopbar {
+
+    .o_buttonActive {
+        color: #875A7B;
+        background-color: lighten(gray('300'), 7%);
+        border-color: #dee2e6;
+        border-bottom-color: transparent;
+        border-top-color: transparent;
+    }
+}
 
 // ------------------------------------------------------------------
 // Animation

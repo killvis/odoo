@@ -5,10 +5,16 @@
         <div class="o_ChatterTopbar">
             <div class="o_ChatterTopbar_leftSection">
                 <button class="btn btn-link o_ChatterTopbar_buttonSendMessage"
+                        t-att-class="{
+                            'o_buttonActive': state.composerIsLog === false,
+                        }"
                         t-on-click.prevent.stop="_onClickSendMessage">
                     Send message
                 </button>
                 <button class="btn btn-link o_ChatterTopbar_buttonLogNote"
+                        t-att-class="{
+                            'o_buttonActive': state.composerIsLog === true,
+                        }"
                         t-on-click.prevent.stop="_onClickLogNote">
                     Log note
                 </button>

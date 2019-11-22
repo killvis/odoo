@@ -20,6 +20,7 @@
                             isCompact="false"
                             isExpandable="true"
                             isLog="state.composerIsLog"
+                            sendOnEnter="false"
                             t-on-o-message-posted="_onComposerMessagePosted"
                             t-ref="composer"
                         />

@@ -58,6 +58,7 @@
                         'o_Composer_textInput-mobile': storeProps.isMobile,
                     }"
                     initialHtmlContent="props.initialTextInputHtmlContent"
+                    sendOnEnter="props.sendOnEnter"
                     t-on-o-discard.stop="_onDiscardInput"
                     t-on-o-input-composer-text-input="_onInputTextInput"
                     t-on-o-keydown-enter.stop="_onTextInputKeydownEnter"
