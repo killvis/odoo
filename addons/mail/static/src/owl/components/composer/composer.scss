@@ -108,7 +108,11 @@
 .o_Composer_followers,
 .o_Composer_suggestedPartners {
     flex: 0 0 100%;
-    margin-bottom: $o-mail-chatter-gap*0.5;
+    margin-bottom: $o-mail-chatter-gap * 0.5;
+}
+
+.o_Composer_inputButtons {
+    display: flex;
 }
 
 .o_Composer_sidebarMain {
