@@ -3,9 +3,12 @@ odoo.define('website.editor.snippets.options', function (require) {
 
 var core = require('web.core');
 var Dialog = require('web.Dialog');
-var weWidgets = require('wysiwyg.widgets');
 const wUtils = require('website.utils');
 var options = require('web_editor.snippets.options');
+// TODO (review) better way to do that? this shows `popupOptions` as unused
+//      but is required as we extend a registry Class defined in it..
+var popupOptions = require('website.s_popup_options');
+
 
 var _t = core._t;
 var qweb = core.qweb;
@@ -1024,6 +1027,61 @@ options.registry.anchor = options.Class.extend({
      */
     _text2Anchor: function (text) {
         return encodeURIComponent(text.trim().replace(/\s+/g, '-'));
+    },
+});
+
+options.registry.CookiesBar = options.registry.SnippetPopup.extend({
+    xmlDependencies: [
+        '/website/static/src/xml/website.cookies_bar.xml',
+    ],
+
+    /**
+     * @constructor
+     */
+    init: function () {
+        this._super.apply(this, arguments);
+        this.textButton = _t('I agree');
+        this.textTitle = _t('Respecting your privacy is our priority.');
+        this.textPrimary = _t('We use cookies to provide you a better user experience.');
+        this.textSecondary = _t('We use them to store info about your habits on our website. It will helps us to provide you the very best experience and customize what you see.') + '<br />' + _t('By clicking on this banner or navigating our website, you give us permission to collect data.');
+
+    },
+
+    //--------------------------------------------------------------------------
+    // Options
+    //--------------------------------------------------------------------------
+
+    /**
+     * Change the cookies bar layout.
+     *
+     * @see this.selectClass for parameters
+     */
+    selectLayout: function (previewMode, widgetValue, params) {
+        this.$content = this.$target.find('.s_popup_content');
+        // elements might have been deleted by the user
+        // TODO (review) .html() will only take first element, if user type enter (not maj enter) it
+        //      create a new element, do we want to take all of them? eg _each(+=html)
+        //      + d-flex align-items-center and normal enter is not working.. to discuss
+        this.textButton = this.$content.find('.cookies_bar_text_button').html() || this.textButton;
+        this.textTitle = this.$content.find('.cookies_bar_text_title').html() || this.textTitle;
+        this.textPrimary = this.$content.find('.cookies_bar_text_primary').html() || this.textPrimary;
+        this.textSecondary = this.$content.find('.cookies_bar_text_secondary').html() || this.textSecondary;
+
+        let websiteId;
+        this.trigger_up('context_get', {
+            callback: function (ctx) {
+                websiteId = ctx['website_id'];
+            },
+        });
+
+        const template = $(qweb.render(`website.cookies_bar.${widgetValue}`, {
+            textButton: this.textButton,
+            textTitle: this.textTitle,
+            textSecondary: this.textSecondary,
+            textPrimary: this.textPrimary,
+            websiteId: websiteId,
+        }));
+        this.$content.html(template);
     },
 });
 

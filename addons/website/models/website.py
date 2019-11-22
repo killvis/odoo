@@ -59,6 +59,7 @@ class Website(models.Model):
     language_ids = fields.Many2many('res.lang', 'website_lang_rel', 'website_id', 'lang_id', 'Languages', default=_active_languages)
     default_lang_id = fields.Many2one('res.lang', string="Default Language", default=_default_language, required=True)
     auto_redirect_lang = fields.Boolean('Autoredirect Language', default=True, help="Should users be redirected to their browser's language")
+    cookies_bar = fields.Boolean('Cookies Bar', help="Display a customizable cookies bar on your website.")
 
     def _default_social_facebook(self):
         return self.env.ref('base.main_company').social_facebook

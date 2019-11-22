@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="website.cookies_bar.discrete">
+        <section class="pt4 pb4">
+            <div class="container text-600 d-flex align-items-center">
+                <p class="mb0 cookies_bar_text_primary" t-raw="textPrimary"/>
+                <a href="#" role="button" class="js_close_popup cookies_bar_text_button btn btn-primary btn-sm text-nowrap ml-auto" t-raw="textButton"/>
+            </div>
+        </section>
+    </t>
+    <t t-name="website.cookies_bar.classic">
+        <section class="pt24 pb24">
+            <div class="container text-600 d-flex align-items-center">
+                <div>
+                    <p class="h3 text-900 cookies_bar_text_title" t-raw="textTitle"/>
+                    <small class="cookies_bar_text_primary" t-raw="textPrimary"/>
+                    <br />
+                    <small class="cookies_bar_text_secondary" t-raw="textSecondary"/>
+                </div>
+                <a href="#" role="button" class="js_close_popup cookies_bar_text_button btn btn-primary text-nowrap ml-auto" t-raw="textButton"/>
+            </div>
+        </section>
+    </t>
+    <t t-name="website.cookies_bar.popup">
+        <section class="p-5">
+            <div class="container text-800 text-center">
+                <img t-attf-src="/web/image/website/#{websiteId}/logo/250x250" class="img img-fluid" alt="Website Logo"/>
+                <br/><br/>
+                <p class="h3 cookies_bar_text_title" t-raw="textTitle"/>
+                <br />
+                <p class="mb0 text-left cookies_bar_text_primary" t-raw="textPrimary"/>
+                <p class="text-left cookies_bar_text_secondary" t-raw="textSecondary"/>
+                <br/>
+                <a href="#" role="button" class="js_close_popup cookies_bar_text_button btn btn-primary btn-lg" t-raw="textButton"/>
+            </div>
+        </section>
+    </t>
+</templates>

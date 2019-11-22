@@ -8,7 +8,7 @@ const utils = require('web.utils');
 const PopupWidget = publicWidget.Widget.extend({
     selector: '.s_popup',
     events: {
-        'click .s_popup_close': '_onCloseClick',
+        'click .js_close_popup': '_onCloseClick',
     },
 
     /**
