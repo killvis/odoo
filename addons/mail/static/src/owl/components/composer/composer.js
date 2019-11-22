@@ -105,7 +105,7 @@ class Composer extends Component {
      * @return {boolean}
      */
     get hasFooter() {
-        return this.storeProps.composer.attachmentLocalIds.length > 0;
+        return this.storeProps.composer.attachmentLocalIds.length > 0 || !this.props.areButtonsInline;
     }
 
     /**
@@ -161,6 +161,7 @@ class Composer extends Component {
      * @private
      */
     async _postMessage() {
+        // FIXME {xdu} should not send on enter
         // TODO: take suggested recipients into account
         this.storeDispatch('postMessage', this.props.composerLocalId, {
             htmlContent: this._textInputRef.comp.getHtmlContent(),
@@ -352,6 +353,7 @@ Composer.defaultProps = {
     hasFollowers: false,
     hasSendButton: true,
     hasThreadName: false,
+    isCompact: true,
     isDiscardOnClickAway: false,
     isExpandable: false,
     isFocusOnMount: false,
@@ -404,6 +406,10 @@ Composer.props = {
     },
     initialTextInputHtmlContent: {
         type: String,
+        optional: true,
+    },
+    isCompact: {
+        type: Boolean,
         optional: true,
     },
     isDiscardOnClickAway: {

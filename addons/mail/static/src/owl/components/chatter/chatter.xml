@@ -15,7 +15,9 @@
                     <div class="o_Chatter_composerContainer">
                         <Composer
                             class="o_Chatter_composer"
+                            areButtonsInline="false"
                             composerLocalId="storeProps.composerLocalId"
+                            isCompact="false"
                             isExpandable="true"
                             isLog="state.composerIsLog"
                             t-on-o-message-posted="_onComposerMessagePosted"

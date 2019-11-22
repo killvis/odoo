@@ -7,6 +7,7 @@
                 'o-has-current-partner-avatar': props.hasCurrentPartnerAvatar,
                 'o-has-footer': hasFooter,
                 'o-has-header': hasHeader,
+                'o-is-compact': props.isCompact,
             }" t-att-data-local-id="localId"
         >
             <t t-if="isDropZoneVisible.value">
@@ -65,25 +66,31 @@
                 />
                 <div class="o_Composer_buttons" t-att-class="{ 'o-mobile': storeProps.isMobile }">
                     <div class="o_Composer_toolButtons" t-att-class="{ 'o-composer-has-current-partner-avatar': props.hasCurrentPartnerAvatar }">
-                        <div class="o_Composer_toolButtonSeparator"/>
-                        <EmojisButton
-                            class="o_Composer_button o_Composer_buttonEmojis o_Composer_toolButton"
-                            t-att-class="{ 'o-mobile': storeProps.isMobile }"
-                            t-on-o-emoji-selection.stop="_onEmojiSelection"
-                            t-ref="emojisButton"
-                        />
-                        <button class="o_Composer_button o_Composer_buttonAttachment o_Composer_toolButton btn btn-secondary fa fa-paperclip" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickAddAttachment" title="Add attachment" type="button" aria-label="Add attachment"/>
+                        <t t-if="props.isCompact">
+                            <div class="o_Composer_toolButtonSeparator"/>
+                        </t>
+                        <div class="o_Composer_inputButtons">
+                            <EmojisButton
+                                class="o_Composer_button o_Composer_buttonEmojis o_Composer_toolButton"
+                                t-att-class="{ 'o-mobile': storeProps.isMobile }"
+                                t-on-o-emoji-selection.stop="_onEmojiSelection"
+                                t-ref="emojisButton"
+                            />
+                            <button class="o_Composer_button o_Composer_buttonAttachment o_Composer_toolButton btn btn-secondary fa fa-paperclip" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickAddAttachment" title="Add attachment" type="button" aria-label="Add attachment"/>
+                        </div>
                         <t t-if="props.isExpandable">
-                            <button class="btn btn-secondary fa fa-expand o_Composer_button o_Composer_buttonFullComposer o_Composer_toolButton" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickFullComposer" title="Full composer" type="button" aria-label="Full composer"/>
+                            <div class="o_Composer_otherButtons">
+                                <button class="btn btn-secondary fa fa-expand o_Composer_button o_Composer_buttonFullComposer o_Composer_toolButton" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickFullComposer" title="Full composer" type="button" aria-label="Full composer"/>
+                            </div>
                         </t>
                     </div>
                     <t t-if="props.hasSendButton and props.areButtonsInline">
-                        <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonSend btn btn-primary" t-att-class="storeProps.isMobile ? 'fa fa-paper-plane-o' : ''" t-on-click="_onClickSend" t-att-disabled="(!state.hasTextInputContent and storeProps.composer.attachmentLocalIds.length === 0) ? 'disabled' : ''" type="button">
+                        <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonInline o_Composer_buttonSend btn btn-primary" t-att-class="storeProps.isMobile ? 'fa fa-paper-plane-o' : ''" t-on-click="_onClickSend" t-att-disabled="(!state.hasTextInputContent and storeProps.composer.attachmentLocalIds.length === 0) ? 'disabled' : ''" type="button">
                             <t t-if="!storeProps.isMobile"><t t-if="props.isLog">Log</t><t t-else="">Send</t></t>
                         </button>
                     </t>
                     <t t-if="!storeProps.isMobile and props.hasDiscardButton and props.areButtonsInline">
-                        <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonDiscard btn btn-secondary" t-on-click="_onClickDiscard" type="button">
+                        <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonInline o_Composer_buttonDiscard btn btn-secondary" t-on-click="_onClickDiscard" type="button">
                             Discard
                         </button>
                     </t>
@@ -100,6 +107,20 @@
                             showAttachmentsExtensions="props.showAttachmentsExtensions"
                             showAttachmentsFilenames="props.showAttachmentsFilenames"
                         />
+                    </t>
+                    <t t-if="!props.areButtonsInline">
+                        <div class="o_Composer_actionButtons">
+                            <t t-if="props.hasSendButton">
+                                <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonSend btn btn-primary" t-att-class="storeProps.isMobile ? 'fa fa-paper-plane-o' : ''" t-on-click="_onClickSend" t-att-disabled="(!state.hasTextInputContent and storeProps.composer.attachmentLocalIds.length === 0) ? 'disabled' : ''" type="button">
+                                    <t t-if="!storeProps.isMobile"><t t-if="props.isLog">Log</t><t t-else="">Send</t></t>
+                                </button>
+                            </t>
+                            <t t-if="!storeProps.isMobile and props.hasDiscardButton">
+                                <button class="o_Composer_actionButton o_Composer_button o_Composer_buttonDiscard btn btn-secondary" t-on-click="_onClickDiscard" type="button">
+                                    Discard
+                                </button>
+                            </t>
+                        </div>
                     </t>
                 </div>
             </t>

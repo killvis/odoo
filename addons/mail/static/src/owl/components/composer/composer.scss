@@ -23,6 +23,47 @@
             padding-top: 20px;
         }
     }
+
+    &:not(.o-is-compact) {
+
+        .o_Composer_coreMain {
+            flex-direction: column;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid lighten(gray('400'), 5%);
+        }
+
+        .o_Composer_textInput {
+            border: 0;
+            min-height: 40px;
+            .note-editable {
+                min-height: 40px;
+            }
+        }
+
+        .o_Composer_buttons {
+            border: 0;
+            height: auto;
+            padding: 0 10px;
+            width: 100%;
+
+            .o_Composer_toolButtons{
+                flex-direction: row;
+                justify-content: space-between;
+                flex: 100%;
+                border-bottom: 0;
+                border-radius: initial;
+            }
+        }
+
+        .o_Composer_coreFooter {
+            margin-left: 0;
+        }
+    }
+}
+
+.o_Composer_actionButtons {
+    margin-top: 10px;
 }
 
 .o_Composer_attachmentList {
@@ -104,27 +145,6 @@
     margin-right: 5px;
 }
 
-// // Chatter composer has a different layout
-// .o_Composer.o_chatter_composer {
-
-//     .o_Composer_buttons {
-//         flex-basis: 100%;
-//     }
-
-//     .o_Composer_buttonFullComposer {
-//         margin-left: auto;
-//     }
-//     &.o-has-current-partner-avatar {
-//         .o_Composer_textInput > .note-editor {
-//             border-radius: 0;
-
-//             > .note-editing-area {
-//                 border-radius: 0;
-//             }
-//         }
-//     }
-// }
-
 // ------------------------------------------------------------------
 // Style
 // ------------------------------------------------------------------
@@ -149,7 +169,36 @@
                 }
             }
         }
+    }
 
+    &.o-is-compact {
+        .o_Composer_buttonSend {
+            &:disabled {
+                border-left: none;
+            }
+        }
+    }
+
+    &:not(.o-is-compact) {
+
+        .o_Composer_coreMain {
+            background: white;
+            border-radius: 5px;
+            border: 1px solid lighten(gray('400'), 5%);
+        }
+
+        .o_Composer_textInput {
+            border: 0;
+        }
+
+        .o_Composer_buttons {
+            border: 0;
+
+            .o_Composer_toolButtons{
+                border-bottom: 0;
+                border-radius: initial;
+            }
+        }
     }
 }
 
@@ -167,17 +216,22 @@
 
 .o_Composer_buttonDiscard {
     border: 1px solid lighten(gray('400'), 5%);
-    border-left: none;
+
+    &.o_Composer_buttonInline {
+        border-left: none;
+    }
 }
 
 .o_Composer_buttonSend {
     border: 1px solid darken($o-brand-primary, 5%);
-    border-left: none;
+
+    &.o_Composer_buttonInline {
+        border-left: none;
+    }
 
     &:disabled {
         // enforce this style (override jQuery style)
         border: 1px solid darken($o-brand-primary, 5%);
-        border-left: none;
     }
 
     &:not(:last-child) {
