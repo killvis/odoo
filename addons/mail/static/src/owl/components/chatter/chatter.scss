@@ -1,0 +1,16 @@
+.o_Chatter {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 530px;
+    padding: 0;
+    overflow: auto;
+    border-left: 1px solid gray('300');
+    background-color: white;
+    .o_Chatter_composerContainer {
+        position: relative;
+    }
+    .o_Chatter_thread {
+        overflow: initial;
+    }
+}
