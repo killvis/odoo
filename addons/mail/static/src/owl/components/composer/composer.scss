@@ -23,43 +23,6 @@
             padding-top: 20px;
         }
     }
-
-    &:not(.o-is-compact) {
-
-        .o_Composer_coreMain {
-            flex-direction: column;
-            background: white;
-            border-radius: 5px;
-            border: 1px solid lighten(gray('400'), 5%);
-        }
-
-        .o_Composer_textInput {
-            border: 0;
-            min-height: 40px;
-            .note-editable {
-                min-height: 40px;
-            }
-        }
-
-        .o_Composer_buttons {
-            border: 0;
-            height: auto;
-            padding: 0 10px;
-            width: 100%;
-
-            .o_Composer_toolButtons{
-                flex-direction: row;
-                justify-content: space-between;
-                flex: 100%;
-                border-bottom: 0;
-                border-radius: initial;
-            }
-        }
-
-        .o_Composer_coreFooter {
-            margin-left: 0;
-        }
-    }
 }
 
 .o_Composer_actionButtons {
@@ -76,6 +39,21 @@
     flex: 0 0 auto;
     height: 41px; // match minimal-height of input, including border width
 
+    &:not(.o-composer-is-compact) {
+        border: 0;
+        height: auto;
+        padding: 0 10px;
+        width: 100%;
+
+        .o_Composer_toolButtons{
+            flex-direction: row;
+            justify-content: space-between;
+            flex: 100%;
+            border-bottom: 0;
+            border-radius: initial;
+        }
+    }
+
     &.o-mobile {
         height: 51px; // mobile padding
     }
@@ -84,6 +62,10 @@
 .o_Composer_coreFooter {
     grid-area: core-footer;
     margin: 10px;
+
+    &:not(.o-composer-is-compact) {
+        margin-left: 0;
+    }
 }
 
 .o_Composer_coreHeader {
@@ -98,6 +80,13 @@
     flex-wrap: nowrap;
     align-items: flex-start;
     flex: 1 1 auto;
+
+    &:not(.o-composer-is-compact) {
+        flex-direction: column;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid lighten(gray('400'), 5%);
+    }
 }
 
 .o_Composer_currentPartnerAvatar {
@@ -123,6 +112,14 @@
 .o_Composer_textInput {
     flex: 1 1 auto;
     align-self: stretch;
+
+    &:not(.o-composer-is-compact) {
+        border: 0;
+        min-height: 40px;
+        .note-editable {
+            min-height: 40px;
+        }
+    }
 }
 
 .o_Composer_toolButton {
@@ -173,48 +170,10 @@
                 }
             }
         }
-    }
+    } }
 
-    &.o-is-compact {
-        .o_Composer_buttonSend {
-            &:disabled {
-                border-left: none;
-            }
-        }
-    }
-
-    &:not(.o-is-compact) {
-
-        .o_Composer_coreMain {
-            background: white;
-            border-radius: 5px;
-            border: 1px solid lighten(gray('400'), 5%);
-        }
-
-        .o_Composer_textInput {
-            border: 0;
-        }
-
-        .o_Composer_buttons {
-            border: 0;
-
-            .o_Composer_toolButtons{
-                border-bottom: 0;
-                border-radius: initial;
-            }
-        }
-    }
-}
-
-.o_Composer_button {
-
-    &:focus {
-        box-shadow: 0 0 0 0.2rem rgba(38, 174, 172, 0.5);
-    }
-
-    &.o-open {
-        background-color: gray('200');
-    }
+.o_Composer_button.o-open {
+    background-color: gray('200');
 }
 
 .o_Composer_buttonDiscard {
@@ -222,6 +181,15 @@
 
     &.o_Composer_buttonInline {
         border-left: none;
+    }
+}
+
+.o_Composer_buttons:not(.o-composer-is-compact) {
+    border: 0;
+
+    .o_Composer_toolButtons{
+        border-bottom: 0;
+        border-radius: initial;
     }
 }
 
@@ -235,11 +203,21 @@
     &:disabled {
         // enforce this style (override jQuery style)
         border: 1px solid darken($o-brand-primary, 5%);
+
+        &.o-composer-is-compact {
+            border-left: none;
+        }
     }
 
     &:not(:last-child) {
         border-right: none;
     }
+}
+
+.o_Composer_coreMain:not(.o-composer-is-compact) {
+    background: white;
+    border-radius: 5px;
+    border: 1px solid lighten(gray('400'), 5%);
 }
 
 .o_Composer_textInput {
@@ -250,6 +228,10 @@
     border-top: 1px solid lighten(gray('400'), 5%);
     border-bottom: 1px solid lighten(gray('400'), 5%);
     border-left: 1px solid lighten(gray('400'), 5%);
+
+    &:not(.o-composer-is-compact) {
+        border: 0;
+    }
 }
 
 .o_Composer_toolButton {

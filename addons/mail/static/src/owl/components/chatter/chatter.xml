@@ -6,6 +6,8 @@
             <t t-if="storeProps.threadLocalId">
                 <ChatterTopbar
                     class="o_Chatter_chatterTopbar"
+                    isComposerLog="state.isComposerLog"
+                    isComposerVisible="state.isComposerVisible"
                     threadLocalId="storeProps.threadLocalId"
                     t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                     t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
@@ -19,8 +21,8 @@
                             composerLocalId="storeProps.composerLocalId"
                             isCompact="false"
                             isExpandable="true"
-                            isLog="state.composerIsLog"
-                            sendOnEnter="false"
+                            isLog="state.isComposerLog"
+                            hasTextInputSendOnEnterEnabled="false"
                             t-on-o-message-posted="_onComposerMessagePosted"
                             t-ref="composer"
                         />

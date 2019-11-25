@@ -3,6 +3,7 @@ odoo.define('mail.form_renderer', function (require) {
 
 var Chatter = require('mail.Chatter');
 var OwlChatter = require('mail.component.Chatter');
+var OwlMixin = require('mail.widget.OwlMixin');
 var FormRenderer = require('web.FormRenderer');
 
 /**
@@ -10,15 +11,14 @@ var FormRenderer = require('web.FormRenderer');
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
-    dependencies: ['owl'],
     on_attach_callback: function () {
-        if (this.chatter_component) {
-            this.chatter_component.__callMounted();
+        if (this._chatterComponent) {
+            this._chatterComponent.__callMounted();
         }
     },
     on_detach_callback: function () {
-        if (this.chatter_component) {
-            this.chatter_component.__callWillUnmount();
+        if (this._chatterComponent) {
+            this._chatterComponent.__callWillUnmount();
         }
     },
 
@@ -29,8 +29,8 @@ FormRenderer.include({
         this._super.apply(this, arguments);
         this.mailFields = params.mailFields;
         this.chatter = undefined;
-        this.chatter_component = undefined;
-        OwlChatter.env = this.call('owl', 'getEnv');
+        this._chatterComponent = undefined;
+        OwlChatter.env = OwlMixin.getEnv.call(this);
     },
 
     //--------------------------------------------------------------------------
@@ -53,6 +53,13 @@ FormRenderer.include({
         return this._super.apply(this, arguments);
     },
 
+    destroy: function () {
+        if (this._chatterComponent) {
+            this._chatterComponent.destroy();
+            this._chatterComponent = undefined;
+        }
+    },
+
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
@@ -60,15 +67,15 @@ FormRenderer.include({
     /**
      * @private
      */
-    async _mount() {
+    async _mount($el) {
         const props = { id: this.state.res_id, model: this.state.model };
-        if (this.chatter_component) {
-            this.chatter_component.destroy();
-            this.chatter_component = undefined;
+        if (this._chatterComponent) {
+            this._chatterComponent.destroy();
+            this._chatterComponent = undefined;
         }
         if (props.id && props.model){
-            this.chatter_component = new OwlChatter(null, props);
-            await this.chatter_component.mount(this.$el[0]);
+            this._chatterComponent = new OwlChatter(null, props);
+            await this._chatterComponent.mount($el[0]);
         }
     },
 
@@ -79,22 +86,23 @@ FormRenderer.include({
      * @override
      * @private
      */
-    _renderNode: function (node) {
+    _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            return;
+            // FIXME {xdu}
+            // if (this._chatterComponent) {
+            //     this._chatterComponent.update();
+            // }
+            const self = this;
+            const $div = $('<div>');
+            this.defs.push(self._mount($div).then(function(){
+                const $el = $(self._chatterComponent.el);
+                $el.unwrap();
+                self._handleAttributes($el, node);
+            }));
+            return $div;
         } else {
             return this._super.apply(this, arguments);
         }
-    },
-
-    /**
-     * @override
-     * @private
-     */
-    async _renderView() {
-        await this._super.apply(this, arguments);
-        await this._mount();
-    },
-});
+    }, });
 
 });

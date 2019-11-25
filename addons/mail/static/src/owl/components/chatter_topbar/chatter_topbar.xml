@@ -6,14 +6,14 @@
             <div class="o_ChatterTopbar_leftSection">
                 <button class="btn btn-link o_ChatterTopbar_buttonSendMessage"
                         t-att-class="{
-                            'o_buttonActive': state.composerIsLog === false,
+                            'o-buttonActive': props.isComposerVisible and props.isComposerLog === false,
                         }"
                         t-on-click.prevent.stop="_onClickSendMessage">
                     Send message
                 </button>
                 <button class="btn btn-link o_ChatterTopbar_buttonLogNote"
                         t-att-class="{
-                            'o_buttonActive': state.composerIsLog === true,
+                            'o-buttonActive': props.isComposerVisible and props.isComposerLog === true,
                         }"
                         t-on-click.prevent.stop="_onClickLogNote">
                     Log note
