@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project.project_project_1" model="project.project">
+        <field name="use_pads">True</field>
+    </record>
+
+    <record id="project.project_project_2" model="project.project">
+        <field name="use_pads">True</field>
+    </record>
+
+</odoo>

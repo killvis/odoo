@@ -16,5 +16,6 @@ This module adds a PAD in all project form views.
         'views/res_config_settings_views.xml',
         'views/project_views.xml'
     ],
+    'demo': ['data/project_demo.xml'],
     'auto_install': True,
 }
