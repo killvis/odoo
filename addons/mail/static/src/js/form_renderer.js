@@ -12,10 +12,14 @@ var FormRenderer = require('web.FormRenderer');
 FormRenderer.include({
     dependencies: ['owl'],
     on_attach_callback: function () {
-        this.chatter_component.__callMounted();
+        if (this.chatter_component) {
+            this.chatter_component.__callMounted();
+        }
     },
     on_detach_callback: function () {
-        this.chatter_component.__callWillUnmount();
+        if (this.chatter_component) {
+            this.chatter_component.__callWillUnmount();
+        }
     },
 
     /**
@@ -62,11 +66,10 @@ FormRenderer.include({
             this.chatter_component.destroy();
             this.chatter_component = undefined;
         }
-        this.chatter_component = new OwlChatter(null, props);
-        // FIXME loading a lot of messages that should not
-        // FIXME scroll to top is active
-        // FIXME postMessage in the thread to refresh chatter directly
-        await this.chatter_component.mount(this.$el[0]);
+        if (props.id && props.model){
+            this.chatter_component = new OwlChatter(null, props);
+            await this.chatter_component.mount(this.$el[0]);
+        }
     },
 
     /**
