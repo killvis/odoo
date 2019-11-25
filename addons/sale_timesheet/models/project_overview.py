@@ -167,7 +167,6 @@ class Project(models.Model):
         raw_data = self.env.cr.dictfetchall()
         rows_employee = self._table_rows_get_employee_lines(raw_data)
         default_row_vals = self._table_row_default()
-
         empty_line_ids, empty_order_ids = self._table_get_empty_so_lines()
 
         # extract row labels
