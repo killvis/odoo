@@ -2,7 +2,7 @@ odoo.define('mail.form_renderer', function (require) {
 "use strict";
 
 var Chatter = require('mail.Chatter');
-var OwlChatter = require('mail.component.Chatter');
+var ChatterManager = require('mail.component.ChatterManager');
 var OwlMixin = require('mail.widget.OwlMixin');
 var FormRenderer = require('web.FormRenderer');
 
@@ -12,13 +12,13 @@ var FormRenderer = require('web.FormRenderer');
  */
 FormRenderer.include({
     on_attach_callback: function () {
-        if (this._chatterComponent) {
-            this._chatterComponent.__callMounted();
+        if (this._chatterManager) {
+            this._chatterManager.__callMounted();
         }
     },
     on_detach_callback: function () {
-        if (this._chatterComponent) {
-            this._chatterComponent.__callWillUnmount();
+        if (this._chatterManager) {
+            this._chatterManager.__callWillUnmount();
         }
     },
 
@@ -29,8 +29,8 @@ FormRenderer.include({
         this._super.apply(this, arguments);
         this.mailFields = params.mailFields;
         this.chatter = undefined;
-        this._chatterComponent = undefined;
-        OwlChatter.env = OwlMixin.getEnv.call(this);
+        this._chatterManager = undefined;
+        ChatterManager.env = OwlMixin.getEnv.call(this);
     },
 
     //--------------------------------------------------------------------------
@@ -54,9 +54,9 @@ FormRenderer.include({
     },
 
     destroy: function () {
-        if (this._chatterComponent) {
-            this._chatterComponent.destroy();
-            this._chatterComponent = undefined;
+        if (this._chatterManager) {
+            this._chatterManager.destroy();
+            this._chatterManager = undefined;
         }
     },
 
@@ -69,13 +69,13 @@ FormRenderer.include({
      */
     async _mount($el) {
         const props = { id: this.state.res_id, model: this.state.model };
-        if (this._chatterComponent) {
-            this._chatterComponent.destroy();
-            this._chatterComponent = undefined;
+        if (this._chatterManager) {
+            this._chatterManager.destroy();
+            this._chatterManager = undefined;
         }
         if (props.id && props.model){
-            this._chatterComponent = new OwlChatter(null, props);
-            await this._chatterComponent.mount($el[0]);
+            this._chatterManager = new ChatterManager(null, props);
+            await this._chatterManager.mount($el[0]);
         }
     },
 
@@ -88,18 +88,21 @@ FormRenderer.include({
      */
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            // FIXME {xdu}
-            // if (this._chatterComponent) {
-            //     this._chatterComponent.update();
-            // }
-            const self = this;
-            const $div = $('<div>');
-            this.defs.push(self._mount($div).then(function(){
-                const $el = $(self._chatterComponent.el);
-                $el.unwrap();
-                self._handleAttributes($el, node);
-            }));
-            return $div;
+            if (this._chatterManager) {
+                this._chatterManager.state.id = this.state.res_id;
+                this._chatterManager.state.model = this.state.model;
+                return $(this._chatterManager.el);
+            }
+            else {
+                const self = this;
+                const $div = $('<div>');
+                this.defs.push(self._mount($div).then(function(){
+                    const $el = $(self._chatterManager.el);
+                    $el.unwrap();
+                    self._handleAttributes($el, node);
+                }));
+                return $div;
+            }
         } else {
             return this._super.apply(this, arguments);
         }

@@ -43,10 +43,10 @@ class Chatter extends Component {
         });
     }
 
-    mounted(){
-        this.storeDispatch('initChatter', {
-            model: this.props.model,
-            id: this.props.id,
+    async willUpdateProps(nextStoreProps) {
+        await this.storeDispatch('initChatter', {
+            model: nextStoreProps.model,
+            id: nextStoreProps.id,
         });
     }
 
