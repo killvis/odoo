@@ -1,10 +1,9 @@
 odoo.define('mail.form_renderer', function (require) {
 "use strict";
 
-var Chatter = require('mail.Chatter');
-var ChatterManager = require('mail.component.ChatterManager');
-var OwlMixin = require('mail.widget.OwlMixin');
-var FormRenderer = require('web.FormRenderer');
+const ChatterManager = require('mail.component.ChatterManager');
+const OwlMixin = require('mail.widget.OwlMixin');
+const FormRenderer = require('web.FormRenderer');
 
 /**
  * Include the FormRenderer to instanciate the chatter area containing (a
@@ -28,7 +27,6 @@ FormRenderer.include({
     init: function (parent, state, params) {
         this._super.apply(this, arguments);
         this.mailFields = params.mailFields;
-        this.chatter = undefined;
         this._chatterManager = undefined;
         ChatterManager.env = OwlMixin.getEnv.call(this);
     },
@@ -43,13 +41,14 @@ FormRenderer.include({
      * @override
      */
     confirmChange: function (state, id, fields) {
-        if (this.chatter) {
-            var chatterFields = ['message_attachment_count'].concat(_.values(this.mailFields));
-            var updatedMailFields = _.intersection(fields, chatterFields);
-            if (updatedMailFields.length) {
-                this.chatter.update(state, updatedMailFields);
-            }
-        }
+        // FIXME adapt this ?
+        // if (this.chatter) {
+        //     const chatterFields = ['message_attachment_count'].concat(_.values(this.mailFields));
+        //     const updatedMailFields = _.intersection(fields, chatterFields);
+        //     if (updatedMailFields.length) {
+        //         this.chatter.update(state, updatedMailFields);
+        //     }
+        // }
         return this._super.apply(this, arguments);
     },
 
@@ -58,6 +57,7 @@ FormRenderer.include({
             this._chatterManager.destroy();
             this._chatterManager = undefined;
         }
+        this._super.apply(this, arguments);
     },
 
     //--------------------------------------------------------------------------
@@ -88,13 +88,20 @@ FormRenderer.include({
      */
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
+            const self = this;
             if (this._chatterManager) {
-                this._chatterManager.state.id = this.state.res_id;
-                this._chatterManager.state.model = this.state.model;
-                return $(this._chatterManager.el);
+                // FIXME {xdu} needed to ensure the "willUpdateProps" method from chatter to be called
+                // otherwise in some cases it is not called.
+                // Example : contact list, then select contact A, back to contact list and select
+                // contact B : without the setTimeout the chatter of contact A is shown instead of
+                // B's. After investigation it happens that willUpdateProps is not called in that case.
+                setTimeout(function(){
+                    self._chatterManager.state.id = self.state.res_id;
+                    self._chatterManager.state.model = self.state.model;
+                });
+                return $(self._chatterManager.el);
             }
             else {
-                const self = this;
                 const $div = $('<div>');
                 this.defs.push(self._mount($div).then(function(){
                     const $el = $(self._chatterManager.el);
