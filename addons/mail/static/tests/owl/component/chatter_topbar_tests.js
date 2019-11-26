@@ -23,7 +23,11 @@ QUnit.module('ChatterTopbar', {
         };
         this.createChatterTopbar = async (threadLocalId, otherProps) => {
             ChatterTopBar.env = this.env;
-            this.chatterTopbar = new ChatterTopBar(null, Object.assign({ threadLocalId }, otherProps));
+            const defaultProps = {
+                isComposerLog: false,
+                isComposerVisible: false
+            };
+            this.chatterTopbar = new ChatterTopBar(null, Object.assign({ threadLocalId }, defaultProps, otherProps));
             await this.chatterTopbar.mount(this.widget.el);
         };
         this.start = async params => {
