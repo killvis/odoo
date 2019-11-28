@@ -64,6 +64,17 @@ FormRenderer.include({
     // Private
     //--------------------------------------------------------------------------
 
+    _createChatterManager: function(node) {
+        const self = this;
+        const $div = $('<div>');
+        self.defs.push(self._mount($div).then(function(){
+            const $el = $(self._chatterManager.el);
+            $el.unwrap();
+            self._handleAttributes($el, node);
+        }));
+        return $div;
+    },
+
     /**
      * @private
      */
@@ -89,30 +100,29 @@ FormRenderer.include({
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
             const self = this;
-            if (this._chatterManager) {
-                // FIXME {xdu} needed to ensure the "willUpdateProps" method from chatter to be called
-                // otherwise in some cases it is not called.
-                // Example : contact list, then select contact A, back to contact list and select
-                // contact B : without the setTimeout the chatter of contact A is shown instead of
-                // B's. After investigation it happens that willUpdateProps is not called in that case.
-                setTimeout(function(){
-                    self._chatterManager.state.id = self.state.res_id;
-                    self._chatterManager.state.model = self.state.model;
-                });
-                return $(self._chatterManager.el);
-            }
-            else {
-                const $div = $('<div>');
-                this.defs.push(self._mount($div).then(function(){
-                    const $el = $(self._chatterManager.el);
-                    $el.unwrap();
-                    self._handleAttributes($el, node);
-                }));
-                return $div;
+            if (!self._chatterManager) {
+                return self._createChatterManager(node);
+            } else {
+                return self._updateChatterManager();
             }
         } else {
             return this._super.apply(this, arguments);
         }
-    }, });
+    },
+
+    _updateChatterManager() {
+        const self = this;
+        // FIXME {xdu} needed to ensure the "willUpdateProps" method from chatter to be called
+        // otherwise in some cases it is not called.
+        // Example : contact list, then select contact A, back to contact list and select
+        // contact B : without the setTimeout the chatter of contact A is shown instead of
+        // B's. After investigation it happens that willUpdateProps is not called in that case.
+        setTimeout(() => {
+            self._chatterManager.state.id = self.state.res_id;
+            self._chatterManager.state.model = self.state.model;
+        });
+        return $(self._chatterManager.el);
+    },
+});
 
 });
