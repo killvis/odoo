@@ -929,6 +929,16 @@ class Users(models.Model):
     def _register_hook(self):
         if hasattr(self, 'check_credentials'):
             _logger.warning("The check_credentials method of res.users has been renamed _check_credentials. One of your installed modules defines one, but it will not be called anymore.")
+
+    # def _get_placeholder_filename(self):
+    #     """ Get default placeholder for res.user model
+
+    #         * override method
+    #         method used into _content_image in odoo/addons/web/controllers/main.py
+    #     """
+    #     print(self.id)
+    #     return 'user-slash.png'
+
 #
 # Implied groups
 #

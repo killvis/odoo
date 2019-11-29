@@ -1445,6 +1445,11 @@ class Binary(http.Controller):
         if status in [301, 304] or (status != 200 and download):
             return request.env['ir.http']._response_by_status(status, headers, image_base64)
         if not image_base64:
+            if placeholder == 'placeholder.png' and model in request.env:
+                placeholder = request.env[model]._get_placeholder_filename()
+                status = 200
+            if model == 'res.users' and id == '-1':
+                placeholder = 'user-slash.png'
             image_base64 = base64.b64encode(self.placeholder(image=placeholder))
             if not (width or height):
                 width, height = odoo.tools.image_guess_size_from_field_name(field)
