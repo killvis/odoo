@@ -123,6 +123,7 @@ class TestReconciliationMatchingRules(AccountTestCommon):
 
     def test_matching_fields(self):
         ''' Test all fields used to restrict the rules's applicability.'''
+        (self.bank_st + self.cash_st).button_post()
 
         # Check without restriction.
         self._check_statement_matching(self.rule_1, {
@@ -267,6 +268,7 @@ class TestReconciliationMatchingRules(AccountTestCommon):
 
     def test_mixin_rules(self):
         ''' Test usage of rules together.'''
+        (self.bank_st + self.cash_st).button_post()
 
         # rule_1 is used before rule_2.
         self.rule_1.sequence = 1
@@ -303,6 +305,7 @@ class TestReconciliationMatchingRules(AccountTestCommon):
 
     def test_auto_reconcile(self):
         ''' Test auto reconciliation.'''
+        (self.bank_st + self.cash_st).button_post()
 
         self.rule_1.sequence = 2
         self.rule_1.auto_reconcile = True
@@ -334,7 +337,6 @@ class TestReconciliationMatchingRules(AccountTestCommon):
 
     def test_auto_reconcile_with_tax(self):
         ''' Test auto reconciliation with a tax amount included in the bank statement line'''
-
         self.rule_1.write({
             'auto_reconcile': True,
             'rule_type': 'writeoff_suggestion',
@@ -346,6 +348,7 @@ class TestReconciliationMatchingRules(AccountTestCommon):
 
         self.bank_line_2.unlink()
         self.bank_line_1.amount = -121
+        (self.bank_st + self.cash_st).button_post()
 
         self._check_statement_matching(
             self.rule_1,

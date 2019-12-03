@@ -1007,6 +1007,7 @@ class TestAccountReconciliationCommon(AccountTestCommon):
                 'foreign_currency_id': currency_id,
             })],
         })
+        bank_stmt.button_post()
 
         bank_stmt.line_ids[0].reconcile(reconcile_param)
         return bank_stmt
