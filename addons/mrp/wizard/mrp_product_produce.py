@@ -55,6 +55,7 @@ class MrpProductProduce(models.TransientModel):
         'finished_product_produce_id', string='By-products')
     production_id = fields.Many2one('mrp.production', 'Manufacturing Order',
         required=True, ondelete='cascade')
+    qty_remaining = fields.Float('Quantity To Be Produced', compute='_compute_pending_production', digits='Product Unit of Measure')
 
     @api.depends('qty_producing')
     def _compute_pending_production(self):

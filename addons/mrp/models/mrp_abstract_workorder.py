@@ -90,6 +90,8 @@ class MrpAbstractWorkorder(models.AbstractModel):
                 self.production_id.product_uom_id,
                 round=False
             )
+            if float_compare(new_qty, 0.0, precision_rounding=rounding) <= 0:
+                new_qty = self.qty_remaining
             qty_todo = float_round(new_qty - sum(move_workorder_lines.mapped('qty_to_consume')), precision_rounding=rounding)
 
             # Remove or lower quantity on exisiting workorder lines
