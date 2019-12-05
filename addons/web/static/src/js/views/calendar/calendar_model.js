@@ -483,10 +483,12 @@ return AbstractModel.extend({
             .then(function (events) {
                 self._parseServerData(events);
                 self.data.data = _.map(events, self._recordToCalendarEvent.bind(self));
-                return Promise.all([
-                    self._loadColors(self.data, self.data.data),
-                    self._loadRecordsToFilters(self.data, self.data.data)
-                ]);
+                if (self.data.data.length) {
+                    return Promise.all([
+                        self._loadColors(self.data, self.data.data),
+                        self._loadRecordsToFilters(self.data, self.data.data)
+                    ]);
+                }
             });
         });
     },
