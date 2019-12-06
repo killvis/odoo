@@ -12,12 +12,12 @@ const FormRenderer = require('web.FormRenderer');
 FormRenderer.include({
     on_attach_callback: function () {
         if (this._chatterManager) {
-            this._chatterManager.__callMounted();
+            this._chatterManager.mount(this._chatterManager.el.parentElement);
         }
     },
     on_detach_callback: function () {
         if (this._chatterManager) {
-            this._chatterManager.__callWillUnmount();
+            this._chatterManager.unmount();
         }
     },
 
@@ -99,11 +99,10 @@ FormRenderer.include({
      */
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            const self = this;
-            if (!self._chatterManager) {
-                return self._createChatterManager(node);
+            if (!this._chatterManager) {
+                return this._createChatterManager(node);
             } else {
-                return self._updateChatterManager();
+                return this._updateChatterManager();
             }
         } else {
             return this._super.apply(this, arguments);
@@ -111,17 +110,9 @@ FormRenderer.include({
     },
 
     _updateChatterManager() {
-        const self = this;
-        // FIXME {xdu} needed to ensure the "willUpdateProps" method from chatter to be called
-        // otherwise in some cases it is not called.
-        // Example : contact list, then select contact A, back to contact list and select
-        // contact B : without the setTimeout the chatter of contact A is shown instead of
-        // B's. After investigation it happens that willUpdateProps is not called in that case.
-        setTimeout(() => {
-            self._chatterManager.state.id = self.state.res_id;
-            self._chatterManager.state.model = self.state.model;
-        });
-        return $(self._chatterManager.el);
+        this._chatterManager.state.id = this.state.res_id;
+        this._chatterManager.state.model = this.state.model;
+        return $(this._chatterManager.el);
     },
 });
 
