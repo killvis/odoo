@@ -220,7 +220,7 @@ QUnit.test('show attachment box', async function (assert) {
 });
 
 QUnit.test('composer show/hide on log note/send message', async function (assert) {
-    assert.expect(8);
+    assert.expect(10);
 
     await this.start();
     await this.createChatter({
@@ -269,12 +269,28 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
         "should still have a composer"
     );
 
+    document.querySelector(`.o_ChatterTopbar_buttonLogNote`).click();
+    await nextRender();
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Chatter_composer`).length,
+        0,
+        "should have no composer anymore"
+    );
+
     document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).click();
     await nextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         1,
-        "should still have a composer"
+        "should have a composer"
+    );
+
+    document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).click();
+    await nextRender();
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Chatter_composer`).length,
+        0,
+        "should have no composer anymore"
     );
 });
 
