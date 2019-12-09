@@ -774,6 +774,7 @@ class SaleOrder(models.Model):
                 len(res),
             ) for l in res]
 
+<<<<<<< HEAD
     def order_lines_layouted(self):
         """
         Returns this order lines classified by sale_layout_category and separated in
@@ -797,6 +798,10 @@ class SaleOrder(models.Model):
 
     def has_to_be_signed(self, include_draft=False):
         return (self.state == 'sent' or (self.state == 'draft' and include_draft)) and not self.is_expired and self.require_signature and not self.signature
+=======
+    def has_to_be_signed(self, also_in_draft=False):
+        return (self.state == 'sent' or (self.state == 'draft' and also_in_draft)) and not self.is_expired and self.require_signature and not self.signature and self.team_id.team_type != 'website'
+>>>>>>> baab63e5003... temp
 
     def has_to_be_paid(self, include_draft=False):
         transaction = self.get_portal_last_transaction()
