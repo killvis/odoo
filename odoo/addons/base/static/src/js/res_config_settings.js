@@ -52,8 +52,10 @@ var BaseSettingRenderer = FormRenderer.extend({
      */
     on_attach_callback: function () {
         this._super.apply(this, arguments);
-        // set default focus on searchInput
-        this.searchInput.focus();
+        // set default focus on searchInput (in devices larger than mobile)
+        if (!config.device.isMobile) {
+            this.searchInput.focus();
+        }
     },
 
     /**
@@ -224,7 +226,9 @@ var BaseSettingRenderer = FormRenderer.extend({
     },
 
     _onSettingTabClick: function (event) {
-        this.searchInput.focus();
+        if (!config.device.isMobile) {
+            this.searchInput.focus();
+        }
         if (this.searchText.length > 0) {
             this.searchInput.val('');
             this.searchText = "";
