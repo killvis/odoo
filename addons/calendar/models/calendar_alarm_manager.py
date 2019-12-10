@@ -15,7 +15,7 @@ class AlarmManager(models.AbstractModel):
     _name = 'calendar.alarm_manager'
     _description = 'Event Alarm Manager'
 
-    def _get_next_potential_limit_alarm(self, alarm_type, seconds=None, partner_id=None):
+    def _get_next_potential_limit_alarm(self, alarm_type, seconds=None, partners=None):
         result = {}
         delta_request = """
             SELECT
@@ -50,16 +50,16 @@ class AlarmManager(models.AbstractModel):
 
         filter_user = """
                 RIGHT JOIN calendar_event_res_partner_rel AS part_rel ON part_rel.calendar_event_id = cal.id
-                    AND part_rel.res_partner_id = %s
+                    AND part_rel.res_partner_id IN %s
         """
 
         # Add filter on alarm type
         tuple_params = (alarm_type,)
 
         # Add filter on partner_id
-        if partner_id:
+        if partners:
             base_request += filter_user
-            tuple_params += (partner_id, )
+            tuple_params += (tuple(partners.ids), )
 
         # Upper bound on first_alarm of requested events
         first_alarm_max_value = ""
@@ -132,6 +132,10 @@ class AlarmManager(models.AbstractModel):
 
     @api.model
     def get_next_mail(self):
+        return self._get_partner_next_mail(partners=None)
+
+    @api.model
+    def _get_partner_next_mail(self, partners=None):
         last_notif_mail = fields.Datetime.to_string(self.env.context.get('lastcall') or fields.Datetime.now())
 
         cron = self.env.ref('calendar.ir_cron_scheduler_alarm', raise_if_not_found=False)
@@ -153,7 +157,7 @@ class AlarmManager(models.AbstractModel):
 
         cron_interval = cron.interval_number * interval_to_second[cron.interval_type]
 
-        all_meetings = self._get_next_potential_limit_alarm('email', seconds=cron_interval)
+        all_meetings = self._get_next_potential_limit_alarm('email', seconds=cron_interval, partners=partners)
 
         for meeting in self.env['calendar.event'].browse(all_meetings):
             max_delta = all_meetings[meeting.id]['max_duration']
@@ -183,7 +187,7 @@ class AlarmManager(models.AbstractModel):
         if not partner:
             return []
 
-        all_meetings = self._get_next_potential_limit_alarm('notification', partner_id=partner.id)
+        all_meetings = self._get_next_potential_limit_alarm('notification', partners=partner)
         time_limit = 3600 * 24  # return alarms of the next 24 hours
         for event_id in all_meetings:
             max_delta = all_meetings[event_id]['max_duration']
