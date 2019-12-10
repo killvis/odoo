@@ -3096,7 +3096,8 @@ var OrderCollection = Backbone.Collection.extend({
 exports.NumpadState = Backbone.Model.extend({
     defaults: {
         buffer: "0",
-        mode: "quantity"
+        mode: "quantity",
+        no_reset: false,
     },
     appendNewChar: function(newChar) {
         var oldBuffer;
@@ -3160,10 +3161,12 @@ exports.NumpadState = Backbone.Model.extend({
         });
     },
     reset: function() {
-        this.set({
-            buffer: "0",
-            mode: "quantity"
-        });
+        if (!this.get('no_reset')) {
+            this.set({
+                buffer: "0",
+                mode: "quantity"
+            });
+        }
     },
     resetValue: function(){
         if(this.get('buffer') === "") {

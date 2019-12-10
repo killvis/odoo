@@ -100,10 +100,21 @@ odoo.define('pos_coupon.pos', function(require) {
     ]);
 
     var _posmodel_super = models.PosModel.prototype;
-    models.PosModel = models.PosModel.extend({});
+    models.PosModel = models.PosModel.extend({
+        initialize: function() {
+            _posmodel_super.initialize.apply(this, arguments);
+            this.ready.then(() => {
+                if (this.get('selectedOrder')) {
+                    this.get('selectedOrder').trigger('update_rewards');
+                }
+            });
+        },
+    });
 
     var _order_super = models.Order.prototype;
     models.Order = models.Order.extend({
+        // OVERIDDEN METHODS
+
         initialize: function() {
             let res = _order_super.initialize.apply(this, arguments);
             // mapping of booked coupon ids to its corresponding program
@@ -118,6 +129,7 @@ odoo.define('pos_coupon.pos', function(require) {
                     })
                     .map(program => program.id)
             );
+            res.on('update_rewards', res.update_rewards, res);
             return res;
         },
         set_orderline_options: function(orderline, options) {
@@ -147,6 +159,21 @@ odoo.define('pos_coupon.pos', function(require) {
             result.generated_coupons = this.get_generated_coupons();
             return result;
         },
+        add_product: function(product, options) {
+            _order_super.add_product.apply(this, [product, options]);
+            if (!options || (options && !options.is_program_reward)) {
+                this.trigger('update_rewards');
+            }
+        },
+        remove_orderline: function(line) {
+            _order_super.remove_orderline.apply(this, [line]);
+            if (!line.is_program_reward) {
+                this.trigger('update_rewards');
+            }
+        },
+
+        // NEW METHODS
+
         /**
          * These are the coupon programs that are activated
          * via coupon codes. Rewards can only be generated if the coupon
@@ -475,7 +502,7 @@ odoo.define('pos_coupon.pos', function(require) {
                 return { rewards: discount_rewards, reason: null };
             }
         },
-        update_rewards: async function(code) {
+        update_rewards: async function(code, numpad_state) {
             let self = this;
 
             // immediately return if `use_coupon_programs` is not activated in the config.
@@ -557,6 +584,11 @@ odoo.define('pos_coupon.pos', function(require) {
                 }
             }
 
+            // We prevent resetting the buffer if numpad_state is passed as argument
+            if (numpad_state) {
+                numpad_state.set('no_reset', true);
+            }
+
             // 1. remove reward lines
             for (let line of self.orderlines.filter(line => line.is_program_reward)) {
                 self.remove_orderline(line);
@@ -587,6 +619,11 @@ odoo.define('pos_coupon.pos', function(require) {
             // 3. Render active programs in the orderlist
             this.non_generating_programs = non_generating_programs;
             this.render_active_programs();
+
+            // We restore the reset-ability of the buffer after updating the reward lines
+            if (numpad_state) {
+                numpad_state.set('no_reset', false);
+            }
         },
         /**
          * Using the `active_promo_program_ids`, `booked_coupon_codes` and `orderlines`
@@ -968,8 +1005,8 @@ odoo.define('pos_coupon.pos', function(require) {
 
     screens.ScreenWidget.include({
         // what happens when a coupon barcode is scanned.
-        barcode_coupon_action: async function(code) {
-            await this.pos.get_order().update_rewards(code.base_code);
+        barcode_coupon_action: function(code) {
+            this.pos.get_order().trigger('update_rewards', code.base_code);
         },
         show: function() {
             this._super();
@@ -988,12 +1025,22 @@ odoo.define('pos_coupon.pos', function(require) {
             }
             return node;
         },
+        set_value: function(val) {
+            // Update the reward lines when numpad buffer is updated
+            // except when the selected order line is a reward line.
+            let order = this.pos.get_order();
+            let selected_line = order.get_selected_orderline();
+            this._super(val);
+            if (!selected_line.is_program_reward) {
+                order.trigger('update_rewards', null, this.numpad_state);
+            }
+        },
     });
 
     var PromoProgramButton = screens.ActionButtonWidget.extend({
         template: 'PromoProgramButton',
-        button_click: async function() {
-            await this.pos.get_order().update_rewards();
+        button_click: function() {
+            this.pos.get_order().trigger('update_rewards');
         },
     });
 
@@ -1007,13 +1054,13 @@ odoo.define('pos_coupon.pos', function(require) {
 
     var PromoCodeButton = screens.ActionButtonWidget.extend({
         template: 'PromoCodeButton',
-        button_click: async function() {
+        button_click: function() {
             var self = this;
             this.pos.gui.show_popup('textinput', {
                 title: _t('Enter Promotion or Coupon Code'),
                 value: '',
-                confirm: async function(value) {
-                    if (value !== '') await self.pos.get_order().update_rewards(value);
+                confirm: function(value) {
+                    if (value !== '') self.pos.get_order().trigger('update_rewards', value);
                 },
             });
         },
