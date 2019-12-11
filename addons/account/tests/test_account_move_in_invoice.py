@@ -859,6 +859,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         reversal = move_reversal.reverse_moves()
         reverse_move = self.env['account.move'].browse(reversal['res_id'])
 
+        self.assertEqual(self.invoice.payment_state, 'not_paid', "Refunding with a draft credit note should keep the invoice 'not_paid'.")
         self.assertInvoiceValues(reverse_move, [
             {
                 **self.product_line_vals_1,
@@ -893,7 +894,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             'date': move_reversal.date,
             'state': 'draft',
             'ref': 'Reversal of: %s, %s' % (self.invoice.name, move_reversal.reason),
-            'invoice_payment_state': 'not_paid',
+            'payment_state': 'not_paid',
         })
 
         move_reversal = self.env['account.move.reversal'].with_context(active_model="account.move", active_ids=self.invoice.ids).create({
@@ -904,6 +905,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         reversal = move_reversal.reverse_moves()
         reverse_move = self.env['account.move'].browse(reversal['res_id'])
 
+        self.assertEqual(self.invoice.payment_state, 'reversed', "After cancelling it with a reverse invoice, an invoice should be in 'reversed' state.")
         self.assertInvoiceValues(reverse_move, [
             {
                 **self.product_line_vals_1,
@@ -938,7 +940,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             'date': move_reversal.date,
             'state': 'posted',
             'ref': 'Reversal of: %s, %s' % (self.invoice.name, move_reversal.reason),
-            'invoice_payment_state': 'paid',
+            'payment_state': 'paid',
         })
 
     def test_in_invoice_create_refund_multi_currency(self):
@@ -961,6 +963,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         reversal = move_reversal.reverse_moves()
         reverse_move = self.env['account.move'].browse(reversal['res_id'])
 
+        self.assertEqual(self.invoice.payment_state, 'not_paid', "Refunding with a draft credit note should keep the invoice 'not_paid'.")
         self.assertInvoiceValues(reverse_move, [
             {
                 **self.product_line_vals_1,
@@ -1006,7 +1009,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             'date': move_reversal.date,
             'state': 'draft',
             'ref': 'Reversal of: %s, %s' % (self.invoice.name, move_reversal.reason),
-            'invoice_payment_state': 'not_paid',
+            'payment_state': 'not_paid',
         })
 
         move_reversal = self.env['account.move.reversal'].with_context(active_model="account.move", active_ids=self.invoice.ids).create({
@@ -1017,6 +1020,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
         reversal = move_reversal.reverse_moves()
         reverse_move = self.env['account.move'].browse(reversal['res_id'])
 
+        self.assertEqual(self.invoice.payment_state, 'reversed', "After cancelling it with a reverse invoice, an invoice should be in 'reversed' state.")
         self.assertInvoiceValues(reverse_move, [
             {
                 **self.product_line_vals_1,
@@ -1062,7 +1066,7 @@ class TestAccountMoveInInvoiceOnchanges(AccountTestInvoicingCommon):
             'date': move_reversal.date,
             'state': 'posted',
             'ref': 'Reversal of: %s, %s' % (self.invoice.name, move_reversal.reason),
-            'invoice_payment_state': 'paid',
+            'payment_state': 'paid',
         })
 
     def test_in_invoice_create_1(self):
