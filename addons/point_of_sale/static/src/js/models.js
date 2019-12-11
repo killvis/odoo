@@ -2619,7 +2619,14 @@ exports.Order = Backbone.Model.extend({
     remove_orderline: function( line ){
         this.assert_editable();
         this.orderlines.remove(line);
-        this.select_orderline(this.get_last_orderline());
+        if (!line.is_program_reward) {
+            this.deselect_orderline(line);
+            this.select_orderline(this.get_last_orderline());
+        }
+        let selected_line = this.get_selected_orderline();
+        if (selected_line && selected_line.is_program_reward) {
+            this.select_orderline(this.get_last_orderline());
+        }
     },
 
     fix_tax_included_price: function(line){
@@ -2670,7 +2677,9 @@ exports.Order = Backbone.Model.extend({
             this.select_orderline(to_merge_orderline);
         } else {
             this.orderlines.add(line);
-            this.select_orderline(this.get_last_orderline());
+            if (!options.is_program_reward) {
+                this.select_orderline(this.get_last_orderline());
+            }
         }
 
         if(line.has_product_lot){
