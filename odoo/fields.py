@@ -660,6 +660,37 @@ class Field(MetaField('DummyField', (object,), {})):
 
         return tuple(get(key) for key in self.depends_context)
 
+    def mapped(self, records):
+        if self.name == 'id':
+            # not stored in cache
+            return records._ids
+
+        if self.compute:
+            # a recompute must be forced for records to_recompute that intersect with input records
+            # otherwise an infinite loop will occur on the next call to flush() / recompute()
+            # as the value will be False in cache and will never trigger a MissingError which,
+            # in turn, triggers a recompute
+            to_compute_ids = records.env.all.tocompute.get(self, set())
+            if not to_compute_ids.isdisjoint(records._ids):
+                to_compute_ids = to_compute_ids.intersection(records._ids).difference(
+                    records.env._protected.get(self, ()))
+                self.compute_value(records.browse(to_compute_ids.intersection(records._ids)))
+
+        vals = records.env.cache.get_until_miss(records, self)
+        if len(vals) < len(records):
+            remaining = records[len(vals):]
+
+            remaining_new = remaining.filtered(lambda r: not r.id)
+            if remaining_new:
+                # populate the cache for each NewId record
+                [self.__get__(rec, type(rec)) for rec in remaining_new]
+            else:
+                missing = records._browse(records.env, (remaining._ids[0],), tuple(remaining._ids))
+                # trigger the prefetch of all remaining records and store the values in cache
+                self.__get__(missing, type(missing))
+            return vals + self.mapped(remaining)
+        return vals
+
     #
     # Setup of field triggers
     #
@@ -784,6 +815,9 @@ class Field(MetaField('DummyField', (object,), {})):
         ``record``.
         """
         return False if value is None else value
+
+    def convert_to_record_multi(self, values, record):
+        return [self.convert_to_record(value, record) for value in values]
 
     def convert_to_read(self, value, record, use_name_get=True):
         """ Convert ``value`` from the record format to the format returned by
@@ -2453,6 +2487,11 @@ class Many2one(_Relational):
         prefetch_ids = IterableGenerator(prefetch_many2one_ids, record, self)
         return record.pool[self.comodel_name]._browse(record.env, ids, prefetch_ids)
 
+    def convert_to_record_multi(self, values, record):
+        prefetch_ids = IterableGenerator(prefetch_many2one_ids, record, self)
+        ids = tuple(unique(val for val in values if val is not None))
+        return record.pool[self.comodel_name]._browse(record.env, ids, prefetch_ids)
+
     def convert_to_read(self, value, record, use_name_get=True):
         if use_name_get and value:
             # evaluate name_get() as superuser, because the visibility of a
@@ -2717,6 +2756,14 @@ class _RelationalMulti(_Relational):
         corecords = Comodel._browse(record.env, value, prefetch_ids)
         if Comodel._active_name and record.env.context.get('active_test', True):
             corecords = corecords.filtered(Comodel._active_name).with_prefetch(prefetch_ids)
+        return corecords
+
+    def convert_to_record_multi(self, values, record):
+        prefetch_ids = IterableGenerator(prefetch_x2many_ids, record, self)
+        ids = tuple(unique(i for v in values for i in v))
+        corecords = record.pool[self.comodel_name]._browse(record.env, ids, prefetch_ids)
+        if 'active' in corecords and record.env.context.get('active_test', True):
+            corecords = corecords.filtered('active').with_prefetch(prefetch_ids)
         return corecords
 
     def convert_to_read(self, value, record, use_name_get=True):

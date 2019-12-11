@@ -5232,7 +5232,8 @@ Record ids: %(records)s
         if isinstance(func, str):
             recs = self
             for name in func.split('.'):
-                recs = recs._mapped_func(operator.itemgetter(name))
+                field = recs._fields[name]
+                recs = field.convert_to_record_multi(field.mapped(recs), recs)
             return recs
         else:
             return self._mapped_func(func)
@@ -5269,6 +5270,8 @@ Record ids: %(records)s
         if isinstance(func, str):
             name = func
             func = lambda rec: any(rec.mapped(name))
+            # populate cache
+            self.mapped(name)
         return self.browse([rec.id for rec in self if func(rec)])
 
     def filtered_domain(self, domain):
