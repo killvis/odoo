@@ -90,6 +90,9 @@ class AccountMove(models.Model):
 
     # ==== Business fields ====
     name = fields.Char(string='Number', copy=False, compute='_compute_name', readonly=False, store=True, index=True)
+    name_prefix = fields.Char(compute='_compute_name_parts')
+    name_number = fields.Char(compute='_compute_name_parts', inverse='_inverse_name_parts')
+    name_prefix_editable = fields.Boolean(compute='_compute_name_prefix_editable')
     date = fields.Date(string='Date', required=True, index=True, readonly=True,
         states={'draft': [('readonly', False)]},
         default=fields.Date.context_today)
@@ -901,12 +904,37 @@ class AccountMove(models.Model):
             # that record has been wrongly created.
             if not record.name or record.name == '/':
                 if record.state == 'draft' and not record.posted_before:
-                    if not record._get_previous_sequence('name'):
+                    if record.name_prefix_editable:
                         record._set_next_sequence('name')
                     else:
                         record.name = '/'
                 elif record.state == 'posted':
                     record._set_next_sequence('name')
+
+    @api.depends('journal_id', 'date')
+    def _compute_name_prefix_editable(self):
+        self.name_prefix_editable = False
+        for record in self:
+            if not record._get_previous_sequence('name'):
+                record.name_prefix_editable = True
+
+    @api.depends('name')
+    def _compute_name_parts(self):
+        self.name_prefix = False
+        self.name_number = False
+        for record in self:
+            if record.name and record.name != "/":
+                sequence = re.match(r'(?P<prefix>.*?)(?P<seq>\d*)$', record.name)
+                record.name_prefix = sequence.group('prefix')
+                record.name_number = sequence.group('seq')
+
+    def _inverse_name_parts(self):
+        for record in self:
+            if record.name and record.name != '/':
+                sequence = re.match(r'(?P<prefix>.*?)(?P<seq>\d*)$', record.name)
+                if not re.match(r'^\d+$', record.name_number or ""):
+                    raise ValidationError(_('You can only enter a number in the sequence now.'))
+                record.name = sequence.group('prefix') + record.name_number
 
     def _get_previous_sequence_domain(self, relaxed=False):
         self.ensure_one()
