@@ -759,6 +759,7 @@ class Task(models.Model):
         if 'stage_id' in changes and test_task.stage_id.mail_template_id:
             res['stage_id'] = (test_task.stage_id.mail_template_id, {
                 'auto_delete_message': True,
+                'parent_id': False,
                 'subtype_id': self.env['ir.model.data'].xmlid_to_res_id('mail.mt_note'),
                 'email_layout_xmlid': 'mail.mail_notification_light'
             })
