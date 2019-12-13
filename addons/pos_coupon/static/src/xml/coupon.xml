@@ -2,7 +2,7 @@
 <templates id="template" xml:space="preserve">
     <t t-name="PromoProgramButton">
         <div class='control-button'>
-            <i class='fa fa-star' /> Update Rewards
+            <i class='fa fa-star' /> Reset Programs
         </div>
     </t>
 
@@ -62,19 +62,6 @@
                 </t>
                 <t t-foreach="with_rewards_booked_coupons" t-as="coupon">
                     <div>
-                        <t t-esc="coupon.program_name"/> (<t t-esc="coupon.coupon_code"/>)
-                    </div>
-                </t>
-                <t t-foreach="no_rewards_promo_programs" t-as="program">
-                    <div style="text-decoration: line-through;">
-                        <t t-esc="program.name"/>
-                        <span t-if="program.promo_code !== false">
-                            (<t t-esc="program.promo_code"/>)
-                        </span>
-                    </div>
-                </t>
-                <t t-foreach="no_rewards_booked_coupons" t-as="coupon">
-                    <div style="text-decoration: line-through;">
                         <t t-esc="coupon.program_name"/> (<t t-esc="coupon.coupon_code"/>)
                     </div>
                 </t>

@@ -20,21 +20,6 @@
     />
 
     <!-- Form Views -->
-    <record id="pos_coupon_program_view_form_common" model="ir.ui.view">
-        <field name="name">coupon.program.form</field>
-        <field name="model">coupon.program</field>
-        <field name="inherit_id" ref="coupon.coupon_program_view_form_common"/>
-        <field name="arch" type="xml">
-            <xpath expr="//group[@name='validity']" position="inside">
-                <field
-                    name="pos_config_ids"
-                    widget="many2many_tags"
-                    groups="base.group_no_one"
-                />
-            </xpath>
-        </field>
-    </record>
-
     <record id="pos_coupon_program_view_coupon_program_form" model="ir.ui.view">
         <field name="name">coupon.program.form</field>
         <field name="model">coupon.program</field>

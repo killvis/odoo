@@ -117,19 +117,9 @@ odoo.define('pos_coupon.pos', function(require) {
 
         initialize: function() {
             let res = _order_super.initialize.apply(this, arguments);
-            // mapping of booked coupon ids to its corresponding program
-            // Map code: String -> [program_id: Integer, coupon_id: Integer]
-            res.booked_coupon_codes = new Map();
-            // These are the other activated promo programs.
-            // Initialized with automatic promo programs' ids.
-            res.active_promo_program_ids = new Set(
-                res.pos.promo_programs
-                    .filter(program => {
-                        return program.promo_code_usage == 'no_code_needed';
-                    })
-                    .map(program => program.id)
-            );
+            res.initialize_programs();
             res.on('update_rewards', res.update_rewards, res);
+            res.on('reset_coupons', res.reset_coupons, res);
             return res;
         },
         set_orderline_options: function(orderline, options) {
@@ -858,29 +848,9 @@ odoo.define('pos_coupon.pos', function(require) {
                         promo_code: program.promo_code,
                     };
                 });
-            let no_rewards_promo_programs = on_current_order_promo_program_ids
-                .filter(program_id => non_generating_program_ids.has(program_id))
-                .map(program_id => {
-                    let program = this.pos.programs_by_id[program_id];
-                    return {
-                        name: program.name,
-                        promo_code: program.promo_code,
-                    };
-                });
             let with_rewards_booked_coupons = [...this.booked_coupon_codes.entries()]
                 .filter(
                     ([code, [program_id, coupon_id]]) => !non_generating_coupon_ids.has(coupon_id)
-                )
-                .map(([code, [program_id, coupon_id]]) => {
-                    let program = this.pos.programs_by_id[program_id];
-                    return {
-                        program_name: program.name,
-                        coupon_code: code,
-                    };
-                });
-            let no_rewards_booked_coupons = [...this.booked_coupon_codes.entries()]
-                .filter(([code, [program_id, coupon_id]]) =>
-                    non_generating_coupon_ids.has(coupon_id)
                 )
                 .map(([code, [program_id, coupon_id]]) => {
                     let program = this.pos.programs_by_id[program_id];
@@ -894,18 +864,61 @@ odoo.define('pos_coupon.pos', function(require) {
                 $(
                     QWeb.render('ActivePrograms', {
                         with_rewards_promo_programs: with_rewards_promo_programs,
-                        no_rewards_promo_programs: no_rewards_promo_programs,
                         with_rewards_booked_coupons: with_rewards_booked_coupons,
-                        no_rewards_booked_coupons: no_rewards_booked_coupons,
                         on_next_order_promo_programs: on_next_order_promo_programs,
                         show:
                             with_rewards_promo_programs.length !== 0 ||
-                            no_rewards_promo_programs.length !== 0 ||
                             with_rewards_booked_coupons.length !== 0 ||
-                            no_rewards_booked_coupons.length !== 0 ||
                             on_next_order_promo_programs.length !== 0,
                     })
                 )
+            );
+        },
+        reset_coupons: async function(coupon_ids) {
+            await rpc.query(
+                {
+                    model: 'coupon.coupon',
+                    method: 'set_state',
+                    args: [coupon_ids, 'new'],
+                    kwargs: { context: session.user_context },
+                },
+                {}
+            );
+        },
+        initialize_programs: async function() {
+            if (this.booked_coupon_codes) {
+                let coupon_ids = [...this.booked_coupon_codes.values()].map(
+                    ([program_id, coupon_id]) => coupon_id
+                );
+                if (coupon_ids.length > 0) {
+                    this.trigger('reset_coupons', coupon_ids);
+                }
+            }
+            if (this.active_promo_program_ids) {
+                let code_needed_promo_program_ids = [...this.active_promo_program_ids].filter(
+                    program_id => {
+                        return (
+                            this.pos.programs_by_id[program_id].promo_code_usage === 'code_needed'
+                        );
+                    }
+                );
+                if (this.booked_coupon_codes.size + code_needed_promo_program_ids.length > 0) {
+                    this.pos.gui.show_notification('basic', {
+                        message: 'Active coupons and promo codes were deactivated.',
+                    });
+                }
+            }
+            // mapping of booked coupon ids to its corresponding program
+            // Map code: String -> [program_id: Integer, coupon_id: Integer]
+            this.booked_coupon_codes = new Map();
+            // These are the other activated promo programs.
+            // Initialized with automatic promo programs' ids.
+            this.active_promo_program_ids = new Set(
+                this.pos.promo_programs
+                    .filter(program => {
+                        return program.promo_code_usage == 'no_code_needed';
+                    })
+                    .map(program => program.id)
             );
         },
     });
@@ -1025,8 +1038,31 @@ odoo.define('pos_coupon.pos', function(require) {
             let order = this.pos.get_order();
             let selected_line = order.get_selected_orderline();
             this._super(val);
+            if (!selected_line) return;
             if (!selected_line.is_program_reward) {
                 order.trigger('update_rewards', null, this.numpad_state);
+            } else if (val === 'remove') {
+                if (selected_line.coupon_id) {
+                    let coupon_code = [...selected_line.order.booked_coupon_codes.entries()]
+                        .filter(
+                            ([coupon_code, [program_id, coupon_id]]) =>
+                                coupon_id === selected_line.coupon_id
+                        )
+                        .map(([coupon_code, [program_id, coupon_id]]) => coupon_code)[0];
+                    selected_line.order.booked_coupon_codes.delete(coupon_code);
+                    selected_line.order.trigger('reset_coupons', [selected_line.coupon_id]);
+                    selected_line.pos.gui.show_notification('basic', {
+                        message: `Coupon (${coupon_code}) has been deactivated.`,
+                    });
+                } else if (selected_line.program_id) {
+                    selected_line.order.active_promo_program_ids.delete(selected_line.program_id);
+                    selected_line.pos.gui.show_notification('basic', {
+                        message: `'${
+                            selected_line.pos.programs_by_id[selected_line.program_id].name
+                        }' program has been deactivated.`,
+                    });
+                }
+                selected_line.order.trigger('update_rewards');
             }
         },
     });
@@ -1034,6 +1070,7 @@ odoo.define('pos_coupon.pos', function(require) {
     var PromoProgramButton = screens.ActionButtonWidget.extend({
         template: 'PromoProgramButton',
         button_click: function() {
+            this.pos.get_order().initialize_programs();
             this.pos.get_order().trigger('update_rewards');
         },
     });

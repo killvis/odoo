@@ -9,15 +9,17 @@ from odoo import api, fields, models, _
 class Coupon(models.Model):
     _inherit = "coupon.coupon"
 
-    state = fields.Selection(selection_add=[("booked", "Booked")])
-    pos_order_ref = fields.Char("PoS Order Reference")
     source_pos_order_id = fields.Many2one(
         "pos.order",
-        string="Source PoS Order",
+        string="PoS Order Reference",
         help="PoS order where this coupon is generated.",
     )
     pos_order_id = fields.Many2one(
         "pos.order",
-        string="PoS Order",
+        string="Applied on PoS Order",
         help="PoS order where this coupon is consumed/booked.",
     )
+
+    def set_state(self, new_state):
+        for coupon in self:
+            coupon.state = new_state
