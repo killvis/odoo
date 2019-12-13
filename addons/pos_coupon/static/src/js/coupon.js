@@ -165,12 +165,6 @@ odoo.define('pos_coupon.pos', function(require) {
                 this.trigger('update_rewards');
             }
         },
-        remove_orderline: function(line) {
-            _order_super.remove_orderline.apply(this, [line]);
-            if (!line.is_program_reward) {
-                this.trigger('update_rewards');
-            }
-        },
 
         // NEW METHODS
 
