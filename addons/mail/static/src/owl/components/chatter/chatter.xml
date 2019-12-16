@@ -3,37 +3,38 @@
 
     <t t-name="mail.component.Chatter" owl="1">
         <div class="o_Chatter">
-            <t t-if="storeProps.threadLocalId">
-                <ChatterTopbar
-                    class="o_Chatter_chatterTopbar"
-                    isComposerLog="state.isComposerLog"
-                    isComposerVisible="state.isComposerVisible"
-                    threadLocalId="storeProps.threadLocalId"
-                    t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
-                    t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
-                    t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
-                />
-                <t t-if="storeProps.composerLocalId and state.isComposerVisible">
-                    <div class="o_Chatter_composerContainer">
-                        <Composer
-                            class="o_Chatter_composer"
-                            areButtonsInline="false"
-                            composerLocalId="storeProps.composerLocalId"
-                            isCompact="false"
-                            isExpandable="true"
-                            isLog="state.isComposerLog"
-                            hasTextInputSendOnEnterEnabled="false"
-                            t-on-o-message-posted="_onComposerMessagePosted"
-                            t-ref="composer"
-                        />
-                    </div>
-                </t>
-                <t t-if="state.isAttachmentBoxVisible">
-                    <AttachmentBox
-                        class="o_Chatter_attachmentBox"
-                        threadLocalId="storeProps.threadLocalId"
+            <ChatterTopbar
+                class="o_Chatter_chatterTopbar"
+                isComposerLog="state.isComposerLog"
+                isComposerVisible="state.isComposerVisible"
+                isDisabled="!storeProps.threadLocalId"
+                threadLocalId="storeProps.threadLocalId"
+                t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
+                t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
+                t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
+            />
+            <t t-if="storeProps.composerLocalId and state.isComposerVisible">
+                <div class="o_Chatter_composerContainer">
+                    <Composer
+                        class="o_Chatter_composer"
+                        areButtonsInline="false"
+                        composerLocalId="storeProps.composerLocalId"
+                        isCompact="false"
+                        isExpandable="true"
+                        isLog="state.isComposerLog"
+                        hasTextInputSendOnEnterEnabled="false"
+                        t-on-o-message-posted="_onComposerMessagePosted"
+                        t-ref="composer"
                     />
-                </t>
+                </div>
+            </t>
+            <t t-if="state.isAttachmentBoxVisible">
+                <AttachmentBox
+                    class="o_Chatter_attachmentBox"
+                    threadLocalId="storeProps.threadLocalId"
+                />
+            </t>
+            <t t-if="storeProps.threadLocalId">
                 <Thread
                     class="o_Chatter_thread"
                     domain="storeProps.domain"

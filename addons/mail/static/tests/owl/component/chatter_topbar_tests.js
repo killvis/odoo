@@ -65,8 +65,11 @@ QUnit.test('base rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const threadLocalId = await this.createThread({ _model: 'res.partner', id: 100 });
-    await this.createChatterTopbar(threadLocalId);
+    const threadLocalId = await this.createThread({
+        _model: 'res.partner',
+        id: 100,
+    });
+    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,
@@ -121,6 +124,69 @@ QUnit.test('base rendering', async function (assert) {
     );
 });
 
+QUnit.test('base disabled rendering', async function (assert) {
+    assert.expect(11);
+
+    await this.start({
+        async mockRPC(route) {
+            if (route.includes('ir.attachment/search_read')) {
+                return [];
+            }
+            return this._super(...arguments);
+        }
+    });
+    await this.createChatterTopbar(undefined, { isDisabled: true });
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar`).length,
+        1,
+        "should have a chatter topbar"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).disabled,
+        "send message button should be disabled"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonLogNote`).disabled,
+        "log note button should be disabled"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonScheduleActivity`).disabled,
+        "schedule activity should be disabled"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonAttachments`).disabled,
+        "attachments button should be disabled"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
+        0,
+        "attachments button should not have a loader"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
+        1,
+        "attachments button should have a counter"
+    );
+    assert.strictEqual(
+        document.querySelector(`.o_ChatterTopbar_buttonAttachmentsCount`).textContent,
+        '0',
+        "attachments button counter should be 0"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonFollow`).disabled,
+        "follow button should be disabled"
+    );
+    assert.ok(
+        document.querySelector(`.o_ChatterTopbar_buttonFollowers`).disabled,
+        "followers button should be disabled"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollowersCount`).length,
+        1,
+        "followers button should have a counter"
+    );
+});
+
 QUnit.test('attachment count without attachments', async function (assert) {
     assert.expect(4);
 
@@ -133,7 +199,7 @@ QUnit.test('attachment count without attachments', async function (assert) {
         }
     });
     const threadLocalId = await this.createThread({ _model: 'res.partner', id: 100 }, { fetchAttachments: true});
-    await this.createChatterTopbar(threadLocalId);
+    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,
@@ -178,7 +244,7 @@ QUnit.test('attachment count with attachments', async function (assert) {
         }
     });
     const threadLocalId = await this.createThread({ _model: 'res.partner', id: 100 }, { fetchAttachments: true });
-    await this.createChatterTopbar(threadLocalId);
+    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,

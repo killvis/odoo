@@ -78,10 +78,21 @@ class ChatterTopbar extends Component {
     }
 }
 
+ChatterTopbar.defaultProps = {
+    isDisabled: false,
+};
+
 ChatterTopbar.props = {
-    threadLocalId: String,
     isComposerLog: Boolean,
     isComposerVisible: Boolean,
+    isDisabled: {
+        type: Boolean,
+        optional: true,
+    },
+    threadLocalId: {
+        type: String,
+        optional: true,
+    },
 };
 
 ChatterTopbar.template = 'mail.component.ChatterTopbar';

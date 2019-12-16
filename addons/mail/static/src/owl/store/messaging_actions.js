@@ -14,7 +14,24 @@ const _t = core._t;
 const MESSAGE_FETCH_LIMIT = 30;
 const PREVIEW_MSG_MAX_SIZE = 350;
 
+// FIXME {xdu} maybe use something like a function generator ?
 const getAttachmentNextTemporaryId = (function () {
+    let tmpId = 0;
+    return () => {
+        tmpId -= 1;
+        return tmpId;
+    };
+})();
+
+const getMessageNextTemporaryId = (function () {
+    let tmpId = 0;
+    return () => {
+        tmpId -= 1;
+        return tmpId;
+    };
+})();
+
+const getThreadNextTemporaryId = (function () {
     let tmpId = 0;
     return () => {
         tmpId -= 1;
@@ -237,6 +254,46 @@ const actions = {
         }
     },
     /**
+     * Create a temporary thread based on a given model
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.env
+     * @param {Object} param0.state
+     * @param {String} model the model to which the thread will be linked
+     * @returns {String} the generated thread local id
+     */
+    createTemporaryThread({ dispatch, env, state }, model){
+        const nextId = getThreadNextTemporaryId();
+        const threadLocalId = dispatch('_createThread', {
+            _model: model,
+            areAttachmentsLoaded: true,
+            id: nextId
+        });
+        const messageLocalId = dispatch('_createMessage', {
+            author_id: [
+                env.session.partner_id,
+                env.session.partner_display_name
+            ],
+            body: "Creating a new record...",
+            id: getMessageNextTemporaryId(),
+            isTemporary: true,
+            threadLocalIds: [threadLocalId],
+        });
+        let threadCacheLocalId = null;
+        for(const loopThreadCacheLocalId in state.threadCaches){
+            const threadCache = state.threadCaches[loopThreadCacheLocalId];
+            if(threadCache.threadLocalId === threadLocalId){
+                threadCacheLocalId = loopThreadCacheLocalId;
+                break;
+            }
+        }
+        dispatch('_linkMessageToThread', {messageLocalId, threadLocalId});
+        if (threadCacheLocalId) {
+            dispatch('_linkMessageToThreadCache', {messageLocalId, threadCacheLocalId});
+        }
+        return threadLocalId;
+    },
+    /**
      * Delete an attachment from the store.
      *
      * @param {Object} param0
@@ -279,6 +336,23 @@ const actions = {
         delete state.attachments[attachmentLocalId];
     },
     /**
+     * Delete a chatter from the store (and the linked thread if chatter has no record)
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.state
+     * @param {String} chatterLocalId the local id of the chatter to delete
+     */
+    deleteChatter({ dispatch, state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        if (!chatter.hasRecord) {
+            dispatch('deleteThread', chatter.threadLocalId);
+        }
+        delete state.chatters[chatterLocalId];
+    },
+    /**
      * Delete a message from the store.
      * Unused for the moment, but may be useful for moderation.
      *
@@ -295,6 +369,28 @@ const actions = {
                 threadLocalId,
             });
         }
+    },
+    /**
+     * Delete a thread from the store
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.state
+     * @param threadLocalId the local id of the thread to delete
+     */
+    deleteThread({ dispatch, state }, threadLocalId){
+        const thread = state.threads[threadLocalId];
+        if (!thread) {
+            return;
+        }
+        // Delete attachments
+        for (const attachmentLocalId of thread.attachmentLocalIds) {
+            dispatch('deleteAttachment', attachmentLocalId);
+        }
+        // Delete messages
+        for (const messageLocalId of thread.messageLocalIds) {
+            dispatch('deleteMessage', messageLocalId);
+        }
+        delete state.threads[threadLocalId];
     },
     /**
      * Fetch attachments linked to a record. Useful for populating the store
@@ -404,24 +500,35 @@ const actions = {
      * @param {Object} param0
      * @param {function} param0.dispatch
      * @param {Object} param0.getters
+     * @param {Object} param0.state
      * @param {Object} param1
+     * @param {string|null} param1.id
      * @param {string} param1.model
-     * @param {string} param1.id
      * @return {string}
      */
-    async initChatter({ dispatch, getters }, { model, id }) {
+    initChatter({ dispatch, getters, state }, { id = null, model }) {
         let threadLocalId;
-        const thread = getters.thread({_model: model, id });
-        if (!thread) {
-            // TODO {xdu} maybe here add the name of the thread
-            threadLocalId = await dispatch('_createThread', { _model: model, id });
-        } else {
-            // TODO {xdu} uncomment me when name is supported
-            // dispatch('_updateThread', threadLocalId, { name: name } );
-            threadLocalId = thread.localId;
+        let hasRecord;
+        if (id === null) {
+            hasRecord = false;
+            threadLocalId = dispatch('createTemporaryThread', model);
         }
-        dispatch('_fetchThreadAttachments', threadLocalId);
-        return threadLocalId;
+        else {
+            hasRecord = true;
+            const thread = getters.thread({_model: model, id });
+            if (!thread) {
+                // TODO {xdu} maybe here add the name of the thread
+                threadLocalId = dispatch('_createThread', { _model: model, id });
+            } else {
+                // TODO {xdu} uncomment me when name is supported
+                // dispatch('_updateThread', threadLocalId, { name: name } );
+                threadLocalId = thread.localId;
+            }
+            dispatch('_fetchThreadAttachments', threadLocalId);
+        }
+        const chatterLocalId = _.uniqueId('o_Chatter');
+        state.chatters[chatterLocalId] = { hasRecord, threadLocalId };
+        return chatterLocalId;
     },
     /**
      * Fetch messaging data initially to populate the store specifically for
@@ -1531,6 +1638,7 @@ const actions = {
             email_from,
             history_partner_ids=[],
             id,
+            isTemporary=false,
             isTransient=false,
             is_discussion,
             is_note,
@@ -1565,6 +1673,7 @@ const actions = {
             customer_email_status,
             email_from,
             id,
+            isTemporary,
             isTransient,
             is_discussion,
             is_note,
@@ -1764,6 +1873,7 @@ const actions = {
     _createThread(
         { dispatch, state },
         {
+            areAttachmentsLoaded=false,
             channel_type,
             counter,
             create_uid,
@@ -1798,7 +1908,7 @@ const actions = {
             throw new Error('thread must always have `model` and `id`');
         }
         const thread = {
-            areAttachmentsLoaded: false,
+            areAttachmentsLoaded,
             attachmentLocalIds: [],
             cacheLocalIds: [],
             channel_type,

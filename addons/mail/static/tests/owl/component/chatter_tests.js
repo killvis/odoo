@@ -15,9 +15,9 @@ QUnit.module('component', {}, function () {
 QUnit.module('Chatter', {
     beforeEach() {
         utilsBeforeEach(this);
-        this.createChatter = async ({ id, model }, otherProps) => {
+        this.createChatter = async ({ chatterLocalId }, otherProps) => {
             Chatter.env = this.env;
-            this.chatter = new Chatter(null, Object.assign({ model, id }, otherProps));
+            this.chatter = new Chatter(null, Object.assign({ chatterLocalId }, otherProps));
             await this.chatter.mount(this.widget.el);
             await afterNextRender();
         };
@@ -45,7 +45,7 @@ QUnit.module('Chatter', {
     }
 });
 
-QUnit.test('base rendering when chatter has no attachments', async function (assert) {
+QUnit.test('base rendering when chatter has no attachment', async function (assert) {
     assert.expect(6);
     let amountOfCalls = 0;
     let lastId = 1000;
@@ -81,10 +81,8 @@ QUnit.test('base rendering when chatter has no attachments', async function (ass
             return this._super(...arguments);
         }
     });
-    await this.createChatter({
-        id: 100,
-        model: 'res.partner'
-    });
+    const chatterLocalId = this.env.store.dispatch('initChatter', { id: 100, model: 'res.partner' });
+    await this.createChatter({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -117,6 +115,48 @@ QUnit.test('base rendering when chatter has no attachments', async function (ass
     );
 });
 
+QUnit.test('base rendering when chatter has no record', async function (assert) {
+    assert.expect(7);
+    await this.start({});
+    const chatterLocalId = this.env.store.dispatch('initChatter', { model: 'res.partner' });
+    await this.createChatter({ chatterLocalId });
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Chatter`).length,
+        1,
+        "should have a chatter"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar`).length,
+        1,
+        "should have a chatter topbar"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Chatter_attachmentBox`).length,
+        0,
+        "should not have an attachment box in the chatter"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Chatter_thread`).length,
+        1,
+        "should have a thread in the chatter"
+    );
+    assert.strictEqual(
+        document.querySelector(`.o_Chatter_thread`).dataset.threadLocalId,
+        'res.partner_-1',
+        'thread should have a temporary thread local id'
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_Message`).length,
+        1,
+        "should have a message"
+    );
+    assert.strictEqual(
+        document.querySelector(`.o_Message_content`).textContent,
+        'Creating a new record...',
+        "should have the 'Creating a new record ...' message"
+    );
+});
+
 QUnit.test('base rendering when chatter has attachments', async function (assert) {
     assert.expect(3);
 
@@ -138,10 +178,8 @@ QUnit.test('base rendering when chatter has attachments', async function (assert
             return this._super(...arguments);
         }
     });
-    await this.createChatter({
-        id: 100,
-        model: 'res.partner'
-    });
+    const chatterLocalId = this.env.store.dispatch('initChatter', { id: 100, model: 'res.partner' });
+    await this.createChatter({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -180,10 +218,8 @@ QUnit.test('show attachment box', async function (assert) {
             return this._super(...arguments);
         }
     });
-    await this.createChatter({
-        id: 100,
-        model: 'res.partner'
-    });
+    const chatterLocalId = this.env.store.dispatch('initChatter', { id: 100, model: 'res.partner' });
+    await this.createChatter({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -223,10 +259,8 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     assert.expect(10);
 
     await this.start();
-    await this.createChatter({
-        id: 100,
-        model: 'res.partner'
-    });
+    const chatterLocalId = this.env.store.dispatch('initChatter', { id: 100, model: 'res.partner' });
+    await this.createChatter({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,

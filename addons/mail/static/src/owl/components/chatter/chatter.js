@@ -23,31 +23,15 @@ class Chatter extends Component {
         });
         this.storeDispatch = useDispatch();
         this.storeGetters = useGetters();
-        this.storeProps = useStore((state, props) => {
-            const thread = this.storeGetters.thread({
-                _model: props.model,
-                id: props.id,
-            });
+        this.storeProps = useStore((state, { chatterLocalId }) => {
+            const chatter = state.chatters[chatterLocalId];
+            const thread = state.threads[chatter.threadLocalId];
             return {
                 composerLocalId: thread ? thread.composerLocalId : undefined,
                 threadLocalId: thread ? thread.localId : undefined,
             };
         });
         this._threadRef = useRef('thread');
-    }
-
-    async willStart() {
-        await this.storeDispatch('initChatter', {
-            model: this.props.model,
-            id: this.props.id,
-        });
-    }
-
-    async willUpdateProps(nextStoreProps) {
-        await this.storeDispatch('initChatter', {
-            model: nextStoreProps.model,
-            id: nextStoreProps.id,
-        });
     }
 
     //--------------------------------------------------------------------------
@@ -90,8 +74,7 @@ class Chatter extends Component {
 Chatter.components = { AttachmentBox, ChatterTopbar, Composer, Thread };
 
 Chatter.props = {
-    id: Number,
-    model: String,
+    chatterLocalId: String,
 };
 
 Chatter.template = 'mail.component.Chatter';
