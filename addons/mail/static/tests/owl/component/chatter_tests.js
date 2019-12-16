@@ -288,7 +288,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     );
 
     document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         1,
@@ -296,7 +296,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     );
 
     document.querySelector(`.o_ChatterTopbar_buttonLogNote`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         1,
@@ -304,7 +304,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     );
 
     document.querySelector(`.o_ChatterTopbar_buttonLogNote`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         0,
@@ -312,7 +312,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     );
 
     document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         1,
@@ -320,7 +320,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
     );
 
     document.querySelector(`.o_ChatterTopbar_buttonSendMessage`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter_composer`).length,
         0,

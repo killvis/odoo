@@ -4,6 +4,7 @@ odoo.define('mail.component.ChatterTopBarTests', function (require) {
 const ChatterTopBar = require('mail.component.ChatterTopbar');
 const {
     afterEach: utilsAfterEach,
+    afterNextRender,
     beforeEach: utilsBeforeEach,
     pause,
     start: utilsStart,
@@ -101,7 +102,7 @@ QUnit.test('base rendering', async function (assert) {
         "attachments button should have a loader"
     );
     await this.env.store.dispatch('_fetchThreadAttachments', threadLocalId);
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
         1,

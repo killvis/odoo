@@ -2,15 +2,15 @@ odoo.define('mail.form_renderer', function (require) {
 "use strict";
 
 const Chatter = require('mail.component.Chatter');
-const OwlMixin = require('mail.widget.OwlMixin');
 const FormRenderer = require('web.FormRenderer');
-const { useDispatch } = owl.hooks;
+const messagingEnv = require('mail.messagingEnv');
 
 /**
  * Include the FormRenderer to instanciate the chatter area containing (a
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
+    env: messagingEnv,
     on_attach_callback: function () {
         if (this._chatter) {
             this._chatter.mount(this.$el[0]);
@@ -32,11 +32,6 @@ FormRenderer.include({
         this._chatterLocalId = undefined;
         this._formHasChatter = false;
         this._oldState = {};
-
-        // Owl stuffs
-        const owlEnv = OwlMixin.getEnv.call(this);
-        Chatter.env = owlEnv;
-        this.storeDispatch = useDispatch(owlEnv.store);
     },
 
     //--------------------------------------------------------------------------
@@ -75,7 +70,7 @@ FormRenderer.include({
     async _createChatter() {
         const { res_id, model } = this.state;
         // Generate chatter local id (+ fake thread or start loading real thread)
-        const chatterLocalId = this.storeDispatch('initChatter', {
+        const chatterLocalId = this.env.store.dispatch('initChatter', {
             id: this.state.res_id,
             model: this.state.model,
         });
@@ -94,7 +89,7 @@ FormRenderer.include({
     async _deleteChatter() {
         this._chatter.destroy();
         this._chatter = undefined;
-        this.storeDispatch('deleteChatter', this._chatterLocalId);
+        this.env.store.dispatch('deleteChatter', this._chatterLocalId);
     },
 
     /**
@@ -115,6 +110,7 @@ FormRenderer.include({
     async _renderView() {
         await this._super(...arguments);
         if (this._formHasChatter) {
+            Chatter.env = this.env;
             if (this._chatter)
             {
                 if (this._oldState.res_id !== this.state.res_id || this._oldState.model !== this.state.model)

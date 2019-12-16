@@ -7,7 +7,7 @@ const FormView = require('web.FormView');
 const mailTestUtils = require('mail.testUtils');
 
 const {
-    nextRender,
+    afterNextRender,
     pause,
 } = require('mail.owl.testUtils');
 
@@ -201,7 +201,7 @@ QUnit.test('basic chatter rendering', async function (assert) {
         },
         res_id: 2,
     });
-    await nextRender();
+    await afterNextRender();
 
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
@@ -267,7 +267,7 @@ QUnit.test('chatter updating', async function (assert) {
             return _super();
         },
     });
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -280,7 +280,7 @@ QUnit.test('chatter updating', async function (assert) {
     );
 
     document.querySelector(`.o_pager_next`).click();
-    await nextRender();
+    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Message`).length,
         1,
