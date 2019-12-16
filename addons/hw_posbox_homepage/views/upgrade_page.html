@@ -1,18 +1,5 @@
 {% extends "layout.html" %}
-{% macro loading_block_ui(message) %}
-<div class="loading-block o_hide">
-    <div class="loading-message-block">
-        <div style="height: 50px">
-            <img src="/web/static/src/img/spin.png" style="animation: spin 4s infinite linear;" alt="Loading...">
-        </div>
-        <br>
-        <div class="loading-message">
-            <span class="message-title">Please wait..</span><br>
-            <span class="message-status">{{ message }}</span>
-        </div>
-    </div>
-</div>
-{% endmacro %}
+{% from "loading.html" import loading_block_ui %}
 {% block head %}
     <script type="text/javascript" src="/web/static/lib/jquery/jquery.js"></script>
     <script>
