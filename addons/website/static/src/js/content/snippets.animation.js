@@ -917,13 +917,14 @@ registry.anchorSlide = publicWidget.Widget.extend({
             return;
         }
         var $anchor = $(hash);
-        if (!$anchor.length || !$anchor.attr('data-anchor')) {
+        const scrollValue = $anchor.attr('data-anchor');
+        if (!$anchor.length || !scrollValue) {
             return;
         }
         ev.preventDefault();
         $('html, body').animate({
-            scrollTop: $anchor.offset().top,
-        }, 500);
+            scrollTop: $anchor.offset().top - ($('header.o_header_affix').height() || 0) - ($('nav.o_main_navbar').height() || 0),
+        }, scrollValue === 'true' ? 500 : 0);
     },
 });
 
