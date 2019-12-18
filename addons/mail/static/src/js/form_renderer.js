@@ -3,14 +3,13 @@ odoo.define('mail.form_renderer', function (require) {
 
 const Chatter = require('mail.component.Chatter');
 const FormRenderer = require('web.FormRenderer');
-const messagingEnv = require('mail.messagingEnv');
 
 /**
  * Include the FormRenderer to instanciate the chatter area containing (a
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
-    env: messagingEnv,
+    dependencies: ['messaging'],
     on_attach_callback: function () {
         if (this._chatter) {
             this._chatter.mount(this.$el[0]);
@@ -32,7 +31,11 @@ FormRenderer.include({
         this._chatterLocalId = undefined;
         this._formHasChatter = false;
         this._oldState = {};
-        window.messagingEnv = messagingEnv;
+    },
+
+    start() {
+        this._super(...arguments);
+        this.env = this.call('messaging', 'getMessagingEnv');
     },
 
     //--------------------------------------------------------------------------
