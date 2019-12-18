@@ -1341,6 +1341,20 @@ const actions = {
         });
     },
     /**
+     * Update a given chatter by loading possibly new messages
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.state
+     * @param chatterLocalId
+     * @returns {Promise<void>}
+     */
+    async updateChatter({ dispatch, state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (chatter && chatter.hasRecord) {
+            dispatch('loadNewMessagesOnThread', chatter.threadLocalId);
+        }
+    },
+    /**
      * Update the data given to given dialog with given data changes.
      *
      * @param {Object} param0
