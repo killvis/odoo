@@ -26,7 +26,6 @@ _logger = logging.getLogger(__name__)
 SORT_ALIASES = {
     'start': 'sort_start',
     'start_date': 'sort_start',
-    'start_datetime': 'sort_start',
 }
 
 def get_weekday_occurence(date):
@@ -115,12 +114,12 @@ class Meeting(models.Model):
 
     @api.model
     def _get_time_fields(self):
-        return {'start', 'stop', 'start_date', 'stop_date', 'start_datetime', 'stop_datetime'}
+        return {'start', 'stop', 'start_date', 'stop_date'}
 
     @api.model
     def _get_public_fields(self):
         return self._get_recurrent_fields() | {
-            'id', 'active', 'allday', 'start', 'stop', 'display_start',
+            'id', 'active', 'allday', 'start', 'stop',
             'display_stop', 'duration', 'user_id', 'interval',
             'count', 'rrule', 'recurrence_id'}
 
@@ -194,15 +193,12 @@ class Meeting(models.Model):
     is_attendee = fields.Boolean('Attendee', compute='_compute_attendee')
     attendee_status = fields.Selection(Attendee.STATE_SELECTION, string='Attendee Status', compute='_compute_attendee')
     display_time = fields.Char('Event Time', compute='_compute_display_time')
-    display_start = fields.Char('Date', compute='_compute_display_start', store=True)
-    start = fields.Datetime('Start', required=True, help="Start date of an event, without time for full days events")
-    stop = fields.Datetime('Stop', required=True, help="Stop date of an event, without time for full days events")
+    start = fields.Datetime('Start', required=True, tracking=True, help="Start date of an event, without time for full days events")
+    stop = fields.Datetime('Stop', required=True, tracking=True, help="Stop date of an event, without time for full days events")
 
     allday = fields.Boolean('All Day', default=False)
     start_date = fields.Date('Start Date', compute='_compute_dates', inverse='_inverse_dates', store=True, tracking=True)
-    start_datetime = fields.Datetime('Start DateTime', compute='_compute_dates', inverse='_inverse_dates', store=True, tracking=True)
     stop_date = fields.Date('End Date', compute='_compute_dates', inverse='_inverse_dates', store=True, tracking=True)
-    stop_datetime = fields.Datetime('End Datetime', compute='_compute_dates', inverse='_inverse_dates', store=True, tracking=True)  # old date_deadline
     event_tz = fields.Selection('_event_tz_get', string='Timezone', default=lambda self: self.env.context.get('tz') or self.user_id.tz)
     duration = fields.Float('Duration', compute='_compute_dates', inverse='_inverse_duration', compute_sudo=True)
     description = fields.Text('Description')
@@ -275,11 +271,6 @@ class Meeting(models.Model):
         for meeting in self:
             meeting.display_time = self._get_display_time(meeting.start, meeting.stop, meeting.duration, meeting.allday)
 
-    @api.depends('allday', 'start_date', 'start_datetime')
-    def _compute_display_start(self):
-        for meeting in self:
-            meeting.display_start = meeting.start_date if meeting.allday else meeting.start_datetime
-
     @api.depends('allday', 'start', 'stop')
     def _compute_dates(self):
         """ Adapt the value of start_date(time)/stop_date(time) according to start/stop fields and allday. Also, compute
@@ -288,17 +279,12 @@ class Meeting(models.Model):
         for meeting in self:
             if meeting.allday and meeting.start and meeting.stop:
                 meeting.start_date = meeting.start.date()
-                meeting.start_datetime = False
                 meeting.stop_date = meeting.stop.date()
-                meeting.stop_datetime = False
 
                 meeting.duration = 0.0
             else:
                 meeting.start_date = False
-                meeting.start_datetime = meeting.start
                 meeting.stop_date = False
-                meeting.stop_datetime = meeting.stop
-
                 meeting.duration = self._get_duration(meeting.start, meeting.stop)
 
     def _inverse_dates(self):
@@ -321,21 +307,18 @@ class Meeting(models.Model):
                     'start': startdate.replace(tzinfo=None),
                     'stop': enddate.replace(tzinfo=None)
                 })
-            else:
-                meeting.write({'start': meeting.start_datetime,
-                               'stop': meeting.stop_datetime})
 
     def _inverse_duration(self):
         for event in self:
             event.stop = event.start + relativedelta(hours=event.duration)
 
-    @api.constrains('start_datetime', 'stop_datetime', 'start_date', 'stop_date')
+    @api.constrains('start', 'stop', 'start_date', 'stop_date')
     def _check_closing_date(self):
         for meeting in self:
-            if meeting.start_datetime and meeting.stop_datetime and meeting.stop_datetime < meeting.start_datetime:
+            if meeting.start and meeting.stop and meeting.stop < meeting.start:
                 raise ValidationError(
                     _('The ending date and time cannot be earlier than the starting date and time.') + '\n' +
-                    _("Meeting '%s' starts '%s' and ends '%s'") % (meeting.name, meeting.start_datetime, meeting.stop_datetime)
+                    _("Meeting '%s' starts '%s' and ends '%s'") % (meeting.name, meeting.start, meeting.stop)
                 )
             if meeting.start_date and meeting.stop_date and meeting.stop_date < meeting.start_date:
                 raise ValidationError(
@@ -343,11 +326,10 @@ class Meeting(models.Model):
                     _("Meeting '%s' starts '%s' and ends '%s'") % (meeting.name, meeting.start_date, meeting.stop_date)
                 )
 
-    @api.onchange('start_datetime', 'duration')
+    @api.onchange('start', 'duration')
     def _onchange_duration(self):
-        if self.start_datetime:
-            start = self.start_datetime
-            self.start = self.start_datetime
+        if self.start:
+            start = self.start
             # Round the duration (in hours) to the minute to avoid weird situations where the event
             # stops at 4:19:59, later displayed as 4:19.
             self.stop = start + timedelta(minutes=round(self.duration * 60))
