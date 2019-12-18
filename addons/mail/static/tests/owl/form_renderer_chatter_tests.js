@@ -1,27 +1,21 @@
 odoo.define('mail.FormRendererChatterTests', function (require) {
 "use strict";
 
-const testUtils = require('web.test_utils');
-const createView = testUtils.createView;
 const FormView = require('web.FormView');
-const mailTestUtils = require('mail.testUtils');
 
 const {
     afterNextRender,
     pause,
-} = require('mail.owl.testUtils');
+    start,
+} = require('mail.messagingTestUtils');
 
-QUnit.module('mail.owl', {}, function () {
-
+QUnit.module('mail.messaging', {}, function () {
 QUnit.module('Chatter', {
     beforeEach: function () {
         this.underscoreDebounce = _.debounce;
         this.underscoreThrottle = _.throttle;
         _.debounce = _.identity;
         _.throttle = _.identity;
-        this.services = Object.assign(mailTestUtils.getMailServices(),{
-            // owl: require('mail.service.Owl')
-        });
         this.data = {
             'ir.attachment': {
                 fields:{
@@ -155,23 +149,11 @@ QUnit.module('Chatter', {
     }
 });
 
-QUnit.skip('basic chatter rendering', async function (assert) {
+QUnit.test('basic chatter rendering', async function (assert) {
     assert.expect(1);
-
-    const form = await createView({
-        View: FormView,
-        model: 'res.partner',
-        data: this.data,
-        services: this.services,
-        viewOptions: {
-            env: this.o_test_env
-        },
-        arch: `<form string="Partners">
-                <sheet>
-                    <field name="foo"/>
-                </sheet>
-                <div class="oe_chatter"></div>
-            </form>`,
+    const { view } = await start({
+        debug:true,
+        hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
             if (route === '/mail/init_messaging') {
@@ -190,9 +172,20 @@ QUnit.skip('basic chatter rendering', async function (assert) {
                 }
             }
             return _super();
-        },
+},
+        // View params
+        View: FormView,
+        model: 'res.partner',
+        data: this.data,
+        arch: `<form string="Partners">
+                <sheet>
+                    <field name="foo"/>
+                </sheet>
+                <div class="oe_chatter"></div>
+            </form>`,
         res_id: 2,
     });
+
     await afterNextRender();
 
     assert.strictEqual(
@@ -200,29 +193,14 @@ QUnit.skip('basic chatter rendering', async function (assert) {
         1,
         "there should be a chatter"
     );
-    form.destroy();
+    view.destroy();
 });
 
-QUnit.skip('chatter updating', async function (assert) {
+QUnit.test('chatter updating', async function (assert) {
     assert.expect(6);
 
-    const form = await createView({
-        View: FormView,
-        model: 'res.partner',
-        data: this.data,
-        services: this.services,
-        res_id: 1,
-        viewOptions: {
-            env: this.o_test_env,
-            ids: [1,2],
-            index: 0
-        },
-        arch: `<form string="Partners">
-                <sheet>
-                    <field name="foo"/>
-                </sheet>
-                <div class="oe_chatter"></div>
-            </form>`,
+    const { view } = await start({
+        hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
             if (route === '/mail/init_messaging') {
@@ -258,6 +236,21 @@ QUnit.skip('chatter updating', async function (assert) {
             }
             return _super();
         },
+        // View params
+        View: FormView,
+        model: 'res.partner',
+        data: this.data,
+        res_id: 1,
+        viewOptions: {
+            ids: [1, 2],
+            index: 0
+        },
+        arch: `<form string="Partners">
+            <sheet>
+                <field name="foo"/>
+            </sheet>
+            <div class="oe_chatter"></div>
+        </form>`,
     });
     await afterNextRender();
     assert.strictEqual(
@@ -281,7 +274,7 @@ QUnit.skip('chatter updating', async function (assert) {
     assert.verifySteps(['message_fetch_res_id_1', 'message_fetch_res_id_2']);
 
     // teardown
-    form.destroy();
+    view.destroy();
 });
 
 });

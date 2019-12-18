@@ -16,6 +16,7 @@ const NotificationService = require('web.NotificationService');
 const RamStorage = require('web.RamStorage');
 const makeTestEnvironment = require('web.test_env');
 const {
+    createView,
     makeTestPromise,
     mock: {
         addMockEnvironment,
@@ -205,6 +206,72 @@ function _useMessagingMenu(callbacks) {
             Object.assign(result, { messagingMenuWidget });
         }),
     });
+}
+
+/**
+ * @private
+ * @param {Object} callbacks
+ * @param {function[]} callbacks.init
+ * @param {function[]} callbacks.mount
+ * @param {function[]} callbacks.destroy
+ * @param {function[]} callbacks.return
+ * @param viewParams the params to pass to createView
+ * @returns {Promise<{env, view: *}>}
+ */
+async function _useView(callbacks, viewParams) {
+    // MOCKING SERVICES
+    const { return: returnCallbacks } = callbacks;
+    const view = await createView(viewParams);
+    const env = view.call('messaging', 'getMessagingEnv');
+    const result = { env, view };
+    returnCallbacks.forEach(callback => callback(result));
+    return result;
+}
+
+/**
+ * @private
+ * @param {Object} callbacks
+ * @param {function[]} callbacks.init
+ * @param {function[]} callbacks.mount
+ * @param {function[]} callbacks.destroy
+ * @param {function[]} callbacks.return
+ * @param {Object} widgetParams the params to pass to addMockEnvironment with
+ *   the created widget
+ * @param {boolean} waitNextRender whether it is necessary to wait next render
+ *   before getting env from services (for example other widgets are mounted)
+ * @returns {Promise<{env, widget: *}>}
+ */
+async function _useWidget(callbacks, widgetParams, waitNextRender) {
+    const {
+        mount: mountCallbacks,
+        destroy: destroyCallbacks,
+        return: returnCallbacks,
+    } = callbacks;
+    const { debug, services } = widgetParams;
+
+    const Parent = Widget.extend({ do_push_state() {} });
+    const parent = new Parent();
+
+    addMockEnvironment(parent, widgetParams);
+    const selector = debug ? 'body' : '#qunit-fixture';
+    const widget = new Widget(parent);
+    await widget.appendTo($(selector));
+    Object.assign(widget, {
+        destroy() {
+            delete widget.destroy;
+            destroyCallbacks.forEach(callback => callback({ widget }));
+            parent.destroy();
+            unpatch(services.messaging);
+        },
+    });
+    await Promise.all(mountCallbacks.map(callback => callback({ selector, widget })));
+    if (waitNextRender) {
+        await afterNextRender();
+    }
+    const env = widget.call('messaging', 'getMessagingEnv');
+    const result = { env, widget };
+    returnCallbacks.forEach(callback => callback(result));
+    return result;
 }
 
 //------------------------------------------------------------------------------
@@ -466,16 +533,31 @@ async function pause() {
  * @param {boolean} [param0.hasDiscuss=false] if set, mount discuss app.
  * @param {boolean} [param0.hasMessagingMenu=false] if set, mount messaging
  *   menu.
+ * @param {boolean} [param0.hasView=false] if set, use createView to create a
+ *   view instead of a generic widget.
  * @param {Object} [param0.services]
  * @param {Object} [param0.session={}]
  * @param {string} [param0.session.name="Admin"]
  * @param {integer} [param0.session.partner_id=3]
  * @param {string} [param0.session.partner_display_name="Your Company, Admin"]
  * @param {integer} [param0.session.uid=2]
+ * @param {Object} [param0.View] makes only sense when `param0.hasView` is set:
+ *   the View class to use in createView.
+ * @param {string} [param0.model] makes only sense when `param0.hasView` is set:
+ *   the model to use in createView.
+ * @param {Object} [param0.data] makes only sense when `param0.hasView` is set:
+ *   the data to use in createView.
+ * @param {string} [param0.arch] makes only sense when `param0.hasView` is set:
+ *   the arch to use in createView.
+ * @param {integer} [param0.res_id] makes only sense when `param0.hasView` is set:
+ *   the res_id to use in createView.
+ * @param {Object} [param0.viewOptions] makes only sense when `param0.hasView`
+ *   is set: the view options to use in createView.
  * @param {...Object} [param0.kwargs]
  * @return {Object}
  */
 async function start(param0) {
+    // Initialize
     let callbacks = {
         init: [],
         mount: [],
@@ -486,10 +568,12 @@ async function start(param0) {
         hasChatWindow = false,
         hasDiscuss = false,
         hasMessagingMenu = false,
+        hasView = false,
     } = param0;
     delete param0.hasChatWindow;
     delete param0.hasDiscuss;
     delete param0.hasMessagingMenu;
+    delete param0.hasView;
     if (hasChatWindow) {
         callbacks = _useChatWindow(callbacks);
     }
@@ -499,26 +583,14 @@ async function start(param0) {
     if (hasMessagingMenu) {
         callbacks = _useMessagingMenu(callbacks);
     }
-    const {
-        init: initCallbacks,
-        mount: mountCallbacks,
-        destroy: destroyCallbacks,
-        return: returnCallbacks,
-    } = callbacks;
     const { debug = false } = param0;
     const {
         services = getServices({ hasChatWindow, debug }),
         session = {},
     } = param0;
-    initCallbacks.forEach(callback => callback(param0));
-    const kwargs = Object.assign({
-        archs: { 'mail.message,false,search': '<search/>' },
-        debug,
-        services,
-        session,
-    }, param0);
-    const Parent = Widget.extend({ do_push_state() {} });
-    const parent = new Parent();
+    callbacks.init.forEach(callback => callback(param0));
+
+    // Widget building & mounting
     _.defaults(session, {
         name: "Admin",
         partner_id: 3,
@@ -556,26 +628,28 @@ async function start(param0) {
             },
         },
     });
-    addMockEnvironment(parent, kwargs);
-    const selector = debug ? 'body' : '#qunit-fixture';
-    const widget = new Widget(parent);
-    await widget.appendTo($(selector));
-    Object.assign(widget, {
-        destroy() {
-            delete widget.destroy;
-            destroyCallbacks.forEach(callback => callback({ widget }));
-            parent.destroy();
-            unpatch(services.messaging);
-        },
-    });
-    await Promise.all(mountCallbacks.map(callback => callback({ selector, widget })));
-    if (hasChatWindow || hasDiscuss || hasMessagingMenu) {
-        await afterNextRender();
+
+    if (hasView) {
+        const viewParams = Object.assign({
+            debug,
+            services,
+            session,
+        }, param0);
+        return _useView(callbacks, viewParams, {
+            hasChatWindow,
+            hasDiscuss,
+            hasMessagingMenu,
+        });
     }
-    const env = widget.call('messaging', 'getMessagingEnv');
-    const result = { env, widget };
-    returnCallbacks.forEach(callback => callback(result));
-    return result;
+    else {
+        const widgetParams = Object.assign({
+            archs: { 'mail.message,false,search': '<search/>' },
+            debug,
+            services,
+            session,
+        }, param0);
+        return _useWidget(callbacks, widgetParams, hasChatWindow || hasDiscuss || hasMessagingMenu);
+    }
 }
 
 //------------------------------------------------------------------------------
