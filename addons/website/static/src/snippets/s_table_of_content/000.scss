@@ -1,0 +1,44 @@
+.s_table_of_content {
+    .s_table_of_content_navbar_wrap {
+        //border-right: 1px solid gray('400');
+
+        .s_table_of_content_navbar {
+            @include o-position-sticky($top: 0px);
+
+            li {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+            & > a.list-group-item {
+                background: none;
+            }
+            & > a.list-group-item-action {
+                color: rgba($body-color, 0.7);
+                font-weight: 500;
+                padding-left: 3px;
+                transition: padding 0.1s;
+
+                &:before {
+                    @include o-position-absolute(10px, auto, 10px, 0);
+                    width: 2px;
+                    content: "";
+                }
+                &:hover {
+                    color: rgba($body-color, 0.9);
+                }
+                &:focus {
+                    background: none;
+                }
+                &.active {
+                    color: rgba($body-color, 0.9);
+                    background: none;
+                    padding-left: 8px;
+
+                    &:before {
+                        background-color: theme-color('primary');
+                    }
+                }
+            }
+        }
+    }
+}

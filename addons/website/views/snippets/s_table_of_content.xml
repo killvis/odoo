@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<template id="s_table_of_content" name="Table of Content">
+    <section class="s_table_of_content pt24 pb24">
+        <div class="container table_of_content">
+            <div class="row">
+                <div class="s_table_of_content_navbar_wrap col-lg-3 d-print-none d-none d-lg-block o_not_editable" data-name="Navbar">
+                    <div class="s_table_of_content_navbar list-group pt-32"/>
+                </div>
+                <div class="col-lg-9 s_table_of_content_main" data-name="Content">
+                    <div class="oe_structure">
+                        <section class="pb16 pl-lg-4">
+                            <h2 class="text-secondary pt16" data-anchor="true">Intuitive system</h2>
+                            <div class="row">
+                                <div class="col-lg-6 col-md-6 pt16" data-name="Box">
+                                    <h4>What you see is what you get</h4>
+                                    <p>
+                                        Insert text styles like headers, bold, italic, lists and fonts with
+                                        a simple WYSIWYG editor. Flexible and easy to use.
+                                    </p>
+                                </div>
+                                <div class="col-lg-6 col-md-6 pt16" data-name="Box">
+                                    <h4>Customization tool</h4>
+                                    <p>
+                                        Click and change content directly from the front-end: no complex back
+                                        end to deal with.
+                                    </p>
+                                </div>
+                                <div class="col-lg-6 col-md-6 pt16" data-name="Box">
+                                    <h4>Building blocks system</h4>
+                                    <p>
+                                        Create your page from scratch by dragging and dropping pre-made,
+                                        fully customizable building blocks.
+                                    </p>
+                                </div>
+                                <div class="col-lg-6 col-md-6 pt16" data-name="Box">
+                                    <h4>Word processor text editing</h4>
+                                    <p>
+                                        Create and update your text content through an editor designed to
+                                        replicate the word processor experience.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</template>
+
+<template id="s_table_of_content_options" inherit_id="website.snippet_options">
+    <xpath expr="." position="inside">
+        <div data-js="TableOfContent" data-selector=".s_table_of_content">
+            <we-checkbox string="Animate Scrolling" data-animate-scrolling="true" data-no-preview="true"/>
+        </div>
+        <div data-js="TableOfContentNavbar" data-selector=".s_table_of_content_navbar_wrap"/>
+        <div data-js="TableOfContentMain" data-selector=".s_table_of_content_main"/>
+    </xpath>
+</template>
+
+<template id="assets_snippet_s_table_of_content_css_000" inherit_id="website.assets_frontend">
+    <xpath expr="//link[last()]" position="after">
+        <link rel="stylesheet" type="text/scss" href="/website/static/src/snippets/s_table_of_content/000.scss"/>
+    </xpath>
+</template>
+
+<template id="assets_snippet_s_table_of_content_js_000" inherit_id="website.assets_frontend">
+    <xpath expr="//script[last()]" position="after">
+        <script type="text/javascript" src="/website/static/src/snippets/s_table_of_content/000.js"/>
+    </xpath>
+</template>
+
+</odoo>
