@@ -2721,11 +2721,13 @@ class _RelationalMulti(_Relational):
     def _setup_regular_full(self, model):
         super(_RelationalMulti, self)._setup_regular_full(model)
         if isinstance(self.domain, list):
-            self.depends += tuple(
+            d = set(self.depends)
+            d.update(
                 self.name + '.' + arg[0]
                 for arg in self.domain
                 if isinstance(arg, (tuple, list)) and isinstance(arg[0], str)
             )
+            self.depends = tuple(d)
 
     def create(self, record_values):
         """ Write the value of ``self`` on the given records, which have just
