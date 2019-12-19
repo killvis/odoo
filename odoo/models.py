@@ -71,6 +71,7 @@ regex_pg_name = re.compile(r'^[a-z_][a-z0-9_$]*$', re.I)
 regex_field_agg = re.compile(r'(\w+)(?::(\w+)(?:\((\w+)\))?)?')
 
 AUTOINIT_RECALCULATE_STORED_FIELDS = 1000
+PROTECTED_FIELDS = ["id", "create_date", "write_date", "create_uid", "write_uid"]
 
 def check_object_name(name):
     """ Check if the given name is a valid model name.
@@ -1895,7 +1896,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
     def _read_group_prepare(self, orderby, aggregated_fields, annotated_groupbys, query):
         """
         Prepares the GROUP BY and ORDER BY terms for the read_group method. Adds the missing JOIN clause
-        to the query if order should be computed against m2o field. 
+        to the query if order should be computed against m2o field.
         :param orderby: the orderby definition in the form "%(field)s %(order)s"
         :param aggregated_fields: list of aggregated fields in the query
         :param annotated_groupbys: list of dictionaries returned by _read_group_process_groupby
@@ -1992,9 +1993,9 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         return {
             'field': split[0],
             'groupby': gb,
-            'type': field_type, 
+            'type': field_type,
             'display_format': display_formats[gb_function or 'month'] if temporal else None,
-            'interval': time_intervals[gb_function or 'month'] if temporal else None,                
+            'interval': time_intervals[gb_function or 'month'] if temporal else None,
             'tz_convert': tz_convert,
             'qualified_field': qualified_field,
         }
@@ -2019,8 +2020,8 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
     @api.model
     def _read_group_format_result(self, data, annotated_groupbys, groupby, domain):
         """
-            Helper method to format the data contained in the dictionary data by 
-            adding the domain corresponding to its values, the groupbys in the 
+            Helper method to format the data contained in the dictionary data by
+            adding the domain corresponding to its values, the groupbys in the
             context and by properly formatting the date/datetime values.
 
         :param data: a single group
@@ -2097,10 +2098,10 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 The possible aggregation functions are the ones provided by PostgreSQL
                 (https://www.postgresql.org/docs/current/static/functions-aggregate.html)
                 and 'count_distinct', with the expected meaning.
-        :param list groupby: list of groupby descriptions by which the records will be grouped.  
+        :param list groupby: list of groupby descriptions by which the records will be grouped.
                 A groupby description is either a field (then it will be grouped by that field)
                 or a string 'field:groupby_function'.  Right now, the only functions supported
-                are 'day', 'week', 'month', 'quarter' or 'year', and they only make sense for 
+                are 'day', 'week', 'month', 'quarter' or 'year', and they only make sense for
                 date/datetime fields.
         :param int offset: optional number of records to skip
         :param int limit: optional max number of records to return
@@ -2108,7 +2109,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                              overriding the natural sort ordering of the
                              groups, see also :py:meth:`~osv.osv.osv.search`
                              (supported only for many2one fields currently)
-        :param bool lazy: if true, the results are only grouped by the first groupby and the 
+        :param bool lazy: if true, the results are only grouped by the first groupby and the
                 remaining groupbys are put in the __context key.  If false, all the groupbys are
                 done in one call.
         :return: list of dictionaries(one dictionary for each record) containing:
@@ -2265,7 +2266,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             # Right now, read_group only fill results in lazy mode (by default).
             # If you need to have the empty groups in 'eager' mode, then the
             # method _read_group_fill_results need to be completely reimplemented
-            # in a sane way 
+            # in a sane way
             result = self._read_group_fill_results(
                 domain, groupby_fields[0], groupby[len(annotated_groupbys):],
                 aggregated_fields, count_field, result, read_group_order=order,
@@ -3680,13 +3681,52 @@ Record ids: %(records)s
             # add missing defaults
             vals = self._add_missing_default_values(vals)
 
+            # VFE compute fields before creating the record
+            # s.t. required and sql constraints works on
+            # computed fields.
+            new_obj = self.with_context(pre_compute=True).new(vals)
+            # VFE TODO ensure no real objects having a potential dependency on new_obj are recomputed
+            # self.env.norecompute ?
+            true_vals = dict()
+            for fname, field in new_obj._fields.items():
+                if fname in vals:
+                    true_vals[fname] = vals[fname]
+                    continue
+                if field.store and field.compute:
+                    # VFE TODO also compute related fields ?
+                    # if we do not use the related here, account tests crashes
+                    # (virtual and real records are accessed in their tests and crashes)
+                    if field.relational:
+                        if field.type == 'many2one':
+                            temp_vals = new_obj[fname]
+                            if temp_vals.id:
+                                true_vals[fname] = temp_vals.id
+                        else:
+                            # many2many and one2many
+                            # shouldn't be computed before create.
+                            continue
+                    elif field.required or new_obj[fname]:
+                        # Do not update falsy values
+                        # if the field value isn't required
+                        # to avoid creating noise in the db.
+                        true_vals[fname] = new_obj[fname]
+                    # VFE TODO update the value even if falsy ?
+                    # if it is computed based on true_vals/vals
+                    # fields to avoid later useless recomputation ?
+                    # or define some fields as post-computed ?
+
+            # VFE how to avoid the virtual new_obj to be present in relationals ?
+
+            # VFE FIXME computes based on one2m or m2m may receive recordsets with new and not new ids... ?
+            # make a recursive computed field label to know whether they depends on 2m relational, or on a field depending on it ?
+
             # distribute fields into sets for various purposes
             data = {}
             data['stored'] = stored = {}
             data['inversed'] = inversed = {}
             data['inherited'] = inherited = defaultdict(dict)
             data['protected'] = protected = set()
-            for key, val in vals.items():
+            for key, val in true_vals.items():
                 if key in bad_names:
                     continue
                 field = self._fields.get(key)
@@ -3704,11 +3744,14 @@ Record ids: %(records)s
                         continue
                 if field.store:
                     stored[key] = val
-                if field.inherited:
-                    inherited[field.related_field.model_name][key] = val
-                elif field.inverse:
-                    inversed[key] = val
-                    inversed_fields.add(field)
+                if key in vals:
+                    # Do not trigger inverse application
+                    # for fields computed through the new() call.
+                    if field.inherited:
+                        inherited[field.related_field.model_name][key] = val
+                    elif field.inverse:
+                        inversed[key] = val
+                        inversed_fields.add(field)
                 # protect non-readonly computed fields against (re)computation
                 if field.compute and not field.readonly:
                     protected.update(self._field_computed.get(field, [field]))
@@ -3719,6 +3762,7 @@ Record ids: %(records)s
         for model_name, parent_name in self._inherits.items():
             parent_data_list = []
             for data in data_list:
+                # VFE FIXME some things could maybe be removed here...
                 if not data['stored'].get(parent_name):
                     parent_data_list.append(data)
                 elif data['inherited'][model_name]:
