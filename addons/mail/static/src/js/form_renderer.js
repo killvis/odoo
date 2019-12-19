@@ -9,13 +9,14 @@ const FormRenderer = require('web.FormRenderer');
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
-    dependencies: ['messaging'],
     on_attach_callback: function () {
+        this._super(...arguments);
         if (this._chatter) {
             this._chatter.mount(this.$el[0]);
         }
     },
     on_detach_callback: function () {
+        this._super(...arguments);
         if (this._chatter) {
             this._chatter.unmount();
         }
@@ -25,7 +26,7 @@ FormRenderer.include({
      * @override
      */
     init: function (parent, state, params) {
-        this._super.apply(this, arguments);
+        this._super(...arguments);
         this.mailFields = params.mailFields;
         this._chatter = undefined;
         this._chatterLocalId = undefined;
@@ -34,8 +35,8 @@ FormRenderer.include({
     },
 
     start() {
-        this._super(...arguments);
         this.env = this.call('messaging', 'getMessagingEnv');
+        return this._super(...arguments);
     },
 
     //--------------------------------------------------------------------------
@@ -43,8 +44,10 @@ FormRenderer.include({
     //--------------------------------------------------------------------------
 
     destroy: function () {
-        this._deleteChatter();
-        this._super.apply(this, arguments);
+        this._super(...arguments);
+        if (this._formHasChatter) {
+            this._deleteChatter();
+        }
     },
 
     //--------------------------------------------------------------------------
@@ -64,7 +67,7 @@ FormRenderer.include({
             this._formHasChatter = true;
             return null;
         } else {
-            return this._super.apply(this, arguments);
+            return this._super(...arguments);
         }
     },
 

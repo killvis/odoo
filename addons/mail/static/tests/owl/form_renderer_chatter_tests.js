@@ -151,8 +151,7 @@ QUnit.module('Chatter', {
 
 QUnit.test('basic chatter rendering', async function (assert) {
     assert.expect(1);
-    const { view } = await start({
-        debug:true,
+    const { widget } = await start({
         hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
@@ -193,13 +192,13 @@ QUnit.test('basic chatter rendering', async function (assert) {
         1,
         "there should be a chatter"
     );
-    view.destroy();
+    widget.destroy();
 });
 
 QUnit.test('chatter updating', async function (assert) {
     assert.expect(6);
 
-    const { view } = await start({
+    const { widget } = await start({
         hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
@@ -274,7 +273,7 @@ QUnit.test('chatter updating', async function (assert) {
     assert.verifySteps(['message_fetch_res_id_1', 'message_fetch_res_id_2']);
 
     // teardown
-    view.destroy();
+    widget.destroy();
 });
 
 });
