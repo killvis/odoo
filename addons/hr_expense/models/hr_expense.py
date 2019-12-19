@@ -18,7 +18,7 @@ class HrExpense(models.Model):
 
     @api.model
     def _default_employee_id(self):
-        return self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1)
+        return self.env['hr.employee'].search([('user_id', '=', self.env.uid), ('company_id', '=', self.company_id.id)])
 
     @api.model
     def _default_product_uom_id(self):
@@ -157,6 +157,10 @@ class HrExpense(models.Model):
             account = self.product_id.product_tmpl_id._get_product_accounts()['expense']
             if account:
                 self.account_id = account
+
+    @api.onchange('company_id')
+    def _onchange_expense_company_id(self):
+        self.employee_id = self._default_employee_id()
 
     @api.onchange('product_uom_id')
     def _onchange_product_uom_id(self):
