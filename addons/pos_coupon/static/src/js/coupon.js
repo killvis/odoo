@@ -455,10 +455,12 @@ odoo.define('pos_coupon.pos', function(require) {
             }
 
             // 2. Take into account the rewarded products
-            for (let reward of product_rewards) {
-                if (product_ids_to_account.has(reward.original_product.id)) {
-                    let key = reward.tax_ids.join(',');
-                    amounts_to_discount[key] += reward.quantity * reward.unit_price;
+            if (program.discount_apply_on !== 'cheapest_product') {
+                for (let reward of product_rewards) {
+                    if (product_ids_to_account.has(reward.original_product.id)) {
+                        let key = reward.tax_ids.join(',');
+                        amounts_to_discount[key] += reward.quantity * reward.unit_price;
+                    }
                 }
             }
 
@@ -502,7 +504,7 @@ odoo.define('pos_coupon.pos', function(require) {
                         if (self.active_promo_program_ids.has(promo_program[0].id)) {
                             throw {
                                 message: {
-                                    message: 'Promo program has already been activated.',
+                                    message: 'That promo code program has already been activated.',
                                     data: {
                                         type: 'couponError',
                                     },
@@ -515,7 +517,7 @@ odoo.define('pos_coupon.pos', function(require) {
                         if (self.booked_coupon_codes.has(code)) {
                             throw {
                                 message: {
-                                    message: 'That coupon code has been scanned.',
+                                    message: 'That coupon code has been scanned and activated.',
                                     data: {
                                         type: 'couponError',
                                     },
