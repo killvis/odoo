@@ -2696,7 +2696,7 @@ exports.Order = Backbone.Model.extend({
 
         if(options.price !== undefined){
             orderline.set_unit_price(options.price);
-            this.fix_tax_included_price(line);
+            this.fix_tax_included_price(orderline);
         }
 
         if(options.lst_price !== undefined){
