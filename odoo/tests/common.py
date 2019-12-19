@@ -825,9 +825,12 @@ class ChromeBrowser():
         self._logger.info('Asked for screenshot (id: %s)', ss_id)
         res = self._websocket_wait_id(ss_id)
         base_png = res.get('result', {}).get('data')
-        decoded = base64.decodebytes(bytes(base_png.encode('utf-8')))
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        fname = '%s%s%s.png' % (prefix, timestamp,suffix)
+        if not base_png:
+            self._logger.warning("Couldn't capture screenshot: expected image data, got %s", res)
+            return
+
+        decoded = base64.b64decode(base_png, validate=True)
+        fname = '{}{:%Y%m%d_%H%M%S_%f}{}.png'.format(prefix, datetime.now(), suffix)
         full_path = os.path.join(self.screenshots_dir, fname)
         with open(full_path, 'wb') as f:
             f.write(decoded)
