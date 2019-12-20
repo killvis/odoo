@@ -57,7 +57,7 @@ class Chatter extends Component {
     _onTopbarLogNote(ev) {
         const wasComposerLog = this.state.isComposerLog;
         this.state.isComposerLog = true;
-        this.state.isComposerVisible = !(wasComposerLog && this.state.isComposerVisible);
+        this.state.isComposerVisible = !wasComposerLog || !this.state.isComposerVisible;
     }
 
     /**
@@ -67,7 +67,7 @@ class Chatter extends Component {
     _onTopbarSendMessage(ev) {
         const wasComposerLog = this.state.isComposerLog;
         this.state.isComposerLog = false;
-        this.state.isComposerVisible = !(!wasComposerLog && this.state.isComposerVisible);
+        this.state.isComposerVisible = wasComposerLog || !this.state.isComposerVisible;
     }
 }
 
