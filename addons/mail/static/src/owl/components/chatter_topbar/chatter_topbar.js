@@ -85,10 +85,7 @@ ChatterTopbar.defaultProps = {
 ChatterTopbar.props = {
     isComposerLog: Boolean,
     isComposerVisible: Boolean,
-    isDisabled: {
-        type: Boolean,
-        optional: true,
-    },
+    isDisabled: Boolean,
     threadLocalId: {
         type: String,
         optional: true,
