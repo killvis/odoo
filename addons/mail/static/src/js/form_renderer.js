@@ -11,14 +11,14 @@ const FormRenderer = require('web.FormRenderer');
 FormRenderer.include({
     on_attach_callback() {
         this._super(...arguments);
-        if (this._chatter) {
-            this._chatter.mount(this.el);
+        if (this._chatterComponent) {
+            this._chatterComponent.mount(this.el);
         }
     },
     on_detach_callback() {
         this._super(...arguments);
-        if (this._chatter) {
-            this._chatter.unmount();
+        if (this._chatterComponent) {
+            this._chatterComponent.unmount();
         }
     },
 
@@ -28,7 +28,7 @@ FormRenderer.include({
     init(parent, state, params) {
         this._super(...arguments);
         this.mailFields = params.mailFields;
-        this._chatter = undefined;
+        this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         this._hasChatter = false;
         this._prevRenderedThreadData = {};
@@ -80,14 +80,14 @@ FormRenderer.include({
         await this._super(...arguments);
         if (this._hasChatter) {
             Chatter.env = this.env;
-            if (this._chatter)
+            if (this._chatterComponent)
             {
                 if (this._prevRenderedThreadData.res_id !== this.state.res_id || this._prevRenderedThreadData.model !== this.state.model)
                 {
                     await this._deleteChatter();
                     await this._createChatter();
                 } else {
-                    this._chatter.unmount();
+                    this._chatterComponent.unmount();
                     await this.env.store.dispatch('updateChatter', this._chatterLocalId);
                     await this._mountChatter();
                 }
@@ -115,7 +115,7 @@ FormRenderer.include({
         this._chatterLocalId = chatterLocalId;
 
         // Create chatter component and mount it
-        this._chatter = new Chatter(null, { chatterLocalId });
+        this._chatterComponent = new Chatter(null, { chatterLocalId });
         this._mountChatter();
 
         // TODO self._handleAttributes($el, node); ??
@@ -127,9 +127,9 @@ FormRenderer.include({
      * @private
      */
     _deleteChatter() {
-        if (this._chatter) {
-            this._chatter.destroy();
-            this._chatter = undefined;
+        if (this._chatterComponent) {
+            this._chatterComponent.destroy();
+            this._chatterComponent = undefined;
         }
         this.env.store.dispatch('deleteChatter', this._chatterLocalId);
     },
@@ -141,7 +141,7 @@ FormRenderer.include({
      */
     async _mountChatter() {
         const { res_id, model } = this.state;
-        await this._chatter.mount(this.$el[0]);
+        await this._chatterComponent.mount(this.$el[0]);
 
         // Store current state as old state for further actions
         this._prevRenderedThreadData = { res_id, model };
