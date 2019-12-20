@@ -25,7 +25,7 @@ FormRenderer.include({
     /**
      * @override
      */
-    init: function (parent, state, params) {
+    init(parent, state, params) {
         this._super(...arguments);
         this.mailFields = params.mailFields;
         this._chatter = undefined;
@@ -43,7 +43,7 @@ FormRenderer.include({
     // Public
     //--------------------------------------------------------------------------
 
-    destroy: function () {
+    destroy() {
         this._super(...arguments);
         if (this._hasChatter) {
             this._deleteChatter();
@@ -122,6 +122,19 @@ FormRenderer.include({
     },
 
     /**
+     * Delete the chatter component
+     * @returns {Promise<void>}
+     * @private
+     */
+    _deleteChatter() {
+        if (this._chatter) {
+            this._chatter.destroy();
+            this._chatter = undefined;
+        }
+        this.env.store.dispatch('deleteChatter', this._chatterLocalId);
+    },
+
+    /**
      * Mount the chatter
      * @returns {Promise<void>}
      * @private
@@ -133,20 +146,5 @@ FormRenderer.include({
         // Store current state as old state for further actions
         this._prevRenderedThreadData = { res_id, model };
     },
-
-    /**
-     * Delete the chatter component
-     * @returns {Promise<void>}
-     * @private
-     */
-    async _deleteChatter() {
-        if (this._chatter) {
-            this._chatter.destroy();
-            this._chatter = undefined;
-        }
-        this.env.store.dispatch('deleteChatter', this._chatterLocalId);
-    },
-
 });
-
 });
