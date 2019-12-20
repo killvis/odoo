@@ -6,6 +6,8 @@ from odoo import fields
 from odoo.exceptions import ValidationError, UserError
 
 from dateutil.relativedelta import relativedelta
+from functools import reduce
+import json
 
 
 @tagged('post_install', '-at_install')
@@ -343,7 +345,61 @@ class TestAccountMove(AccountTestInvoicingCommon):
         copy6.post()
         self.assertEqual(copy6.name, 'N\'importe quoi?1')
 
+    def test_journal_sequence_ordering(self):
+        copies = reduce((lambda x, y: x+y), [self.test_move.copy() for i in range(6)])
 
+        copies[0].date = '2019-03-05'
+        copies[1].date = '2019-03-06'
+        copies[2].date = '2019-03-07'
+        copies[3].date = '2019-03-04'
+        copies[4].date = '2019-03-05'
+        copies[5].date = '2019-03-05'
+        copies.post()
+
+        # Ordonned by date
+        self.assertEqual(copies[0].name, 'MISC/2019/00002')
+        self.assertEqual(copies[1].name, 'MISC/2019/00005')
+        self.assertEqual(copies[2].name, 'MISC/2019/00006')
+        self.assertEqual(copies[3].name, 'MISC/2019/00001')
+        self.assertEqual(copies[4].name, 'MISC/2019/00003')
+        self.assertEqual(copies[5].name, 'MISC/2019/00004')
+
+        # Lets remove the order by date
+        copies[0].name = 'MISC/2019/10001'
+        copies[1].name = 'MISC/2019/10002'
+        copies[2].name = 'MISC/2019/10003'
+        copies[3].name = 'MISC/2019/10004'
+        copies[4].name = 'MISC/2019/10005'
+        copies[5].name = 'MISC/2019/10006'
+
+        copies[4].with_context(force_delete=True).unlink()
+        copies[5].button_draft()
+
+        wizard = Form(self.env['account.resequence.wizard'].with_context(default_journal_id=self.test_move.journal_id.id))
+        wizard.first_date = '2019-01-01'
+        self.assertEqual(wizard.end_date, fields.Date.to_date('2019-12-31'))
+
+        new_values = json.loads(wizard.new_values)
+        self.assertEqual(new_values[str(copies[0].id)]['new_by_date'], 'MISC/2019/10002')
+        self.assertEqual(new_values[str(copies[0].id)]['new_by_name'], 'MISC/2019/10001')
+
+        self.assertEqual(new_values[str(copies[1].id)]['new_by_date'], 'MISC/2019/10004')
+        self.assertEqual(new_values[str(copies[1].id)]['new_by_name'], 'MISC/2019/10002')
+
+        self.assertEqual(new_values[str(copies[2].id)]['new_by_date'], 'MISC/2019/10005')
+        self.assertEqual(new_values[str(copies[2].id)]['new_by_name'], 'MISC/2019/10003')
+
+        self.assertEqual(new_values[str(copies[3].id)]['new_by_date'], 'MISC/2019/10001')
+        self.assertEqual(new_values[str(copies[3].id)]['new_by_name'], 'MISC/2019/10004')
+
+        self.assertEqual(new_values[str(copies[5].id)]['new_by_date'], 'MISC/2019/10003')
+        self.assertEqual(new_values[str(copies[5].id)]['new_by_name'], 'MISC/2019/10005')
+
+        wizard.save().resequence()
+
+        self.assertEqual(copies[3].state, 'posted')
+        self.assertEqual(copies[5].name, 'MISC/2019/10005')
+        self.assertEqual(copies[5].state, 'draft')
 
     def test_add_followers_on_post(self):
         # Add some existing partners, some from another company

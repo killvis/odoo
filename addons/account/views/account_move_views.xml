@@ -570,7 +570,7 @@
                             <h1 class="mt0" attrs="{'invisible':[('name', '=', '/'), ('posted_before', '=', False)]}">
                                 <field name="name" attrs="{'invisible':[('name_prefix_editable', '=', False)], 'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="name_prefix" class="oe_inline" attrs="{'invisible':[('name_prefix_editable', '=', True)]}"/>
-                                <field name="name_number" class="oe_inline" attrs="{'invisible':[('name_prefix_editable', '=', True)], 'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="name_number" class="oe_inline" attrs="{'invisible':[('name_prefix_editable', '=', True)], 'readonly': ['|', ('state', '!=', 'draft'), ('type', '=', 'out_invoice')]}"/>
                             </h1>
 
                         </div>

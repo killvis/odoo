@@ -286,6 +286,9 @@
                                     <group>
                                         <field name="code"/>
                                         <field name="sequence_number_reset"/>
+                                        <div attrs="{'invisible': [('type', '=', 'sale')]}">
+                                            <button type="object" class="btn btn-link" role="button" name="action_resequence">Reorder Journal Entries</button>
+                                        </div>
                                         <field name="refund_sequence" attrs="{'invisible': [('type', 'not in', ['sale', 'purchase'])]}"/>
                                     </group>
                                     <group>
