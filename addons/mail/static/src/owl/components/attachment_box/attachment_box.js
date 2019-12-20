@@ -25,7 +25,7 @@ class AttachmentBox extends Component {
             return {
                 attachmentLocalIds: thread ? thread.attachmentLocalIds : [],
                 uploadId: thread ? thread.id : null,
-                uploadModel: thread ? thread._model: null
+                uploadModel: thread ? thread._model : null
             };
         });
         /**

@@ -573,7 +573,7 @@ async function start(param0) {
 
     let widget;
     const selector = debug ? 'body' : '#qunit-fixture';
-    if(hasView){
+    if (hasView) {
         widget = await createView(kwargs);
         patch(widget, {
             destroy() {

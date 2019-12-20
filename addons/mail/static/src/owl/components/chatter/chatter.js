@@ -36,9 +36,9 @@ class Chatter extends Component {
 
     //--------------------------------------------------------------------------
     // Handlers
-    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------a
 
-    _onComposerMessagePosted(){
+    _onComposerMessagePosted() {
         this.storeDispatch('loadNewMessagesOnThread', this.storeProps.threadLocalId);
     }
 

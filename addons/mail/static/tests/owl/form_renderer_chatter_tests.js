@@ -18,21 +18,27 @@ QUnit.module('Chatter', {
         _.throttle = _.identity;
         this.data = {
             'ir.attachment': {
-                fields:{
-                    name:{type:'char', string:"attachment name", required:true},
-                    res_model:{type:'char', string:"res model"},
-                    res_id:{type:'integer', string:"res id"},
-                    url:{type:'char', string:'url'},
-                    type:{ type:'selection', selection:[['url',"URL"],['binary',"BINARY"]]},
-                    mimetype:{type:'char', string:"mimetype"},
+                fields: {
+                    name: { type: 'char', string: "attachment name", required: true },
+                    res_model: { type: 'char', string: "res model" },
+                    res_id: { type: 'integer', string: "res id" },
+                    url: { type: 'char', string: 'url' },
+                    type: { type: 'selection', selection: [['url', "URL"], ['binary', "BINARY"]] },
+                    mimetype: { type: 'char', string: "mimetype" },
                 },
-                records:[
-                    {id:1, type:'url', mimetype:'image/png', name:'filename.jpg',
-                     res_id: 7, res_model: 'partner'},
-                    {id:2, type:'binary', mimetype:"application/x-msdos-program",
-                     name:"file2.txt", res_id: 7, res_model: 'partner'},
-                    {id:3, type:'binary', mimetype:"application/x-msdos-program",
-                     name:"file3.txt", res_id: 5, res_model: 'partner'},
+                records: [
+                    {
+                        id: 1, type: 'url', mimetype: 'image/png', name: 'filename.jpg',
+                        res_id: 7, res_model: 'partner'
+                    },
+                    {
+                        id: 2, type: 'binary', mimetype: "application/x-msdos-program",
+                        name: "file2.txt", res_id: 7, res_model: 'partner'
+                    },
+                    {
+                        id: 3, type: 'binary', mimetype: "application/x-msdos-program",
+                        name: "file3.txt", res_id: 5, res_model: 'partner'
+                    },
                 ],
             },
             'mail.message': {
@@ -144,14 +150,14 @@ QUnit.module('Chatter', {
         };
     },
     afterEach: function () {
-        _.debounce = self.underscoreDebounce;
-        _.throttle = self.underscoreThrottle;
+        _.debounce = this.underscoreDebounce;
+        _.throttle = this.underscoreThrottle;
     }
 });
 
 QUnit.test('basic chatter rendering', async function (assert) {
     assert.expect(1);
-    const { widget } = await start({
+    const { widget } = await start({
         hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
@@ -168,10 +174,10 @@ QUnit.test('basic chatter rendering', async function (assert) {
                     needaction_inbox_counter: 0,
                     shortcodes: [],
                     starred_counter: 0,
-                }
+                };
             }
             return _super();
-},
+        },
         // View params
         View: FormView,
         model: 'res.partner',
@@ -215,9 +221,9 @@ QUnit.test('chatter updating', async function (assert) {
                     needaction_inbox_counter: 0,
                     shortcodes: [],
                     starred_counter: 0,
-                }
+                };
             } else if (route === '/web/dataset/call_kw/mail.message/message_fetch') {
-                if(args.args[0][1][2] === 1) {
+                if (args.args[0][1][2] === 1) {
                     assert.step('message_fetch_res_id_1');
                     return [];
                 } else {

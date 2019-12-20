@@ -103,7 +103,7 @@ QUnit.test("global state after default '/mail/init_messaging' RPC data", async f
                 },
                 notifiedAutofocusCounter: 0,
             },
-            chatters : {},
+            chatters: {},
             commands: {},
             composers: {},
             currentPartnerLocalId: 'res.partner_3',

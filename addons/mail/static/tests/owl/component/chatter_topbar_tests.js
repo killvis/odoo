@@ -199,7 +199,9 @@ QUnit.test('attachment count without attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const threadLocalId = await this.createThread({ _model: 'res.partner', id: 100 }, { fetchAttachments: true});
+    const threadLocalId = await this.createThread(
+        { _model: 'res.partner', id: 100 },
+        { fetchAttachments: true });
     await this.createChatterTopbar(threadLocalId, { isDisabled: false });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,

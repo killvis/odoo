@@ -262,7 +262,7 @@ const actions = {
      * @param {String} model the model to which the thread will be linked
      * @returns {String} the generated thread local id
      */
-    createTemporaryThread({ dispatch, env, state }, model){
+    createTemporaryThread({ dispatch, env, state }, model) {
         const nextId = getThreadNextTemporaryId();
         const threadLocalId = dispatch('_createThread', {
             _model: model,
@@ -280,16 +280,16 @@ const actions = {
             threadLocalIds: [threadLocalId],
         });
         let threadCacheLocalId = null;
-        for(const loopThreadCacheLocalId in state.threadCaches){
+        for (const loopThreadCacheLocalId in state.threadCaches) {
             const threadCache = state.threadCaches[loopThreadCacheLocalId];
-            if(threadCache.threadLocalId === threadLocalId){
+            if (threadCache.threadLocalId === threadLocalId) {
                 threadCacheLocalId = loopThreadCacheLocalId;
                 break;
             }
         }
-        dispatch('_linkMessageToThread', {messageLocalId, threadLocalId});
+        dispatch('_linkMessageToThread', { messageLocalId, threadLocalId });
         if (threadCacheLocalId) {
-            dispatch('_linkMessageToThreadCache', {messageLocalId, threadCacheLocalId});
+            dispatch('_linkMessageToThreadCache', { messageLocalId, threadCacheLocalId });
         }
         return threadLocalId;
     },
@@ -344,7 +344,7 @@ const actions = {
      */
     deleteChatter({ dispatch, state }, chatterLocalId) {
         const chatter = state.chatters[chatterLocalId];
-        if (!chatter) {
+        if (!chatter) {
             return;
         }
         if (!chatter.hasRecord) {
@@ -377,7 +377,7 @@ const actions = {
      * @param {Object} param0.state
      * @param threadLocalId the local id of the thread to delete
      */
-    deleteThread({ dispatch, state }, threadLocalId){
+    deleteThread({ dispatch, state }, threadLocalId) {
         const thread = state.threads[threadLocalId];
         if (!thread) {
             return;
@@ -512,8 +512,7 @@ const actions = {
         if (id === null) {
             hasRecord = false;
             threadLocalId = dispatch('createTemporaryThread', model);
-        }
-        else {
+        } else {
             hasRecord = true;
             const thread = getters.thread({_model: model, id });
             if (!thread) {
@@ -645,7 +644,7 @@ const actions = {
         { dispatch, env, state },
         threadLocalId,
         { searchDomain=[] }={}
-    ){
+    ) {
         const stringifiedDomain = JSON.stringify(searchDomain);
         const thread = state.threads[threadLocalId];
         const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
@@ -2041,7 +2040,6 @@ const actions = {
         } else {
             return domain.concat([['model', '=', thread._model], ['res_id', '=', thread.id]]);
         }
-        return domain;
     },
     /**
      * @private
