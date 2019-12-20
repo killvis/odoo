@@ -160,6 +160,8 @@ class AccountReconcileModel(models.Model):
     match_partner_category_ids = fields.Many2many('res.partner.category', string='Restrict Partner Categories to',
         help='The reconciliation model will only be applied to the selected customer/vendor categories.')
 
+    partner_id = fields.Many2one('res.partner', string='Partner')  # TODO resolve compatibility with match_partner_ids
+
     line_ids = fields.One2many('account.reconcile.model.line', 'model_id')
 
     decimal_separator = fields.Char(default=lambda self: self.env['res.lang']._lang_get(self.env.user.lang).decimal_point, help="Every character that is nor a digit nor this separator will be removed from the matching string")
