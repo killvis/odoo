@@ -9,13 +9,13 @@ const FormRenderer = require('web.FormRenderer');
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
-    on_attach_callback: function () {
+    on_attach_callback() {
         this._super(...arguments);
         if (this._chatter) {
-            this._chatter.mount(this.$el[0]);
+            this._chatter.mount(this.el);
         }
     },
-    on_detach_callback: function () {
+    on_detach_callback() {
         this._super(...arguments);
         if (this._chatter) {
             this._chatter.unmount();
@@ -30,8 +30,8 @@ FormRenderer.include({
         this.mailFields = params.mailFields;
         this._chatter = undefined;
         this._chatterLocalId = undefined;
-        this._formHasChatter = false;
-        this._oldState = {};
+        this._hasChatter = false;
+        this._prevRenderedThreadData = {};
     },
 
     start() {
@@ -45,7 +45,7 @@ FormRenderer.include({
 
     destroy: function () {
         this._super(...arguments);
-        if (this._formHasChatter) {
+        if (this._hasChatter) {
             this._deleteChatter();
         }
     },
@@ -64,7 +64,7 @@ FormRenderer.include({
      */
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            this._formHasChatter = true;
+            this._hasChatter = true;
             return null;
         } else {
             return this._super(...arguments);
@@ -78,11 +78,11 @@ FormRenderer.include({
      */
     async _renderView() {
         await this._super(...arguments);
-        if (this._formHasChatter) {
+        if (this._hasChatter) {
             Chatter.env = this.env;
             if (this._chatter)
             {
-                if (this._oldState.res_id !== this.state.res_id || this._oldState.model !== this.state.model)
+                if (this._prevRenderedThreadData.res_id !== this.state.res_id || this._prevRenderedThreadData.model !== this.state.model)
                 {
                     await this._deleteChatter();
                     await this._createChatter();
@@ -131,7 +131,7 @@ FormRenderer.include({
         await this._chatter.mount(this.$el[0]);
 
         // Store current state as old state for further actions
-        this._oldState = { res_id, model };
+        this._prevRenderedThreadData = { res_id, model };
     },
 
     /**
