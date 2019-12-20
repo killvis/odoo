@@ -27,16 +27,12 @@ FormRenderer.include({
      */
     init(parent, state, params) {
         this._super(...arguments);
+        this.env = this.call('messaging', 'getMessagingEnv');
         this.mailFields = params.mailFields;
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         this._hasChatter = false;
         this._prevRenderedThreadData = {};
-    },
-
-    start() {
-        this.env = this.call('messaging', 'getMessagingEnv');
-        return this._super(...arguments);
     },
 
     //--------------------------------------------------------------------------
@@ -73,17 +69,16 @@ FormRenderer.include({
 
     /**
      * Overrides the function to render the chatter once the form view is rendered.
-     * @returns {Promise<void>}
+     *
      * @private
+     * @returns {Promise<void>}
      */
     async _renderView() {
         await this._super(...arguments);
         if (this._hasChatter) {
             Chatter.env = this.env;
-            if (this._chatterComponent)
-            {
-                if (this._prevRenderedThreadData.res_id !== this.state.res_id || this._prevRenderedThreadData.model !== this.state.model)
-                {
+            if (this._chatterComponent) {
+                if (this._prevRenderedThreadData.res_id !== this.state.res_id || this._prevRenderedThreadData.model !== this.state.model) {
                     await this._deleteChatter();
                     await this._createChatter();
                 } else {
@@ -91,7 +86,7 @@ FormRenderer.include({
                     await this.env.store.dispatch('updateChatter', this._chatterLocalId);
                     await this._mountChatter();
                 }
-            }  else {
+            } else {
                 await this._createChatter();
             }
         }
@@ -103,14 +98,15 @@ FormRenderer.include({
 
     /**
      * Create the chatter
-     * @returns {Promise<void>}
+     *
      * @private
+     * @returns {Promise<void>}
      */
     async _createChatter() {
         // Generate chatter local id (+ fake thread or start loading real thread)
-        const chatterLocalId = this.env.store.dispatch('initChatter', {
-            id: this.state.res_id,
-            model: this.state.model,
+        const chatterLocalId = this.env.store.dispatch('createChatter', {
+            initialThreadId: this.state.res_id,
+            initialThreadModel: this.state.model,
         });
         this._chatterLocalId = chatterLocalId;
 
@@ -123,8 +119,9 @@ FormRenderer.include({
 
     /**
      * Delete the chatter component
-     * @returns {Promise<void>}
+     *
      * @private
+     * @returns {Promise<void>}
      */
     _deleteChatter() {
         if (this._chatterComponent) {
@@ -136,8 +133,9 @@ FormRenderer.include({
 
     /**
      * Mount the chatter
-     * @returns {Promise<void>}
+     *
      * @private
+     * @returns {Promise<void>}
      */
     async _mountChatter() {
         const { res_id, model } = this.state;

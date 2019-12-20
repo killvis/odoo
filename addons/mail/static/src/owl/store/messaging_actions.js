@@ -502,22 +502,22 @@ const actions = {
      * @param {Object} param0.getters
      * @param {Object} param0.state
      * @param {Object} param1
-     * @param {string|null} param1.id
-     * @param {string} param1.model
+     * @param {string|null} param1.initialThreadId
+     * @param {string} param1.initialThreadModel
      * @return {string}
      */
-    initChatter({ dispatch, getters, state }, { id = null, model }) {
+    createChatter({ dispatch, getters, state }, { initialThreadId = null, initialThreadModel }) {
         let threadLocalId;
         let hasRecord;
-        if (id === null) {
+        if (initialThreadId === null) {
             hasRecord = false;
-            threadLocalId = dispatch('createTemporaryThread', model);
+            threadLocalId = dispatch('createTemporaryThread', initialThreadModel);
         } else {
             hasRecord = true;
-            const thread = getters.thread({_model: model, id });
+            const thread = getters.thread({_model: initialThreadModel, id: initialThreadId });
             if (!thread) {
                 // TODO {xdu} maybe here add the name of the thread
-                threadLocalId = dispatch('_createThread', { _model: model, id });
+                threadLocalId = dispatch('_createThread', { _model: initialThreadModel, id: initialThreadId });
             } else {
                 // TODO {xdu} uncomment me when name is supported
                 // dispatch('_updateThread', threadLocalId, { name: name } );
