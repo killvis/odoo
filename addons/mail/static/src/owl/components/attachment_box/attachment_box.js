@@ -24,8 +24,8 @@ class AttachmentBox extends Component {
             const thread = state.threads[props.threadLocalId];
             return {
                 attachmentLocalIds: thread ? thread.attachmentLocalIds : [],
-                uploadId: thread ? thread.id : null,
-                uploadModel: thread ? thread._model : null
+                threadId: thread ? thread.id : null,
+                threadModel: thread ? thread._model : null
             };
         });
         /**
