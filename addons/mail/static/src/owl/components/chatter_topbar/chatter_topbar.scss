@@ -20,7 +20,7 @@
     padding: 0 16px;
     border-left: none;
 
-    &.o-buttonActive {
+    &.o-active {
         border-left: none;
     }
 }
@@ -35,7 +35,7 @@
 
 .o_ChatterTopbar {
 
-    .o-buttonActive {
+    .o-active {
         color: #875A7B;
         background-color: lighten(gray('300'), 7%);
         border-color: #dee2e6;
