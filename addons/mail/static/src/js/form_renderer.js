@@ -21,7 +21,6 @@ FormRenderer.include({
             this._chatterComponent.unmount();
         }
     },
-
     /**
      * @override
      */
@@ -34,22 +33,18 @@ FormRenderer.include({
         this._hasChatter = false;
         this._prevRenderedThreadData = {};
     },
-
     //--------------------------------------------------------------------------
     // Public
     //--------------------------------------------------------------------------
-
     destroy() {
         this._super(...arguments);
         if (this._hasChatter) {
             this._deleteChatter();
         }
     },
-
     //--------------------------------------------------------------------------
     // Private (overrides)
     //--------------------------------------------------------------------------
-
     /**
      * Overrides the function that renders the nodes to return the chatter's $el
      * for the 'oe_chatter' div node. We just set a boolean to keep track that
@@ -66,7 +61,6 @@ FormRenderer.include({
             return this._super(...arguments);
         }
     },
-
     /**
      * Overrides the function to render the chatter once the form view is rendered.
      *
@@ -91,11 +85,9 @@ FormRenderer.include({
             }
         }
     },
-
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
-
     /**
      * Create the chatter
      *
@@ -116,7 +108,6 @@ FormRenderer.include({
 
         // TODO self._handleAttributes($el, node); ??
     },
-
     /**
      * Delete the chatter component
      *
@@ -130,7 +121,6 @@ FormRenderer.include({
         }
         this.env.store.dispatch('deleteChatter', this._chatterLocalId);
     },
-
     /**
      * Mount the chatter
      *
