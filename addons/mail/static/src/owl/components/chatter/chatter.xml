@@ -4,7 +4,7 @@
     <t t-name="mail.component.Chatter" owl="1">
         <div class="o_Chatter">
             <ChatterTopbar
-                class="o_Chatter_chatterTopbar"
+                class="o_Chatter_topbar"
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
                 isDisabled="!storeProps.threadLocalId"
