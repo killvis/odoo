@@ -651,6 +651,9 @@ var SnippetEditor = Widget.extend({
      * @private
      */
     _onOptionsSectionMouseOver: function (ev) {
+        if (!this.$target.is(':visible')) {
+            return;
+        }
         this.trigger_up('activate_snippet', {
             $snippet: this.$target,
             previewMode: true,
@@ -1241,9 +1244,12 @@ var SnippetsMenu = Widget.extend({
      * @returns {Promise<SnippetEditor>}
      *          (might be async when an editor must be created)
      */
-    _activateSnippet: function ($snippet, previewMode, ifInactiveOptions) {
+    _activateSnippet: async function ($snippet, previewMode, ifInactiveOptions) {
         if (this._blockPreviewOverlays && previewMode) {
-            return Promise.resolve();
+            return;
+        }
+        if ($snippet && !$snippet.is(':visible')) {
+            return;
         }
         return this._mutex.exec(() => {
             return new Promise(resolve => {
