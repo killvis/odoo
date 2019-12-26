@@ -274,7 +274,7 @@ const actions = {
                 env.session.partner_id,
                 env.session.partner_display_name
             ],
-            body: "Creating a new record...",
+            body: _t("Creating a new record..."),
             id: getMessageNextTemporaryId(),
             isTemporary: true,
             threadLocalIds: [threadLocalId],
