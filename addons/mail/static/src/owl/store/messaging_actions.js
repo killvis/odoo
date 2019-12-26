@@ -279,7 +279,7 @@ const actions = {
             isTemporary: true,
             threadLocalIds: [threadLocalId],
         });
-        let threadCacheLocalId = null;
+        let threadCacheLocalId;
         for (const loopThreadCacheLocalId in state.threadCaches) {
             const threadCache = state.threadCaches[loopThreadCacheLocalId];
             if (threadCache.threadLocalId === threadLocalId) {
