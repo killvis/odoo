@@ -390,7 +390,6 @@ Composer.props = {
     },
     hasTextInputSendOnEnterEnabled: {
         type: Boolean,
-        optional: true,
     },
     hasThreadName: {
         type: Boolean,
