@@ -506,10 +506,10 @@ const actions = {
      * @param {string} param1.initialThreadModel
      * @return {string}
      */
-    createChatter({ dispatch, getters, state }, { initialThreadId = null, initialThreadModel }) {
+    createChatter({ dispatch, getters, state }, { initialThreadId = undefined, initialThreadModel }) {
         let threadLocalId;
         let hasRecord;
-        if (initialThreadId === null) {
+        if (initialThreadId === undefined) {
             hasRecord = false;
             threadLocalId = dispatch('createTemporaryThread', initialThreadModel);
         } else {
