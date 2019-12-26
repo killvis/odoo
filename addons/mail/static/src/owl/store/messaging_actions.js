@@ -254,46 +254,6 @@ const actions = {
         }
     },
     /**
-     * Create a temporary thread based on a given model
-     * @param {Object} param0
-     * @param {function} param0.dispatch
-     * @param {Object} param0.env
-     * @param {Object} param0.state
-     * @param {String} model the model to which the thread will be linked
-     * @returns {String} the generated thread local id
-     */
-    createTemporaryThread({ dispatch, env, state }, model) {
-        const nextId = getThreadNextTemporaryId();
-        const threadLocalId = dispatch('_createThread', {
-            _model: model,
-            areAttachmentsLoaded: true,
-            id: nextId
-        });
-        const messageLocalId = dispatch('_createMessage', {
-            author_id: [
-                env.session.partner_id,
-                env.session.partner_display_name
-            ],
-            body: _t("Creating a new record..."),
-            id: getMessageNextTemporaryId(),
-            isTemporary: true,
-            threadLocalIds: [threadLocalId],
-        });
-        let threadCacheLocalId;
-        for (const loopThreadCacheLocalId in state.threadCaches) {
-            const threadCache = state.threadCaches[loopThreadCacheLocalId];
-            if (threadCache.threadLocalId === threadLocalId) {
-                threadCacheLocalId = loopThreadCacheLocalId;
-                break;
-            }
-        }
-        dispatch('_linkMessageToThread', { messageLocalId, threadLocalId });
-        if (threadCacheLocalId) {
-            dispatch('_linkMessageToThreadCache', { messageLocalId, threadCacheLocalId });
-        }
-        return threadLocalId;
-    },
-    /**
      * Delete an attachment from the store.
      *
      * @param {Object} param0
@@ -511,7 +471,7 @@ const actions = {
         let hasRecord;
         if (initialThreadId === undefined) {
             hasRecord = false;
-            threadLocalId = dispatch('createTemporaryThread', initialThreadModel);
+            threadLocalId = dispatch('_createTemporaryThread', initialThreadModel);
         } else {
             hasRecord = true;
             const thread = getters.thread({_model: initialThreadModel, id: initialThreadId });
@@ -1845,6 +1805,46 @@ const actions = {
         state.partners[partnerLocalId] = partner;
         // todo: links
         return partnerLocalId;
+    },
+    /**
+     * Create a temporary thread based on a given model
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.env
+     * @param {Object} param0.state
+     * @param {String} model the model to which the thread will be linked
+     * @returns {String} the generated thread local id
+     */
+    _createTemporaryThread({ dispatch, env, state }, model) {
+        const nextId = getThreadNextTemporaryId();
+        const threadLocalId = dispatch('_createThread', {
+            _model: model,
+            areAttachmentsLoaded: true,
+            id: nextId
+        });
+        const messageLocalId = dispatch('_createMessage', {
+            author_id: [
+                env.session.partner_id,
+                env.session.partner_display_name
+            ],
+            body: _t("Creating a new record..."),
+            id: getMessageNextTemporaryId(),
+            isTemporary: true,
+            threadLocalIds: [threadLocalId],
+        });
+        let threadCacheLocalId;
+        for (const loopThreadCacheLocalId in state.threadCaches) {
+            const threadCache = state.threadCaches[loopThreadCacheLocalId];
+            if (threadCache.threadLocalId === threadLocalId) {
+                threadCacheLocalId = loopThreadCacheLocalId;
+                break;
+            }
+        }
+        dispatch('_linkMessageToThread', { messageLocalId, threadLocalId });
+        if (threadCacheLocalId) {
+            dispatch('_linkMessageToThreadCache', { messageLocalId, threadCacheLocalId });
+        }
+        return threadLocalId;
     },
     /**
      * @private
