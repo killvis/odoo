@@ -13,7 +13,8 @@ class ChatterTopbar extends Component {
     constructor(...args) {
         super(...args);
         this.storeProps = useStore((state, props) => {
-            const thread = state.threads[props.threadLocalId];
+            const chatter = state.chatters[props.chatterLocalId];
+            const thread = state.threads[chatter.threadLocalId];
             return {
                 areAttachmentsLoaded: thread && thread.areAttachmentsLoaded,
                 attachmentsAmount: thread && thread.attachmentLocalIds
@@ -86,10 +87,7 @@ ChatterTopbar.props = {
     isComposerLog: Boolean,
     isComposerVisible: Boolean,
     isDisabled: Boolean,
-    threadLocalId: {
-        type: String,
-        optional: true,
-    },
+    chatterLocalId: String,
 };
 
 ChatterTopbar.template = 'mail.component.ChatterTopbar';

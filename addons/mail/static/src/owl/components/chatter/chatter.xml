@@ -8,7 +8,7 @@
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
                 isDisabled="!storeProps.threadLocalId"
-                threadLocalId="storeProps.threadLocalId"
+                chatterLocalId="props.chatterLocalId"
                 t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                 t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
                 t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
