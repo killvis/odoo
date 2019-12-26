@@ -17,10 +17,10 @@ class Project(models.Model):
             ('partner_id', '=?', partner_id),
         ]"""
     )
-    allow_timesheet_timer = fields.Boolean('Timesheet Timer', default=False, help="Use a timer to record timesheets on tasks")
+    allow_timesheet_timer = fields.Boolean('Timesheet Timer', default=True, help="Use a timer to record timesheets on tasks")
 
     _sql_constraints = [
-        ('timer_only_when_timesheet', "CHECK((allow_timesheets = 'f' AND allow_timesheet_timer = 'f') OR (allow_timesheets = 't'))", 'The timesheet timer can only be activated on project allowing timesheets.'),
+        ('timer_only_when_timesheet', "CHECK((allow_timesheets = 'f') OR (allow_timesheets = 't'))", 'The timesheet timer can only be activated on project allowing timesheets.'),
     ]
 
     @api.onchange('partner_id')
