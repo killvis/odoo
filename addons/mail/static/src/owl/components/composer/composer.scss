@@ -44,14 +44,6 @@
         height: auto;
         padding: 0 10px;
         width: 100%;
-
-        .o_Composer_toolButtons{
-            flex-direction: row;
-            justify-content: space-between;
-            flex: 100%;
-            border-bottom: 0;
-            border-radius: initial;
-        }
     }
 
     &.o-mobile {
@@ -134,6 +126,13 @@
 .o_Composer_toolButtons {
     display: flex;
 
+    &:not(.o-composer-is-compact){
+        flex-direction: row;
+        justify-content: space-between;
+        flex: 100%;
+        border-bottom: 0;
+        border-radius: initial;
+    }
     &:not(:last-child) .o_Composer_toolButton:last-child {
         margin-right: 5px;
     }
