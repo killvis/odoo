@@ -36,9 +36,9 @@
 .o_ChatterTopbar {
 
     .o-active {
-        color: #875A7B;
+        color: $o-brand-odoo;
         background-color: lighten(gray('300'), 7%);
-        border-color: #dee2e6;
+        border-color: $gray-300;
         border-bottom-color: transparent;
         border-top-color: transparent;
     }
