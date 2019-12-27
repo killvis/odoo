@@ -40,7 +40,7 @@ var FilterInterface = Class.extend(mixins.EventDispatcherMixin, {
         if (fuzzy.test(value, this.filter.description)) {
             result = [{
                 label: _.str.sprintf(this.completion_label.toString(),
-                                         _.escape(this.filter.description)),
+                    _.escape(this.filter.description)),
                 facet: {
                     filter: this.filter,
                 },
@@ -143,8 +143,9 @@ var Field = FilterInterface.extend(ServicesMixin, {
     _getAutocompletionLabel: function (value) {
         return _.str.sprintf(_.str.escapeHTML(
             _t("Search %(field)s for: %(value)s")), {
-                field: '<em>' + _.escape(this.attrs.string) + '</em>',
-                value: '<strong>' + _.escape(value) + '</strong>'});
+            field: '<em>' + _.escape(this.attrs.string) + '</em>',
+            value: '<strong>' + _.escape(value) + '</strong>'
+        });
     },
     /**
      * @private
@@ -154,7 +155,7 @@ var Field = FilterInterface.extend(ServicesMixin, {
     _getFacetValue: function (value) {
         return {
             filter: this.filter,
-            values: [{label: value, value: value}],
+            values: [{ label: value, value: value }],
         };
     },
     /**
@@ -279,7 +280,7 @@ var SelectionField = Field.extend({
     _getFacetValue: function (value) {
         return {
             filter: this.filter,
-            values: [{label: value[1], value: value[0]}],
+            values: [{ label: value[1], value: value[0] }],
         };
     },
 });
@@ -308,14 +309,14 @@ var DateField = Field.extend({
         var t, v;
         try {
             t = (this.attrs && this.attrs.type === 'datetime') ? 'datetime' : 'date';
-            v = field_utils.parse[t](value, {type: t}, {timezone: true});
+            v = field_utils.parse[t](value, { type: t }, { timezone: true });
         } catch (e) {
             return Promise.resolve(null);
         }
 
         var m = moment(v, t === 'datetime' ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD');
         if (!m.isValid()) { return Promise.resolve(null); }
-        var dateString = field_utils.format[t](m, {type: t});
+        var dateString = field_utils.format[t](m, { type: t });
         var label = this._getAutocompletionLabel(dateString);
         var facet = this._getFacetValue(dateString, m.toDate());
         return Promise.resolve([{
@@ -334,8 +335,9 @@ var DateField = Field.extend({
     _getAutocompletionLabel: function (value) {
         return _.str.sprintf(_.str.escapeHTML(
             _t("Search %(field)s at: %(value)s")), {
-                field: '<em>' + _.escape(this.attrs.string) + '</em>',
-                value: '<strong>' + value + '</strong>'});
+            field: '<em>' + _.escape(this.attrs.string) + '</em>',
+            value: '<strong>' + value + '</strong>'
+        });
     },
     /**
      * @override
@@ -398,41 +400,41 @@ var ManyToOneField = CharField.extend({
     _getExpandedFacetValue: function (value) {
         return {
             filter: this.filter,
-            values: [{label: value[1], value: value[0]}],
+            values: [{ label: value[1], value: value[0] }],
         };
     },
     /**
-     * @override
-     */
+        * @override
+        */
     _getFacetValue: function (value) {
         return {
             filter: this.filter,
-            values: [{label: value, value: value, operator: 'ilike'}],
+            values: [{ label: value, value: value, operator: 'ilike' }],
         };
     },
     /**
-     * @override
-     */
+        * @override
+        */
     _expand: function (value) {
         var self = this;
         var args = this.attrs.domain;
         if (typeof args === 'string') {
             try {
                 args = Domain.prototype.stringToArray(args);
-            } catch(e) {
+            } catch (e) {
                 args = [];
             }
         }
         return this._rpc({
-                model: this.attrs.relation,
-                method: 'name_search',
-                kwargs: {
-                    name: value,
-                    args: args,
-                    limit: 8,
-                    context: this.context,
-                },
-            })
+            model: this.attrs.relation,
+            method: 'name_search',
+            kwargs: {
+                name: value,
+                args: args,
+                limit: 8,
+                context: this.context,
+            },
+        })
             .then(function (results) {
                 if (_.isEmpty(results)) { return null; }
                 return _(results).map(function (result) {
@@ -444,24 +446,24 @@ var ManyToOneField = CharField.extend({
             });
     },
     /**
-     * @override
-     */
+        * @override
+        */
     _makeDomain: function (name, operator, facetValue) {
         operator = facetValue.operator || operator;
 
-        switch(operator){
-        case this.default_operator:
-            return [[name, '=', facetValue.value]];
-        case 'ilike':
-            return [[name, 'ilike', facetValue.value]];
-        case 'child_of':
-            return [[name, 'child_of', facetValue.value]];
+        switch (operator) {
+            case this.default_operator:
+                return [[name, '=', facetValue.value]];
+            case 'ilike':
+                return [[name, 'ilike', facetValue.value]];
+            case 'child_of':
+                return [[name, 'child_of', facetValue.value]];
         }
         return this._super(name, operator, facetValue);
     },
     /**
-     * @override
-     */
+        * @override
+        */
     _valueFrom: function (facetValue) {
         return facetValue.label;
     },

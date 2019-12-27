@@ -1,22 +1,26 @@
 odoo.define('web.ControlPanelView', function (require) {
 "use strict";
 
+const { Factory } = require('web.mvc');
+return Factory.extend({
+    init() {
+        throw new Error(`Woops! You tried to instanciate a "ControlPanelView"!`);
+    }
+});
+
 var ControlPanelController = require('web.ControlPanelController');
 var ControlPanelModel = require('web.ControlPanelModel');
 var ControlPanelRenderer = require('web.ControlPanelRenderer');
-var controlPanelViewParameters = require('web.controlPanelViewParameters');
-var mvc = require('web.mvc');
+var controlPanelParameters = require('web.controlPanelParameters');
 var pyUtils = require('web.py_utils');
 var viewUtils = require('web.viewUtils');
 var Domain = require('web.Domain');
 
-var DEFAULT_INTERVAL = controlPanelViewParameters.DEFAULT_INTERVAL;
-var DEFAULT_PERIOD = controlPanelViewParameters.DEFAULT_PERIOD;
-var INTERVAL_OPTIONS = controlPanelViewParameters.INTERVAL_OPTIONS;
-var PERIOD_OPTIONS = controlPanelViewParameters.PERIOD_OPTIONS;
-const OPTION_GENERATORS = controlPanelViewParameters.OPTION_GENERATORS;
-
-var Factory = mvc.Factory;
+var DEFAULT_INTERVAL = controlPanelParameters.DEFAULT_INTERVAL;
+var DEFAULT_PERIOD = controlPanelParameters.DEFAULT_PERIOD;
+var INTERVAL_OPTIONS = controlPanelParameters.INTERVAL_OPTIONS;
+var PERIOD_OPTIONS = controlPanelParameters.PERIOD_OPTIONS;
+var OPTION_GENERATORS = controlPanelParameters.OPTION_GENERATORS;
 
 var ControlPanelView = Factory.extend({
     config: _.extend({}, Factory.prototype.config, {

@@ -166,7 +166,6 @@ var DataImport = AbstractAction.extend({
         return Promise.all([this._super.apply(this, arguments), def]);
     },
     start: function () {
-        var self = this;
         this.$form = this.$('form');
         this.setup_encoding_picker();
         this.setup_separator_picker();
@@ -176,15 +175,16 @@ var DataImport = AbstractAction.extend({
 
         return Promise.all([
             this._super(),
-            self.create_model().then(function (id) {
-                self.id = id;
-                self.$('input[name=import_id]').val(id);
+            this.create_model().then(id => {
+                this.id = id;
+                this.$('input[name=import_id]').val(id);
 
-                self.renderButtons();
-                var status = {
-                    cp_content: {$buttons: self.$buttons},
-                };
-                self.updateControlPanel(status);
+                this.renderButtons();
+                this.updateControlPanel({
+                    cp_content: {
+                        buttons: this.$buttons,
+                    },
+                });
             }),
         ]);
     },

@@ -1,21 +1,27 @@
 odoo.define('web.ControlPanelModel', function (require) {
 "use strict";
 
-var controlPanelViewParameters = require('web.controlPanelViewParameters');
+const { Model } = require('web.mvc');
+return Model.extend({
+    init() {
+        throw new Eror(`Woops! You tried to instanciate a "ControlPanelModel"!`);
+    }
+});
+
+var controlPanelParameters = require('web.controlPanelParameters');
 var core = require('web.core');
 var Domain = require('web.Domain');
-var mvc = require('web.mvc');
 var pyUtils = require('web.py_utils');
 var searchBarAutocompleteRegistry = require('web.search_bar_autocomplete_sources_registry');
 var session = require('web.session');
 
 var _t = core._t;
 
-const DEFAULT_TIMERANGE = controlPanelViewParameters.DEFAULT_TIMERANGE;
-let TIME_RANGE_OPTIONS = controlPanelViewParameters.TIME_RANGE_OPTIONS;
-let COMPARISON_TIME_RANGE_OPTIONS = controlPanelViewParameters.COMPARISON_TIME_RANGE_OPTIONS;
-const OPTION_GENERATORS = controlPanelViewParameters.OPTION_GENERATORS;
-const YEAR_OPTIONS = controlPanelViewParameters.YEAR_OPTIONS;
+const DEFAULT_TIMERANGE = controlPanelParameters.DEFAULT_TIMERANGE;
+let TIME_RANGE_OPTIONS = controlPanelParameters.TIME_RANGE_OPTIONS;
+let COMPARISON_TIME_RANGE_OPTIONS = controlPanelParameters.COMPARISON_TIME_RANGE_OPTIONS;
+const OPTION_GENERATORS = controlPanelParameters.OPTION_GENERATORS;
+const YEAR_OPTIONS = controlPanelParameters.YEAR_OPTIONS;
 
 // Returns a predicate used to test if two arrays (of maximal length 2) have the same basic content.
 function isEqualTo (array1) {
@@ -26,7 +32,7 @@ function isEqualTo (array1) {
     }
 }
 
-var ControlPanelModel = mvc.Model.extend({
+var ControlPanelModel = Model.extend({
     /**
      * @override
      * @param {string} [params.actionId]
@@ -420,7 +426,7 @@ var ControlPanelModel = mvc.Model.extend({
                         }
                         if (filter.currentOptionIds) {
                             filter.currentOptionIds.clear();
-                        }   
+                        }
                     })
                     group.activeFilterIds = [];
                 });
@@ -459,7 +465,7 @@ var ControlPanelModel = mvc.Model.extend({
                     acc.push(y.optionId);
                 }
                 return acc;
-            }, 
+            },
             []
         );
 
@@ -726,8 +732,8 @@ var ControlPanelModel = mvc.Model.extend({
         return pyUtils.assembleDomains(domains, 'AND');
     },
     /**
-     * Return an array containing 'facets' used to create the content of the search bar. 
-     * 
+     * Return an array containing 'facets' used to create the content of the search bar.
+     *
      * @returns {Object}
      */
     _getFacets: function () {

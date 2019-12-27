@@ -1,177 +1,164 @@
 odoo.define('web.AddNewFavoriteMenu', function (require) {
 "use strict";
 
-var core = require('web.core');
-var favoritesSubmenusRegistry = require('web.favorites_submenus_registry');
-var Widget = require('web.Widget');
+const SearchMenuItem = require('web.SearchMenuItem');
+const { useFocusOnUpdate } = require('web.custom_hooks');
 
-var _t = core._t;
+const { useDispatch, useRef, useState } = owl.hooks;
 
-var AddNewFavoriteMenu = Widget.extend({
-    template: 'AddNewFavoriteMenu',
-    events: _.extend({}, Widget.prototype.events, {
-        'click .o_save_favorite': '_onSaveFavoriteClick',
-        'click .o_add_favorite.o_menu_header': '_onMenuHeaderClick',
-        'click input[type="checkbox"]': '_onCheckboxClick',
-        'keyup .o_save_name input': '_onKeyUp',
-    }),
+let favoriteId = 0;
+
+class AddNewFavoriteMenu extends SearchMenuItem {
+
     /**
-     * @override
      * @param {Object} params
      * @param {Object} params.action
      * @param {Object} params.favorites
      */
-    init: function (parent, params) {
-        this._super(parent);
-        this.favorites = params.favorites;
-        this.action = params.action;
-        this.isOpen = false;
-    },
-    /**
-     * @override
-     */
-    start: function () {
-        this._render();
-        return this._super.apply(this, arguments);
-    },
+    constructor() {
+        super(...arguments);
+
+        this.descriptionRef = useRef('description');
+        this.dispatch = useDispatch(this.env.controlPanelStore);
+        this.favId = favoriteId++;
+        this.interactive = true;
+        this.state = useState({
+            description: this.props.action.name || "",
+            isDefault: false,
+            isShared: false,
+            open: false,
+        });
+
+        const focusOnMounted = useFocusOnUpdate();
+        focusOnMounted();
+    }
 
     //--------------------------------------------------------------------------
-    // Public
+    // Getters
     //--------------------------------------------------------------------------
 
-    /**
-     * @param {Object} params
-     */
-    update: function (params) {
-        this.favorites = params.favorites;
-    },
-    /**
-     * Close the menu and re-render the widget.
-     */
-    closeMenu: function () {
-        this.isOpen = false;
-        this._render();
-    },
+    get useByDefaultId() {
+        return `o_favorite_use_by_default_${this.favId}`;
+
+    }
+
+    get shareAllUsersId() {
+        return `o_favorite_share_all_users_${this.favId}`;
+    }
 
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
 
+    _doWarn(title, message) {
+        this.env.bus.trigger('call_service', {
+            data: {
+                args: [{ title, message, type: 'danger' }],
+                callback: _ => _,
+                method: 'notify',
+                service: 'notification',
+            },
+        });
+    }
+
     /**
      * @private
      */
-    _render: function () {
-        this.renderElement();
-        if (this.isOpen) {
-            var $input = this.$('.o_favorite_name input.o_input');
-            $input.val(this.action.name);
+    _render() {
+        if (this.state.open) {
+            const $input = this.el.querySelector('.o_favorite_name input.o_input');
+            $input.val(this.props.action.name);
             $input.focus();
         }
-    },
+    }
+
     /**
      * @private
      */
-    _saveFavorite: function () {
-        var self = this;
-        var $inputs = this.$('input');
-        var description = $inputs[0].value;
-        var isDefault = $inputs[1].checked;
-        var isShared = $inputs[2].checked;
-
-        if (!description.length){
-            this.do_warn(_t("Error"), _t("A name for your favorite is required."));
-            $inputs[0].focus();
-            return;
+    _saveFavorite() {
+        if (!this.state.description.length) {
+            this._doWarn(
+                this.env._t("Error"),
+                this.env._t("A name for your favorite is required.")
+            );
+            return this.descriptionRef.el.focus();
         }
-        var descriptionAlreadyExists = !!this.favorites.find(function (favorite) {
-            return favorite.description === description;
-        });
-        if (descriptionAlreadyExists) {
-            this.do_warn(_t("Error"), _t("Filter with same name already exists."));
-            $inputs[0].focus();
-            return;
+        if (this.props.favorites.find(f => f.description === this.state.description)) {
+            this._doWarn(
+                this.env._t("Error"),
+                this.env._t("Filter with same name already exists.")
+            );
+            return this.descriptionRef.el.focus();
         }
-        this.trigger_up('new_favorite', {
+        this.dispatch('createNewFavorite', {
             type: 'favorite',
-            description: description,
-            isDefault: isDefault,
-            isShared: isShared,
-            on_success: function () {self.generatorMenuIsOpen = false;},
+            description: this.state.description,
+            isDefault: this.state.isDefault,
+            isShared: this.state.isShared,
         });
-        this.closeMenu();
-    },
+        this.state.open = false;
+    }
+
     /**
      * Hide and display the submenu which allows adding custom filters.
      *
      * @private
      */
-    _toggleMenu: function () {
-        this.isOpen = !this.isOpen;
-        this._render();
-        this.trigger_up('favorite_submenu_toggled');
-    },
+    _toggleMenu() {
+        this.state.open = !this.state.open;
+        this.trigger('favorite_submenu_toggled');
+    }
 
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
 
     /**
-     * Additional behavior when a checkbox is clicked upon
-     * Namely, some checkbox are mutually exclusive
-     * this function allows this
-     *
      * @private
-     * @param {jQueryEvent} ev
+     * @param {Event} ev change Event
      */
-    _onCheckboxClick: function (ev) {
-        function mutuallyExclusive (elem) {
-            if (!elem.id) return false;
-            return ['use_by_default', 'share_all_users'].some(function (str) {
-                return elem.id.indexOf(str);
-            });
-        }
-        var $checkboxes = this.$('input[type="checkbox"]');
-        var currentCheckBox = ev.target;
-
-        if (mutuallyExclusive(currentCheckBox)) {
-            for (var i=0; i < $checkboxes.length; i++) {
-                var checkbox = $checkboxes[i];
-                if (checkbox !== currentCheckBox && mutuallyExclusive(checkbox)) {
-                    checkbox.checked = false;
-                }
+    _onCheckboxChange(ev) {
+        const { checked, id } = ev.target;
+        if (this.useByDefaultId === id) {
+            this.state.isDefault = checked;
+            if (checked) {
+                this.state.isShared = false;
+            }
+        } else {
+            this.state.isShared = checked;
+            if (checked) {
+                this.state.isDefault = false;
             }
         }
-    },
+    }
     /**
      * @private
-     * @param {jQueryEvent} ev
+     * @param {Event} ev
      */
-    _onKeyUp: function (ev) {
-        if (ev.which === $.ui.keyCode.ENTER) {
-            this._saveFavorite();
-        }
-    },
-    /**
-     * @private
-     * @param {jQueryEvent} ev
-     */
-    _onMenuHeaderClick: function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        this._toggleMenu();
-    },
-    /**
-     * @private
-     * @param {jQueryEvent} ev
-     */
-    _onSaveFavoriteClick: function (ev) {
-        ev.stopPropagation();
-        this._saveFavorite();
-    },
-});
+    _onInput(ev) {
+        this.state.description = ev.target.value;
+    }
 
-favoritesSubmenusRegistry.add('add_new_favorite_menu', AddNewFavoriteMenu, 0);
+    /**
+     * @private
+     * @param {jQueryEvent} ev
+     */
+    _onInputKeydown(ev) {
+        switch (ev.key) {
+            case 'Enter':
+                ev.preventDefault();
+                this._saveFavorite();
+                break;
+            case 'Escape':
+                // Gives the focus back to the component.
+                ev.preventDefault();
+                ev.target.blur();
+                break;
+        }
+    }
+}
+
+AddNewFavoriteMenu.template = 'AddNewFavoriteMenu';
 
 return AddNewFavoriteMenu;
-
 });

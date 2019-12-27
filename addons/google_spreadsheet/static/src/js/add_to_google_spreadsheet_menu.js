@@ -1,102 +1,55 @@
 odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
-"use strict";
+    "use strict";
 
-var ActionManager = require('web.ActionManager');
-var core = require('web.core');
-var data = require('web.data');
-var Domain = require('web.Domain');
-var favorites_submenus_registry = require('web.favorites_submenus_registry');
-var pyUtils = require('web.py_utils');
-var Widget = require('web.Widget');
+    const ActionManager = require('web.ActionManager');
+    const { DataSet } = require('web.data');
+    const Domain = require('web.Domain');
+    const FavoriteMenu = require('web.FavoriteMenu');
+    const pyUtils = require('web.py_utils');
+    const SearchMenuItem = require('web.SearchMenuItem');
 
-var QWeb = core.qweb;
+    class AddToGoogleSpreadsheetMenu extends SearchMenuItem {
 
-var AddToGoogleSpreadsheetMenu = Widget.extend({
-    events: _.extend({}, Widget.prototype.events, {
-        'click .add_to_spreadsheet': '_onAddToSpreadsheetClick',
-    }),
-    /**
-     * @override
-     * @param {Object} params
-     * @param {Object} params.action an ir.actions description
-     */
-    init: function (parent, params) {
-        this._super(parent);
-        this.action = params.action;
-    },
-    /**
-     * @override
-     */
-    start: function () {
-        if (this.action.type === 'ir.actions.act_window') {
-            this._render();
-        }
-        return this._super.apply(this, arguments);
-    },
+        //--------------------------------------------------------------------------
+        // Handlers
+        //--------------------------------------------------------------------------
 
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
-    /**
-     * @private
-     */
-    _addToSpreadsheet: function () {
-        // AAB: trigger_up an event that will be intercepted by the controller,
-        // as soon as the controller is the parent of the control panel
-        var actionManager = this.findAncestor(function (ancestor) {
-            return ancestor instanceof ActionManager;
-        });
-        var controller = actionManager.getCurrentController();
-        var searchQuery;
-        // TO DO: for now the domains in query are evaluated.
-        // This should be changed I think.
-        this.trigger_up('get_search_query', {
-            callback: function (query) {
-                searchQuery = query;
-            }
-        });
-        var modelName = this.action.res_model;
-        var list_view = _.findWhere(controller.widget.actionViews, {type: 'list'});
-        var list_view_id = list_view ? list_view.viewID : false;
-        var domain = searchQuery.domain;
-        var groupBys = pyUtils.eval('groupbys', searchQuery.groupBys).join(" ");
-        var ds = new data.DataSet(this, 'google.drive.config');
-
-        ds.call('set_spreadsheet', [modelName, Domain.prototype.arrayToString(domain), groupBys, list_view_id])
-            .then(function (res) {
-                if (res.url){
-                    window.open(res.url, '_blank');
-                }
+        /**
+         * @private
+         */
+        async _onAddToSpreadsheet() {
+            // AAB: trigger_up an event that will be intercepted by the controller,
+            // as soon as the controller is the parent of the control panel
+            const actionManager = this.findAncestor(function (ancestor) {
+                return ancestor instanceof ActionManager;
             });
-    },
-    /**
-     * Renders the `SearchView.addtogooglespreadsheet` template.
-     *
-     * @private
-     */
-    _render: function () {
-        var $el = QWeb.render('SearchView.addtogooglespreadsheet', {widget: this});
-        this._replaceElement($el);
-    },
+            const controller = actionManager.getCurrentController();
+            let searchQuery;
+            // TO DO: for now the domains in query are evaluated.
+            // This should be changed I think.
+            this.trigger('get_search_query', {
+                callback(query) {
+                    searchQuery = query;
+                },
+            });
+            const modelName = this.props.action.res_model;
+            const listView = controller.widget.actionViews.find(view => view.type === 'list');
+            const listViewId = listView ? listView.viewID : false;
+            const domain = searchQuery.domain;
+            const groupBys = pyUtils.eval('groupbys', searchQuery.groupBys).join(" ");
+            const dataset = new DataSet(this, 'google.drive.config');
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
+            const result = await dataset.call('set_spreadsheet', [modelName, Domain.prototype.arrayToString(domain), groupBys, listViewId])
+            if (result.url) {
+                window.open(result.url, '_blank');
+            }
+        }
+    }
 
-    /**
-     * @private
-     * @param {jQueryEvent} event
-     */
-     _onAddToSpreadsheetClick: function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        this._addToSpreadsheet();
-     },
-});
+    AddToGoogleSpreadsheetMenu.template = 'AddToGoogleSpreadsheetMenu';
 
-favorites_submenus_registry.add('add_to_google_spreadsheet_menu', AddToGoogleSpreadsheetMenu, 20);
+    // Add to the FavoriteMenu components object.
+    FavoriteMenu.components.AddToGoogleSpreadsheetMenu = AddToGoogleSpreadsheetMenu;
 
-return AddToGoogleSpreadsheetMenu;
-
+    return AddToGoogleSpreadsheetMenu;
 });

@@ -100,7 +100,7 @@ return Widget.extend({
                     ev.preventDefault();
                     break;
                 case $.ui.keyCode.RIGHT:
-                    if(self.$input[0].selectionStart < self.search_string.length) {
+                    if (self.$input[0].selectionStart < self.search_string.length) {
                         ev.stopPropagation();
                         return;
                     }
@@ -114,10 +114,10 @@ return Widget.extend({
                     ev.preventDefault();
                     break;
                 case $.ui.keyCode.LEFT:
-                     if(self.$input[0].selectionStart > 0) {
+                    if (self.$input[0].selectionStart > 0) {
                         ev.stopPropagation();
-                     }
-                     break;
+                    }
+                    break;
                 case $.ui.keyCode.ESCAPE:
                     self.close();
                     self.searching = false;
@@ -133,7 +133,7 @@ return Widget.extend({
     search: function (query) {
         var self = this;
         this.current_search = query;
-        this.source({term:query}, function (results) {
+        this.source({ term: query }, function (results) {
             if (results.length) {
                 self.render_search_results(results);
                 self.focus_element(self.$('li:first-child'));
@@ -168,7 +168,7 @@ return Widget.extend({
         var $li = $('<li>')
             .mousedown(function (ev) {
                 if (ev.button === 0) { // left button
-                    self.select(ev, {item: {facet: result.facet}});
+                    self.select(ev, { item: { facet: result.facet } });
                     self.close();
                 }
             })
@@ -184,12 +184,14 @@ return Widget.extend({
                     self.expand();
                 }
             });
-            $expand.click(function(ev) {
+            $expand.click(function (ev) {
                 ev.preventDefault(); // to prevent url from changing due to href="#"
             });
             result.expanded = false;
         }
-        if (result.indent) $li.addClass('o-indent');
+        if (result.indent) {
+            $li.addClass('o-indent');
+        }
         $li.append($('<a href="#">').html(result.label));
         return $li;
     },
@@ -197,7 +199,7 @@ return Widget.extend({
         var self = this;
         var current_result = this.current_result;
         current_result.expand(this.get_search_string()).then(function (results) {
-            (results || [{label: '(no result)'}]).reverse().forEach(function (result) {
+            (results || [{ label: '(no result)' }]).reverse().forEach(function (result) {
                 result.indent = true;
                 var $li = self.make_list_item(result);
                 current_result.$el.after($li);
@@ -221,7 +223,7 @@ return Widget.extend({
         this.current_result = $li.data('result');
     },
     select_item: function (ev) {
-        this.select(ev, {item: {facet: this.current_result.facet}});
+        this.select(ev, { item: { facet: this.current_result.facet } });
         this.close();
     },
     show: function () {
@@ -237,17 +239,21 @@ return Widget.extend({
         var $next;
         if (direction === 'down') {
             $next = this.$('li.o-selection-focus').next();
-            if (!$next.length) $next = this.$('li').first();
+            if (!$next.length) {
+                $next = this.$('li').first();
+            }
         } else {
             $next = this.$('li.o-selection-focus').prev();
-            if (!$next.length) $next = this.$('li').last();
+            if (!$next.length) {
+                $next = this.$('li').last();
+            }
         }
         this.focus_element($next);
     },
     is_expandable: function () {
         return !!this.$('.o-selection-focus .o-expand').length;
     },
-    is_expanded: function() {
+    is_expanded: function () {
         return this.$el[0].style.display === "block";
     }
 });

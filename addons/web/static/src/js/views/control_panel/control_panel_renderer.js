@@ -1,16 +1,20 @@
 odoo.define('web.ControlPanelRenderer', function (require) {
 "use strict";
 
+const { Renderer } = require('web.mvc');
+return Renderer.extend({
+    init() {
+        throw new Error(`Woops! You tried to instanciate a "ControlPanelRenderer"!`);
+    }
+});
+
 var config = require('web.config');
 var data = require('web.data');
 var FavoriteMenu = require('web.FavoriteMenu');
 var FilterMenu = require('web.FilterMenu');
 var GroupByMenu = require('web.GroupByMenu');
-var mvc = require('web.mvc');
 var SearchBar = require('web.SearchBar');
 var TimeRangeMenu = require('web.TimeRangeMenu');
-
-var Renderer = mvc.Renderer;
 
 var ControlPanelRenderer = Renderer.extend({
     template: 'ControlPanel',

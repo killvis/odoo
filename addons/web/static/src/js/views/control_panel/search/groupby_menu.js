@@ -2,18 +2,36 @@ odoo.define('web.GroupByMenu', function (require) {
 "use strict";
 
 var config = require('web.config');
-var controlPanelViewParameters = require('web.controlPanelViewParameters');
+var controlPanelParameters = require('web.controlPanelParameters');
 var core = require('web.core');
 var DropdownMenu = require('web.DropdownMenu');
+const SearchMenu = require('web.SearchMenu');
+const GroupByMenuGenerator = require('web.GroupByMenuGenerator');
 
 var _t = core._t;
 var QWeb = core.qweb;
 
-var DEFAULT_INTERVAL = controlPanelViewParameters.DEFAULT_INTERVAL;
-var GROUPABLE_TYPES = controlPanelViewParameters.GROUPABLE_TYPES;
-var INTERVAL_OPTIONS = controlPanelViewParameters.INTERVAL_OPTIONS;
+var DEFAULT_INTERVAL = controlPanelParameters.DEFAULT_INTERVAL;
+var GROUPABLE_TYPES = controlPanelParameters.GROUPABLE_TYPES;
+var INTERVAL_OPTIONS = controlPanelParameters.INTERVAL_OPTIONS;
 
-var GroupByMenu = DropdownMenu.extend({
+class GroupByMenu extends SearchMenu {
+    constructor() {
+        super(...arguments);
+        this.category = 'groupBy';
+        this.title = this.env._t("Group By");
+        this.icon = 'fa fa-bars';
+    }
+
+    _onCreateNewGroupBy(ev) {
+        this.dispatch('createNewGroupBy', ev.detail);
+    }
+}
+
+GroupByMenu.components = Object.assign({ GroupByMenuGenerator }, SearchMenu.components);
+GroupByMenu.template = 'GroupByMenu';
+
+var _GroupByMenu = DropdownMenu.extend({
     events: _.extend({}, DropdownMenu.prototype.events, {
         'click .o_add_custom_group': '_onAddCustomGroupClick',
         'click button.o_apply_group': '_onButtonApplyClick',

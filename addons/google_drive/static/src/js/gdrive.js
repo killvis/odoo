@@ -8,6 +8,8 @@ odoo.define('google_drive.sidebar', function (require) {
 
 var Sidebar = require('web.Sidebar');
 
+const { patch } = require('web.utils');
+
 
 Sidebar.include({
     // TO DO: clean me in master

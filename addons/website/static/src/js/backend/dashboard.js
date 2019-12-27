@@ -405,8 +405,8 @@ var Dashboard = AbstractAction.extend({
 
         this.updateControlPanel({
             cp_content: {
-                $searchview: this.$searchview,
-                $buttons: $buttons,
+                buttons: $buttons,
+                searchView: this.$searchview,
             },
         });
     },

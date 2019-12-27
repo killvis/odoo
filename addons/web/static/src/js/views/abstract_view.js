@@ -26,10 +26,13 @@ odoo.define('web.AbstractView', function (require) {
 var AbstractModel = require('web.AbstractModel');
 var AbstractRenderer = require('web.AbstractRenderer');
 var AbstractController = require('web.AbstractController');
-var ControlPanelView = require('web.ControlPanelView');
+const ControlPanel = require('web.ControlPanel');
+const ControlPanelStore = require('web.ControlPanelStore');
 var mvc = require('web.mvc');
 var SearchPanel = require('web.SearchPanel');
 var viewUtils = require('web.viewUtils');
+
+const { Store, Component } = owl;
 
 var Factory = mvc.Factory;
 
@@ -83,7 +86,7 @@ var AbstractView = Factory.extend({
      * @param {string} [params.displayName]
      * @param {Array[]} [params.domain=[]]
      * @param {Object[]} [params.dynamicFilters] transmitted to the
-     *   ControlPanelView
+     *   ControlPanel
      * @param {number[]} [params.ids]
      * @param {boolean} [params.isEmbedded=false]
      * @param {Object} [params.searchQuery={}]
@@ -174,19 +177,40 @@ var AbstractView = Factory.extend({
             this._updateMVCParams(params.searchQuery);
         }
 
-        this.controlPanelParams = {
-            action: action,
+        this.env = Object.assign(Object.create(Component.env), {
+            action: action || {},
+            context: this.loadParams.context || {},
+            domain: this.loadParams.domain || [],
+            modelName: params.modelName,
+        });
+
+        // TODO: Check useless params
+        this.controlPanelStoreConfig = {
+            env: Component.env,
+
+            actionId: action.id,
+            actionContext: Object.assign({}, this.loadParams.context || {}),
+            actionDomain: this.loadParams.domain || [],
+            modelName: params.modelName,
+
+            // control initialization
             activateDefaultFavorite: params.activateDefaultFavorite,
             dynamicFilters: params.dynamicFilters,
-            breadcrumbs: params.breadcrumbs,
-            context: this.loadParams.context,
-            domain: this.loadParams.domain,
-            modelName: params.modelName,
-            searchMenuTypes: params.searchMenuTypes,
-            state: controllerState.cpState,
             viewInfo: params.controlPanelFieldsView,
-            withBreadcrumbs: params.withBreadcrumbs,
             withSearchBar: params.withSearchBar,
+
+            // avoid work to initialize
+            importedState: controllerState.cpState,
+        };
+        this.controlPanelProps = {
+            action: action,
+            breadcrumbs: params.breadcrumbs,
+            fields: this.fields,
+            searchMenuTypes: params.searchMenuTypes,
+            withBreadcrumbs: params.withBreadcrumbs,
+            views: action.views && action.views.filter(v => v.multiRecord === this.isMultiRecord),
+            withSearchBar: params.withSearchBar,
+            viewType: this.viewType,
         };
         this.searchPanelParams = {
             defaultNoFilter: params.searchPanelDefaultNoFilter,
@@ -203,13 +227,13 @@ var AbstractView = Factory.extend({
     /**
      * @override
      */
-    getController: function (parent) {
+    getController: async function (parent) {
         var self = this;
         var cpDef = this.withControlPanel && this._createControlPanel(parent);
         var spDef;
         if (this.withSearchPanel) {
             var spProto = this.config.SearchPanel.prototype;
-            var viewInfo = this.controlPanelParams.viewInfo;
+            var viewInfo = this.controlPanelProps.viewInfo;
             var searchPanelParams = spProto.computeSearchPanelParams(viewInfo, this.viewType);
             if (searchPanelParams.sections) {
                 this.searchPanelParams.sections = searchPanelParams.sections;
@@ -225,9 +249,6 @@ var AbstractView = Factory.extend({
             var modelParent = self.model && self.model.getParent();
             var prom = _super(parent);
             prom.then(function (controller) {
-                if (controlPanel) {
-                    controlPanel.setParent(controller);
-                }
                 if (searchPanel) {
                     searchPanel.setParent(controller);
                 }
@@ -265,23 +286,38 @@ var AbstractView = Factory.extend({
     //--------------------------------------------------------------------------
 
     /**
-     * Instantiates and starts a ControlPanelController.
+     * Instantiates and starts a ControlPanel.
      *
      * @private
      * @param {Widget} parent
-     * @returns {Promise<ControlPanelController>} resolved when the controlPanel
+     * @param {Function} [alterQuery] a function meant to alter the fetched query.
+     * @returns {Promise<ControlPanel>} resolved when the controlPanel
      *   is ready
      */
-    _createControlPanel: function (parent) {
-        var self = this;
-        var controlPanelView = new ControlPanelView(this.controlPanelParams);
-        return controlPanelView.getController(parent).then(function (controlPanel) {
-            self.controllerParams.controlPanel = controlPanel;
-            return controlPanel.appendTo(document.createDocumentFragment()).then(function () {
-                self._updateMVCParams(controlPanel.getSearchQuery());
-                return controlPanel;
-            });
-        });
+    _createControlPanel: async function (parent, alterQuery) {
+        const controlPanelStore = await this._createControlPanelStore();
+
+        this.controlPanelProps.controlPanelStore = controlPanelStore;
+        const controlPanel = new ControlPanel(null, this.controlPanelProps);
+        await controlPanel.mount(document.createDocumentFragment());
+
+        this.controllerParams.controlPanelStore = controlPanelStore;
+        this.controllerParams.controlPanel = controlPanel;
+        const query = controlPanelStore.getQuery();
+        if (alterQuery) {
+            alterQuery(query);
+        }
+        this._updateMVCParams(query);
+
+        return controlPanel;
+    },
+    /**
+     * Create the control panel store
+     *
+     * @private
+     */
+    _createControlPanelStore: async function () {
+        return new ControlPanelStore(this.controlPanelStoreConfig);
     },
     /**
      * @private

@@ -6,9 +6,21 @@ var AbstractController = require('web.AbstractController');
 var ControllerAdapter = AbstractController.extend({
     on_attach_callback: function () {
         this.renderer.__callMounted();
+        if (this._controlPanel) {
+            this._controlPanel.mount(this.el, { position: 'first-child' });
+        }
+        if (this._controlPanelStore) {
+            this._controlPanelStore.on('get_controller_query_params', this, this._onGetOwnedQueryParams);
+        }
     },
     on_detach_callback: function () {
         this.renderer.__callWillUnmount();
+        if (this._controlPanel) {
+            this._controlPanel.unmount();
+        }
+        if (this._controlPanelStore) {
+            this._controlPanelStore.off('get_controller_query_params', this);
+        }
     },
 
     /**
