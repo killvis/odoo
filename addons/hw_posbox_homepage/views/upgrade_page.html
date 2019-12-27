@@ -24,6 +24,57 @@
                     });
                 }
             });
+            $('#flash').click(function(){
+                if ( confirm('Alert message to flash IoT Box to ' ) ) {
+                    $('.loading-block').removeClass('o_hide');
+                    var messageStatus = $('.message-status');
+                    var messageError = $('.error-message');
+                    $('.message-title').text('IoTBox perform a self flashing it take a lot of time (~25min).');
+                    messageStatus.text('Prepare space for IoTBox.');
+                    console.log('Prepare space for IoTBox.');
+                    console.log(messageStatus);
+                    $.ajax({
+                        url:'/hw_proxy/perform_flashing_create_partition/'
+                    }).done(function(status){
+                        messageStatus.text('Prepare new boot partition.');
+                        console.log('Prepare new boot partition.');
+                        console.log(messageStatus);
+                        console.log(status);
+                        $.ajax({
+                            url:'/hw_proxy/perform_flashing_download_raspbian/'
+                        }).done(function(status){
+                            messageStatus.text('Install new boot partition.');
+                            console.log('Install new boot partition.');
+                            console.log(messageStatus);
+                            console.log(status);
+                            $.ajax({
+                                url:'/hw_proxy/perform_flashing_copy_raspbian/'
+                            }).always(function(){
+                                messageStatus.text('Prepare to restart and installation of the new version of the IoT Box');
+                                setTimeout(function() {
+                                    messageStatus.text('The auto flash is almost finished - the page will be automatically reloaded');
+                                    setInterval(function(){
+                                        console.log('Ping box.');
+                                        $.ajax({
+                                            url: '/hw_proxy/get_version',
+                                            timeout: 4000,
+                                        }).done(function(version) {
+                                            console.log(version);
+                                            if (version == {{ flashToVersion }}) {
+                                                window.location = '/';
+                                            }
+                                        });
+                                    } , 2000);
+                                }, 240000);
+                            });
+                        }).fail(function(){
+                            messageError.text('Download raspbian failed');
+                        });
+                    }).fail(function(){
+                        messageError.text('Creating partition failed');
+                    });
+                }
+            });
         });
     </script>
     <style>
@@ -54,6 +105,9 @@
     </div>
     <div class="text-center" style="margin: 15px auto;">
         <a class="btn" href='#' id='upgrade'>Upgrade</a>
+        {% if flashToVersion %}
+            <a class="btn" href='#' id='flash'>Flash to {{ flashToVersion }} !</a>
+        {% endif %}
     </div>
     {{ loading_block_ui(loading_message) }}
 {% endblock %}

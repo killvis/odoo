@@ -289,11 +289,17 @@ class IoTboxHomepage(web.Home):
     @http.route('/hw_proxy/upgrade', type='http', auth='none', )
     def upgrade(self):
         commit = subprocess.check_output(["git", "--work-tree=/home/pi/odoo/", "--git-dir=/home/pi/odoo/.git", "log", "-1"]).decode('utf-8').replace("\n", "<br/>")
+        flashToVersion = helpers.check_image()
+        actualVersion = helpers.get_version()
+        if flashToVersion:
+            flashToVersion = '%s.%s' % (flashToVersion.get('major', ''), flashToVersion.get('minor', ''))
         return upgrade_page_template.render({
             'title': "Odoo's IoTBox - Software Upgrade",
             'breadcrumb': 'IoT Box Software Upgrade',
             'loading_message': 'Updating IoT box',
             'commit': commit,
+            'flashToVersion': flashToVersion,
+            'actualVersion': actualVersion,
         })
 
     @http.route('/hw_proxy/perform_upgrade', type='http', auth='none')
@@ -301,4 +307,32 @@ class IoTboxHomepage(web.Home):
         self.upgrading.acquire()
         os.system('/home/pi/odoo/addons/point_of_sale/tools/posbox/configuration/posbox_update.sh')
         self.upgrading.release()
+        return 'SUCCESS'
+
+    @http.route('/hw_proxy/perform_flashing_create_partition', type='http', auth='none')
+    def perform_flashing_create_partition(self):
+        try:
+            subprocess.check_call(['sudo', 'bash', '-c', '. /home/pi/odoo/addons/point_of_sale/tools/posbox/configuration/upgrade.sh; create_partition'])
+        except subprocess.CalledProcessError as e:
+            _logger.error('A error encountered : %s ' % e.output)
+        return 'SUCCESS'
+
+    @http.route('/hw_proxy/get_version', type='http', auth='none')
+    def check_version(self):
+        return helpers.get_version()
+
+    @http.route('/hw_proxy/perform_flashing_download_raspbian', type='http', auth='none')
+    def perform_flashing_download_raspbian(self):
+        try:
+            subprocess.check_call(['sudo', 'bash', '-c', '. /home/pi/odoo/addons/point_of_sale/tools/posbox/configuration/upgrade.sh; download_raspbian'])
+        except subprocess.CalledProcessError as e:
+            _logger.error('A error encountered : %s ' % e.output)
+        return 'SUCCESS'
+
+    @http.route('/hw_proxy/perform_flashing_copy_raspbian', type='http', auth='none')
+    def perform_flashing_copy_raspbian(self):
+        try:
+            subprocess.check_call(['sudo', 'bash', '-c', '. /home/pi/odoo/addons/point_of_sale/tools/posbox/configuration/upgrade.sh; copy_raspbian'])
+        except subprocess.CalledProcessError as e:
+            _logger.error('A error encountered : %s ' % e.output)
         return 'SUCCESS'
