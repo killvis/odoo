@@ -915,12 +915,20 @@ class AccountMoveLine(models.Model):
                 credit_moves[0].amount_residual += temp_amount_residual
                 credit_moves[0].amount_residual_currency += temp_amount_residual_currency
             #Check for the currency and amount_currency we can set
-            currency = False
+            currency_id = False
             amount_reconcile_currency = 0
             if field == 'amount_residual_currency':
-                currency = credit_move.currency_id.id
+                currency_id = credit_move.currency_id.id
                 amount_reconcile_currency = temp_amount_residual_currency
                 amount_reconcile = temp_amount_residual
+            elif bool(debit_move.currency_id) != bool(credit_move.currency_id):
+                # If only one of debit_move or credit_move has a secondary currency, also record the converted amount
+                # in that secondary currency in the partial reconciliation. That allows the exchange difference entry
+                # to be created, in case it is needed. It also allows to compute the amount residual in foreign currency.
+                currency = debit_move.currency_id or credit_move.currency_id
+                currency_id = currency.id
+                currency_date = debit_move.currency_id and credit_move.date or debit_move.date
+                amount_reconcile_currency = company_currency._convert(amount_reconcile, currency, debit_move.company_id, currency_date)
 
             if cash_basis:
                 tmp_set = debit_move | credit_move
@@ -931,7 +939,7 @@ class AccountMoveLine(models.Model):
                 'credit_move_id': credit_move.id,
                 'amount': amount_reconcile,
                 'amount_currency': amount_reconcile_currency,
-                'currency_id': currency,
+                'currency_id': currency_id,
             })
 
         cash_basis_subjected = []
