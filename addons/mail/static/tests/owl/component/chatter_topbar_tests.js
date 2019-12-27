@@ -15,20 +15,16 @@ QUnit.module('component', {}, function () {
 QUnit.module('ChatterTopbar', {
     beforeEach() {
         utilsBeforeEach(this);
-        this.createThread = async ({ _model, id }, { fetchAttachments=false }={}) => {
-            const threadLocalId = this.env.store.dispatch('_createThread', { _model, id });
-            if (fetchAttachments) {
-                await this.env.store.dispatch('_fetchThreadAttachments', threadLocalId);
-            }
-            return threadLocalId;
+        this.createThread = async ({ _model, id }) => {
+            return this.env.store.dispatch('_createThread', { _model, id });
         };
-        this.createChatterTopbar = async (threadLocalId, otherProps) => {
+        this.createChatterTopbar = async (chatterLocalId, otherProps) => {
             ChatterTopBar.env = this.env;
             const defaultProps = {
                 isComposerLog: false,
                 isComposerVisible: false
             };
-            this.chatterTopbar = new ChatterTopBar(null, Object.assign({ threadLocalId }, defaultProps, otherProps));
+            this.chatterTopbar = new ChatterTopBar(null, Object.assign({ chatterLocalId }, defaultProps, otherProps));
             await this.chatterTopbar.mount(this.widget.el);
         };
         this.start = async params => {
@@ -66,11 +62,16 @@ QUnit.test('base rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const threadLocalId = await this.createThread({
+    const initialThreadModel = 'res.partner';
+    const initialThreadId = await this.createThread({
         _model: 'res.partner',
         id: 100,
     });
-    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadId,
+        initialThreadModel,
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,
@@ -98,11 +99,9 @@ QUnit.test('base rendering', async function (assert) {
     );
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
-        1,
-        "attachments button should have a loader"
+        0,
+        "attachments button should not have a loader"
     );
-    await this.env.store.dispatch('_fetchThreadAttachments', threadLocalId);
-    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
         1,
@@ -136,7 +135,11 @@ QUnit.test('base disabled rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    await this.createChatterTopbar(undefined, { isDisabled: true });
+    const initialThreadModel = 'res.partner';
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadModel,
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: true });
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,
@@ -199,10 +202,17 @@ QUnit.test('attachment count without attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const threadLocalId = await this.createThread(
-        { _model: 'res.partner', id: 100 },
-        { fetchAttachments: true });
-    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
+    const initialThreadModel = 'res.partner';
+    const initialThreadId = await this.createThread({
+        _model: 'res.partner',
+        id: 100,
+    });
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadId,
+        initialThreadModel,
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
+
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,
@@ -246,8 +256,17 @@ QUnit.test('attachment count with attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const threadLocalId = await this.createThread({ _model: 'res.partner', id: 100 }, { fetchAttachments: true });
-    await this.createChatterTopbar(threadLocalId, { isDisabled: false });
+    const initialThreadModel = 'res.partner';
+    const initialThreadId = await this.createThread({
+        _model: 'res.partner',
+        id: 100,
+    });
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadId,
+        initialThreadModel,
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
+
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar`).length,
         1,

@@ -600,26 +600,6 @@ const actions = {
             dispatch('openThread', threadLocalId, { resetDiscussDomain: true });
         }
     },
-    async loadNewMessagesOnThread(
-        { dispatch, env, state },
-        threadLocalId,
-        { searchDomain=[] }={}
-    ) {
-        const stringifiedDomain = JSON.stringify(searchDomain);
-        const thread = state.threads[threadLocalId];
-        const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
-        const threadCache = state.threadCaches[threadCacheLocalId];
-        const lastMessageId = Math.max(
-            ...threadCache.messageLocalIds.map(messageLocalId =>
-                state.messages[messageLocalId].id
-            )
-        );
-        const additionalDomain = ['id', '>', lastMessageId];
-        await dispatch('_loadMoreMessagesOnThread', threadLocalId, {
-            additionalDomain,
-            searchDomain,
-        });
-    },
     /**
      * @param {Object} param0
      * @param {function} param0.dispatch
@@ -935,6 +915,7 @@ const actions = {
                 res_id: thread.id
             }));
         }
+        dispatch('_loadNewMessagesOnThread', thread.localId);
     },
     /**
      * Handles redirection to a model and id. Try to handle it in the context
@@ -1310,7 +1291,7 @@ const actions = {
     async updateChatter({ dispatch, state }, chatterLocalId) {
         const chatter = state.chatters[chatterLocalId];
         if (chatter && chatter.hasRecord) {
-            dispatch('loadNewMessagesOnThread', chatter.threadLocalId);
+            dispatch('_loadNewMessagesOnThread', chatter.threadLocalId);
         }
     },
     /**
@@ -3322,6 +3303,36 @@ const actions = {
         }, { shadow: true });
         dispatch('_handleThreadLoaded', threadLocalId, {
             messagesData,
+            searchDomain,
+        });
+    },
+    /**
+     * @private
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.env
+     * @param {Object} param0.state
+     * @param {string} threadLocalId
+     * @param {Object} [param2]
+     * @param {Array} [param2.searchDomain=[]]
+    */
+    async _loadNewMessagesOnThread(
+        { dispatch, env, state },
+        threadLocalId,
+        { searchDomain=[] }={}
+    ) {
+        const stringifiedDomain = JSON.stringify(searchDomain);
+        const thread = state.threads[threadLocalId];
+        const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
+        const threadCache = state.threadCaches[threadCacheLocalId];
+        const lastMessageId = Math.max(
+            ...threadCache.messageLocalIds.map(messageLocalId =>
+                state.messages[messageLocalId].id
+            )
+        );
+        const additionalDomain = ['id', '>', lastMessageId];
+        await dispatch('_loadMoreMessagesOnThread', threadLocalId, {
+            additionalDomain,
             searchDomain,
         });
     },

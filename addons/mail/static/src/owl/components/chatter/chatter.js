@@ -28,6 +28,7 @@ class Chatter extends Component {
             const thread = state.threads[chatter.threadLocalId];
             return {
                 composerLocalId: thread ? thread.composerLocalId : undefined,
+                hasRecord: chatter.hasRecord,
                 threadLocalId: thread ? thread.localId : undefined,
             };
         });
@@ -36,10 +37,10 @@ class Chatter extends Component {
 
     //--------------------------------------------------------------------------
     // Handlers
-    //--------------------------------------------------------------------------a
+    //--------------------------------------------------------------------------
 
     _onComposerMessagePosted() {
-        this.storeDispatch('loadNewMessagesOnThread', this.storeProps.threadLocalId);
+        this.state.isComposerVisible = false;
     }
 
     /**
