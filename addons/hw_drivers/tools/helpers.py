@@ -98,6 +98,7 @@ def check_image():
     http = urllib3.PoolManager(cert_reqs='CERT_NONE')
     response = http.request('GET', url)
     checkFile = {}
+    valueActual = get_version()
     for line in response.data.decode().split('\n'):
         if line:
             value, name = line.split('  ')
@@ -139,7 +140,7 @@ def get_token():
     return read_file_first_line('token')
 
 def get_version():
-    return '19.12'
+    return '20.01'
 
 def get_wifi_essid():
     wifi_options = []

@@ -28,8 +28,8 @@ __base="$(basename ${__file} .sh)"
 MOUNT_POINT="${__dir}/root_mount"
 OVERWRITE_FILES_BEFORE_INIT_DIR="${__dir}/overwrite_before_init"
 OVERWRITE_FILES_AFTER_INIT_DIR="${__dir}/overwrite_after_init"
-VERSION=13.0
-REPO=https://github.com/odoo/odoo.git
+VERSION=13.0-iot-auto-flash-qle
+REPO=https://github.com/odoo-dev/odoo.git
 
 if ! file_exists *raspbian*.img ; then
     wget 'http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip' -O raspbian.img.zip
