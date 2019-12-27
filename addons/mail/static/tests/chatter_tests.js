@@ -2516,8 +2516,8 @@ QUnit.test('followers widget: follow/unfollow, edit subtypes', async function (a
             if (route === '/web/dataset/call_kw/partner/read') {
                 nbReads++;
                 if (nbReads === 1) { // first read: should read all fields
-                    assert.strictEqual(args.args[1].length, 3,
-                        'should read "foo", "message_follower_ids" and "display_name"');
+                    assert.strictEqual(args.args[1].length, 4,
+                        'should read "foo", "message_follower_ids", "message_attachment_count" and "display_name"');
                 } else { // three next reads: only read 'message_follower_ids' field
                     assert.deepEqual(args.args[1], ['message_follower_ids', 'display_name'],
                         'should only read "message_follower_ids" and "display_name"');
