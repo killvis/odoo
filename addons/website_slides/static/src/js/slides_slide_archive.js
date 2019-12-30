@@ -30,6 +30,14 @@ var SlideArchiveDialog = Dialog.extend({
         this.slideId = this.$slideTarget.data('slideId');
         this._super(parent, options);
     },
+    _displayCategoryEmptyFlag: function (){
+        var categorySlideList = $(this.$slideTarget.parents('li'));
+        var categoryId = categorySlideList.data('categoryId');
+        var slideList = $('.o_wslides_slide_list[data-category-id='+ categoryId +']').find('.o_wslides_js_list_item');
+        if (slideList.length === 0){
+            $('.o_wslides_slide_list_category_header[data-category-id="'+ categoryId +'"] > div:first-child').append('<small class="ml-1 text-muted">Empty</small>');
+        }
+    },
 
     //--------------------------------------------------------------------------
     // Handlers
@@ -46,8 +54,11 @@ var SlideArchiveDialog = Dialog.extend({
             params: {
                 slide_id: this.slideId
             },
-        }).then(function () {
-            self.$slideTarget.closest('.o_wslides_slides_list_slide').remove();
+        }).then(function (data) {
+            if (data){
+                self.$slideTarget.closest('.o_wslides_slides_list_slide').remove();
+                self._displayCategoryEmptyFlag();
+            }
             self.close();
         });
     }
