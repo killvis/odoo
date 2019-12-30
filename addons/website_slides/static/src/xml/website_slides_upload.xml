@@ -246,7 +246,7 @@
     </t>
 
     <t t-name="website.slide.list.slide.item">
-        <li t-att-data-slide-id="widget.slide.id" t-att-data-category-id="widget.slide.category_id" class="o_wslides_slides_list_slide o_wslides_js_list_item bg-white-50 border-top-0 d-flex align-items-center pl-2">
+        <li t-att-data-slide-id="widget.slide.id" t-att-data-category-id="widget.slide.category_id" class="o_wslides_slides_list_slide o_wslides_js_list_item o_wslides_slide_pulse  bg-white-50 border-top-0 d-flex align-items-center pl-2">
             <div class=" o_wslides_slides_list_drag border-right p-2">
                 <i class="fa fa-bars mr-2"></i>
             </div>
