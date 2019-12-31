@@ -2471,9 +2471,15 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 @self.pool.post_init
                 def mark_fields_to_compute():
                     recs = self.with_context(active_test=False).search([])
-                    for field in fields_to_compute:
-                        _logger.info("Storing computed values of %s", field)
-                        self.env.add_to_compute(recs._fields[field], recs)
+                    for fname in fields_to_compute:
+                        _logger.info("Storing computed values of %s", fname)
+                        field = recs._fields[fname]
+                        self.env.add_to_compute(field, recs)
+                        if not must_create_table and field.required and field.column_type:
+                            # VFE required computed fields columns have to be
+                            # set NOT NULL after field computation
+                            # when the table already exists (IntegrityError)
+                            field.update_db_notnull(self, columns.get(field.name))
 
         if self._auto:
             self._add_sql_constraints()

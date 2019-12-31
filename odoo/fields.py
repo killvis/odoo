@@ -839,7 +839,8 @@ class Field(MetaField('DummyField', (object,), {})):
 
         # create/update the column, not null constraint, indexes
         self.update_db_column(model, column)
-        self.update_db_notnull(model, column)
+        if not self.compute:
+            self.update_db_notnull(model, column)
         self.update_db_index(model, column)
 
         return not column
