@@ -38,12 +38,35 @@ class PurchaseOrder(models.Model):
                  'order_line.move_ids.picking_id')
     def _compute_picking(self):
         for order in self:
-            pickings = self.env['stock.picking']
-            for line in order.order_line:
-                # We keep a limited scope on purpose. Ideally, we should also use move_orig_ids and
-                # do some recursive search, but that could be prohibitive if not done correctly.
-                moves = line.move_ids | line.move_ids.mapped('returned_move_ids')
-                pickings |= moves.mapped('picking_id')
+            # We keep a limited scope on purpose. Ideally, we should also use move_orig_ids and
+            # do some recursive search, but that could be prohibitive if not done correctly.
+            if order.id:
+                query = """
+                WITH moves AS (
+                    SELECT id FROM stock_move
+                        WHERE purchase_line_id IN (
+                            SELECT id FROM purchase_order_line WHERE order_id = %s
+                        )
+                )
+                SELECT picking_id FROM stock_move WHERE id IN (
+                    SELECT id FROM moves
+                    UNION
+                    SELECT id FROM stock_move
+                        WHERE origin_returned_move_id IN (
+                            SELECT id FROM moves
+                        )
+                )
+                """
+                self.env.cr.execute(query, (order.id,))
+                res = self.env.cr.fetchall()
+                pickings = self.env['stock.picking'].browse({e[0] for e in res})
+            else:
+                # 'order' is newly created, not available in db yet.
+                # falling back to the slower way to compute the pickings
+                pickings = self.env['stock.picking']
+                for line in order.order_line:
+                    moves = line.move_ids | line.move_ids.mapped('returned_move_ids')
+                    pickings |= moves.mapped('picking_id')
             order.picking_ids = pickings
             order.picking_count = len(pickings)
 
