@@ -3699,6 +3699,10 @@ Record ids: %(records)s
                     true_vals[fname] = vals[fname]
                     continue
                 if field.store and field.compute:
+                    # if field.post_compute:
+                    #     # VFE FIXME do we need to post compute some fields or not??
+                    #     # Is it a potential improvement in performance ?
+                    #     continue
                     # VFE TODO also compute related fields ?
                     # if we do not use the related here, account tests crashes
                     # (virtual and real records are accessed in their tests and crashes)
@@ -3761,6 +3765,11 @@ Record ids: %(records)s
                 # protect non-readonly computed fields against (re)computation
                 if field.compute and not field.readonly:
                     protected.update(self._field_computed.get(field, [field]))
+                # elif field.compute and key not in vals:
+                #     # VFE POC protect pre-computed readonly against recomputation
+                #     protected.update(self._field_computed.get(field, [field]))
+                # VFE TODO protect related fields from recomputation
+                # when added in the create vals.
 
             data_list.append(data)
 
@@ -3956,6 +3965,8 @@ Record ids: %(records)s
     def _compute_field_value(self, field):
         # This is for base automation, to have something to override to catch
         # the changes of values for stored compute fields.
+        # if field.post_compute and self.env.context.get('pre_compute', False):
+        #     raise UserError("pre computing post compute field.")
         if isinstance(field.compute, str):
             getattr(self, field.compute)()
         else:

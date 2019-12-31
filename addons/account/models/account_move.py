@@ -133,25 +133,25 @@ class AccountMove(models.Model):
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
         string='Partner', change_default=True)
     commercial_partner_id = fields.Many2one('res.partner', string='Commercial Entity', store=True, readonly=True,
-        compute='_compute_commercial_partner_id')
+        compute='_compute_commercial_partner_id', post_compute=True)
 
     # === Amount fields ===
-    amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, tracking=True,
+    amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, tracking=True, post_compute=True,
         compute='_compute_amount')
-    amount_tax = fields.Monetary(string='Tax', store=True, readonly=True,
+    amount_tax = fields.Monetary(string='Tax', store=True, readonly=True, post_compute=True,
         compute='_compute_amount')
-    amount_total = fields.Monetary(string='Total', store=True, readonly=True,
+    amount_total = fields.Monetary(string='Total', store=True, readonly=True, post_compute=True,
         compute='_compute_amount',
         inverse='_inverse_amount_total')
-    amount_residual = fields.Monetary(string='Amount Due', store=True,
+    amount_residual = fields.Monetary(string='Amount Due', store=True, post_compute=True,
         compute='_compute_amount')
-    amount_untaxed_signed = fields.Monetary(string='Untaxed Amount Signed', store=True, readonly=True,
+    amount_untaxed_signed = fields.Monetary(string='Untaxed Amount Signed', store=True, readonly=True, post_compute=True,
         compute='_compute_amount', currency_field='company_currency_id')
-    amount_tax_signed = fields.Monetary(string='Tax Signed', store=True, readonly=True,
+    amount_tax_signed = fields.Monetary(string='Tax Signed', store=True, readonly=True, post_compute=True,
         compute='_compute_amount', currency_field='company_currency_id')
-    amount_total_signed = fields.Monetary(string='Total Signed', store=True, readonly=True,
+    amount_total_signed = fields.Monetary(string='Total Signed', store=True, readonly=True, post_compute=True,
         compute='_compute_amount', currency_field='company_currency_id')
-    amount_residual_signed = fields.Monetary(string='Amount Due Signed', store=True,
+    amount_residual_signed = fields.Monetary(string='Amount Due Signed', store=True, post_compute=True,
         compute='_compute_amount', currency_field='company_currency_id')
     amount_by_group = fields.Binary(string="Tax amount by group",
         compute='_compute_invoice_taxes_by_group',
@@ -186,11 +186,12 @@ class AccountMove(models.Model):
         default=lambda self: self.env.user)
     user_id = fields.Many2one(string='User', related='invoice_user_id',
         help='Technical field used to fit the generic behavior in mail templates.')
+    # VFE has to be computed post create...
     invoice_payment_state = fields.Selection(selection=[
         ('not_paid', 'Not Paid'),
         ('in_payment', 'In Payment'),
         ('paid', 'Paid')],
-        string='Payment', store=True, readonly=True, copy=False, tracking=True,
+        string='Payment', store=True, readonly=True, copy=False, tracking=True, post_compute=True,
         compute='_compute_amount')
     invoice_date = fields.Date(string='Invoice/Bill Date', readonly=True, index=True, copy=False,
         states={'draft': [('readonly', False)]},

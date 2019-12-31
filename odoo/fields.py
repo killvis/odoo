@@ -231,6 +231,7 @@ class Field(MetaField('DummyField', (object,), {})):
         'depends_context': None,        # collection of context key dependencies
         'recursive': False,             # whether self depends on itself
         'compute': None,                # compute(recs) computes field on recs
+        'post_compute': False,          # whether field has to be computed after creation
         'compute_sudo': False,          # whether field should be recomputed as superuser
         'inverse': None,                # inverse(recs) inverses field on recs
         'search': None,                 # search(recs, operator, value) searches on self
@@ -357,6 +358,7 @@ class Field(MetaField('DummyField', (object,), {})):
             attrs['compute_sudo'] = attrs.get('compute_sudo', store)
             attrs['copy'] = attrs.get('copy', False)
             attrs['readonly'] = attrs.get('readonly', not attrs.get('inverse'))
+            attrs['post_compute'] = attrs.get('post_compute')
         if attrs.get('related'):
             # by default, related fields are not stored, computed in superuser
             # mode, not copied and readonly
@@ -372,6 +374,7 @@ class Field(MetaField('DummyField', (object,), {})):
             attrs['copy'] = attrs.get('copy', False)
             attrs['default'] = attrs.get('default', self._default_company_dependent)
             attrs['compute'] = self._compute_company_dependent
+            attrs['post_compute'] = attrs.get('post_compute', True)
             if not attrs.get('readonly'):
                 attrs['inverse'] = self._inverse_company_dependent
             attrs['search'] = self._search_company_dependent
@@ -678,6 +681,9 @@ class Field(MetaField('DummyField', (object,), {})):
                 field = field_model._fields[fname]
                 if field is self and index:
                     self.recursive = True
+
+                if field.post_compute:
+                    self.post_compute = True
 
                 field_seq.append(field)
 

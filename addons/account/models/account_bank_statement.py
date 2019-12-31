@@ -153,6 +153,7 @@ class AccountBankStatement(models.Model):
 
     @api.depends('journal_id')
     def _compute_currency(self):
+        # VFE FIXME change to related and make it stored.
         for statement in self:
             statement.currency_id = statement.journal_id.currency_id or statement.company_id.currency_id
 
@@ -250,6 +251,7 @@ class AccountBankStatement(models.Model):
     cashbox_start_id = fields.Many2one('account.bank.statement.cashbox', string="Starting Cashbox")
     cashbox_end_id = fields.Many2one('account.bank.statement.cashbox', string="Ending Cashbox")
     is_difference_zero = fields.Boolean(compute='_is_difference_zero', string='Is zero', help="Check if difference is zero.")
+    # VFE TODO has to computed post create ...
     previous_statement_id = fields.Many2one('account.bank.statement', help='technical field to compute starting balance correctly', compute='_get_previous_statement', store=True)
     is_valid_balance_start = fields.Boolean(string="Is Valid Balance Start", compute="_compute_is_valid_balance_start", help="technical field to display a warning message in case starting balance is different than previous ending balance")
 
