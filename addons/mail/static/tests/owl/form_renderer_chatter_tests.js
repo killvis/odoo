@@ -202,7 +202,7 @@ QUnit.test('basic chatter rendering', async function (assert) {
 });
 
 QUnit.test('chatter updating', async function (assert) {
-    assert.expect(6);
+    assert.expect(7);
 
     const { widget } = await start({
         hasView: true,
@@ -268,6 +268,7 @@ QUnit.test('chatter updating', async function (assert) {
         0,
         "there should be no message"
     );
+    assert.verifySteps(['message_fetch_res_id_1']);
 
     document.querySelector(`.o_pager_next`).click();
     await afterNextRender();
@@ -276,7 +277,7 @@ QUnit.test('chatter updating', async function (assert) {
         1,
         "there should be a message"
     );
-    assert.verifySteps(['message_fetch_res_id_1', 'message_fetch_res_id_2']);
+    assert.verifySteps(['message_fetch_res_id_2']);
 
     // teardown
     widget.destroy();

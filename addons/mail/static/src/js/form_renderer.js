@@ -9,16 +9,16 @@ const FormRenderer = require('web.FormRenderer');
  * subset of) the mail widgets (mail_thread, mail_followers and mail_activity).
  */
 FormRenderer.include({
-    on_attach_callback() {
+    async on_attach_callback() {
         this._super(...arguments);
-        if (this._chatterComponent) {
-            this._chatterComponent.mount(this.el);
+        if (this._chatterComponent && this._isInDom) {
+            await this._forceMountChatterComponent();
         }
     },
     on_detach_callback() {
         this._super(...arguments);
         if (this._chatterComponent) {
-            this._chatterComponent.unmount();
+            this._deleteChatter();
         }
     },
     /**
@@ -31,7 +31,6 @@ FormRenderer.include({
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         this._hasChatter = false;
-        this._prevRenderedThreadData = {};
     },
     //--------------------------------------------------------------------------
     // Public
@@ -55,6 +54,7 @@ FormRenderer.include({
      */
     _renderNode(node) {
         if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
+            // TODO {xdu} "store" the place where the oe_chatter is
             this._hasChatter = true;
             return null;
         } else {
@@ -71,17 +71,16 @@ FormRenderer.include({
         await this._super(...arguments);
         if (this._hasChatter) {
             Chatter.env = this.env;
-            if (this._chatterComponent) {
-                if (this._prevRenderedThreadData.res_id !== this.state.res_id || this._prevRenderedThreadData.model !== this.state.model) {
-                    await this._deleteChatter();
-                    await this._createChatter();
-                } else {
-                    this._chatterComponent.unmount();
-                    await this.env.store.dispatch('updateChatter', this._chatterLocalId);
-                    await this._mountChatter();
-                }
-            } else {
+            if (!this._chatterComponent) {
                 await this._createChatter();
+            } else {
+                if (this._isInDom) {
+                    await this._forceMountChatterComponent();
+                }
+                await this.env.store.dispatch('updateChatter', this._chatterLocalId, {
+                    threadId: this.state.res_id,
+                    threadModel: this.state.model
+                });
             }
         }
     },
@@ -104,7 +103,7 @@ FormRenderer.include({
 
         // Create chatter component and mount it
         this._chatterComponent = new Chatter(null, { chatterLocalId });
-        this._mountChatter();
+        await this._chatterComponent.mount(this.el); // options {position: 'self'} to replace {xdu}
 
         // TODO self._handleAttributes($el, node); ??
     },
@@ -122,17 +121,21 @@ FormRenderer.include({
         this.env.store.dispatch('deleteChatter', this._chatterLocalId);
     },
     /**
-     * Mount the chatter
+     * Force mount the chatter
      *
+     * FIXME {XDU} It's a hack : chatterComponent is in a fragment :
+     * - no more in the DOM
+     * - no more correctly connected to the store
+     * We need to retarget it correctly in the DOM to fix that issue
+     * The issue is that the component considers itself as mounted
+     * but is no more added to the view as the super call to render view
+     * re-rendered the view entirely and without this component.
      * @private
      * @returns {Promise<void>}
      */
-    async _mountChatter() {
-        const { res_id, model } = this.state;
-        await this._chatterComponent.mount(this.$el[0]);
-
-        // Store current state as old state for further actions
-        this._prevRenderedThreadData = { res_id, model };
+    async _forceMountChatterComponent() {
+        this._chatterComponent.__owl__.isMounted = false;
+        await this._chatterComponent.mount(this.el);
     },
 });
 });

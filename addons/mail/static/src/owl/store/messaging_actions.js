@@ -253,6 +253,31 @@ const actions = {
             dispatch('openThread', threadLocalId);
         }
     },
+        /**
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.getters
+     * @param {Object} param0.state
+     * @param {Object} param1
+     * @param {string|null} param1.initialThreadId
+     * @param {string} param1.initialThreadModel
+     * @return {string}
+     */
+    createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
+        const chatterLocalId = _.uniqueId('o_Chatter');
+        const chatter = {
+            localId: chatterLocalId,
+            threadId: initialThreadId,
+            threadLocalId: undefined,
+            threadModel: initialThreadModel,
+        };
+        state.chatters[chatterLocalId] = chatter;
+        dispatch('_computeChatter', chatterLocalId, {
+            threadId: initialThreadId,
+            threadModel: initialThreadModel,
+        });
+        return chatterLocalId;
+    },
     /**
      * Delete an attachment from the store.
      *
@@ -307,8 +332,9 @@ const actions = {
         if (!chatter) {
             return;
         }
-        if (!chatter.hasRecord) {
-            dispatch('deleteThread', chatter.threadLocalId);
+        const thread = state.threads[chatter.threadLocalId];
+        if (thread && thread.isTemporary) {
+            dispatch('_deleteThread', chatter.threadLocalId);
         }
         delete state.chatters[chatterLocalId];
     },
@@ -329,28 +355,6 @@ const actions = {
                 threadLocalId,
             });
         }
-    },
-    /**
-     * Delete a thread from the store
-     * @param {Object} param0
-     * @param {function} param0.dispatch
-     * @param {Object} param0.state
-     * @param threadLocalId the local id of the thread to delete
-     */
-    deleteThread({ dispatch, state }, threadLocalId) {
-        const thread = state.threads[threadLocalId];
-        if (!thread) {
-            return;
-        }
-        // Delete attachments
-        for (const attachmentLocalId of thread.attachmentLocalIds) {
-            dispatch('deleteAttachment', attachmentLocalId);
-        }
-        // Delete messages
-        for (const messageLocalId of thread.messageLocalIds) {
-            dispatch('deleteMessage', messageLocalId);
-        }
-        delete state.threads[threadLocalId];
     },
     /**
      * Fetch attachments linked to a record. Useful for populating the store
@@ -455,39 +459,6 @@ const actions = {
         }
         // update docked chat windows
         dispatch('_computeChatWindows');
-    },
-    /**
-     * @param {Object} param0
-     * @param {function} param0.dispatch
-     * @param {Object} param0.getters
-     * @param {Object} param0.state
-     * @param {Object} param1
-     * @param {string|null} param1.initialThreadId
-     * @param {string} param1.initialThreadModel
-     * @return {string}
-     */
-    createChatter({ dispatch, getters, state }, { initialThreadId = undefined, initialThreadModel }) {
-        let threadLocalId;
-        let hasRecord;
-        if (initialThreadId === undefined) {
-            hasRecord = false;
-            threadLocalId = dispatch('_createTemporaryThread', initialThreadModel);
-        } else {
-            hasRecord = true;
-            const thread = getters.thread({_model: initialThreadModel, id: initialThreadId });
-            if (!thread) {
-                // TODO {xdu} maybe here add the name of the thread
-                threadLocalId = dispatch('_createThread', { _model: initialThreadModel, id: initialThreadId });
-            } else {
-                // TODO {xdu} uncomment me when name is supported
-                // dispatch('_updateThread', threadLocalId, { name: name } );
-                threadLocalId = thread.localId;
-            }
-            dispatch('_fetchThreadAttachments', threadLocalId);
-        }
-        const chatterLocalId = _.uniqueId('o_Chatter');
-        state.chatters[chatterLocalId] = { hasRecord, threadLocalId };
-        return chatterLocalId;
     },
     /**
      * Fetch messaging data initially to populate the store specifically for
@@ -1281,18 +1252,39 @@ const actions = {
         });
     },
     /**
-     * Update a given chatter by loading possibly new messages
      * @param {Object} param0
      * @param {function} param0.dispatch
+     * @param {Object} param0.getters
      * @param {Object} param0.state
      * @param chatterLocalId
+     * @param {Object} param1
+     * @param {string} param1.threadId
+     * @param {string} param1.threadModel
      * @returns {Promise<void>}
      */
-    async updateChatter({ dispatch, state }, chatterLocalId) {
+    async updateChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel}) {
         const chatter = state.chatters[chatterLocalId];
-        if (chatter && chatter.hasRecord) {
-            dispatch('_loadNewMessagesOnThread', chatter.threadLocalId);
+        if (!chatter) {
+            return;
         }
+        const thread = state.threads[chatter.threadLocalId];
+        const prevThreadId = chatter.threadId;
+        const prevThreadModel = chatter.threadModel;
+        Object.assign(chatter, { threadId, threadModel });
+        if (prevThreadId === threadId && prevThreadModel === threadModel) {
+            // "Nothing to do" but we check if no new message has to be fetched
+            if (!thread.isTemporary) {
+                dispatch('_loadNewMessagesOnThread', chatter.threadLocalId);
+            }
+            return;
+        }
+
+        // if previous linked thread was temporary, we delete it
+        // (we don't keep a temporary chatter "by model")
+        if (thread.isTemporary) {
+            dispatch('_deleteThread', chatter.threadLocalId);
+        }
+        await dispatch('_computeChatter', chatterLocalId, { threadId, threadModel });
     },
     /**
      * Update the data given to given dialog with given data changes.
@@ -1396,6 +1388,41 @@ const actions = {
         dispatch('_updatePartner', partnerLocalId, {
             userId: userIds.length ? userIds[0] : null,
         });
+    },
+    /**
+     * @private
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.getters
+     * @param {Object} param0.state
+     * @param chatterLocalId
+     * @param {Object} param1
+     * @param {string} param1.threadId
+     * @param {string} param1.threadModel
+     * @returns {Promise<void>}
+     */
+    async _computeChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel }){
+        const chatter = state.chatters[chatterLocalId];
+        let threadLocalId;
+        if (chatter.threadId === undefined) {
+            threadLocalId = dispatch('_createTemporaryThread', chatter.threadModel);
+        } else {
+            const thread = getters.thread({
+                _model: chatter.threadModel,
+                id: chatter.threadId,
+            });
+            if (!thread) {
+                threadLocalId = dispatch('_createThread', {
+                    _model: chatter.threadModel,
+                    id: chatter.threadId,
+                });
+            } else {
+                threadLocalId = thread.localId;
+                await dispatch('_loadNewMessagesOnThread', threadLocalId);
+            }
+            await dispatch('_fetchThreadAttachments', threadLocalId);
+        }
+        chatter.threadLocalId = threadLocalId;
     },
     /**
      * @private
@@ -1801,7 +1828,8 @@ const actions = {
         const threadLocalId = dispatch('_createThread', {
             _model: model,
             areAttachmentsLoaded: true,
-            id: nextId
+            id: nextId,
+            isTemporary: true,
         });
         const messageLocalId = dispatch('_createMessage', {
             author_id: [
@@ -1813,16 +1841,10 @@ const actions = {
             isTemporary: true,
             threadLocalIds: [threadLocalId],
         });
-        let threadCacheLocalId;
-        for (const loopThreadCacheLocalId in state.threadCaches) {
-            const threadCache = state.threadCaches[loopThreadCacheLocalId];
-            if (threadCache.threadLocalId === threadLocalId) {
-                threadCacheLocalId = loopThreadCacheLocalId;
-                break;
-            }
-        }
         dispatch('_linkMessageToThread', { messageLocalId, threadLocalId });
-        if (threadCacheLocalId) {
+        const thread = state.threads[threadLocalId];
+        for (const threadCacheDomain in thread.cacheLocalIds) {
+            const threadCacheLocalId = thread.cacheLocalIds[threadCacheDomain];
             dispatch('_linkMessageToThreadCache', { messageLocalId, threadCacheLocalId });
         }
         return threadLocalId;
@@ -1876,6 +1898,7 @@ const actions = {
             group_based_subscription,
             id,
             isPinned=true,
+            isTemporary=false,
             is_minimized,
             is_moderator,
             mass_mailing,
@@ -1913,6 +1936,7 @@ const actions = {
             group_based_subscription,
             id,
             isPinned,
+            isTemporary,
             is_minimized,
             is_moderator,
             localId: `${_threadModel}_${id}`,
@@ -1992,6 +2016,29 @@ const actions = {
             [stringifiedDomain]: threadCacheLocalId,
         });
         return threadCacheLocalId;
+    },
+    /**
+     * @private
+     * Delete a thread from the store
+     * @param {Object} param0
+     * @param {function} param0.dispatch
+     * @param {Object} param0.state
+     * @param threadLocalId the local id of the thread to delete
+     */
+    _deleteThread({ dispatch, state }, threadLocalId) {
+        const thread = state.threads[threadLocalId];
+        if (!thread) {
+            return;
+        }
+        // Delete attachments
+        for (const attachmentLocalId of thread.attachmentLocalIds) {
+            dispatch('deleteAttachment', attachmentLocalId);
+        }
+        // Delete messages
+        for (const messageLocalId of thread.messageLocalIds) {
+            dispatch('deleteMessage', messageLocalId);
+        }
+        delete state.threads[threadLocalId];
     },
     /**
      * @private
@@ -3325,14 +3372,30 @@ const actions = {
         const thread = state.threads[threadLocalId];
         const threadCacheLocalId = thread.cacheLocalIds[stringifiedDomain];
         const threadCache = state.threadCaches[threadCacheLocalId];
-        const lastMessageId = Math.max(
-            ...threadCache.messageLocalIds.map(messageLocalId =>
-                state.messages[messageLocalId].id
-            )
+        const messageIds = threadCache.messageLocalIds.map(messageLocalId =>
+            state.messages[messageLocalId].id
         );
-        const additionalDomain = ['id', '>', lastMessageId];
-        await dispatch('_loadMoreMessagesOnThread', threadLocalId, {
-            additionalDomain,
+
+        let domain = searchDomain.length ? searchDomain : [];
+        domain = dispatch('_extendMessageDomainWithThreadDomain', {
+            domain,
+            threadLocalId,
+        });
+        if (messageIds.length > 0) {
+            const lastMessageId = Math.max(...messageIds);
+            domain = [['id', '>', lastMessageId]].concat(domain);
+        }
+        threadCache.isLoadingMore = true;
+        const messageFetchKwargs = dispatch('_getThreadFetchMessagesKwargs', threadLocalId);
+        messageFetchKwargs.limit = false;
+        const messagesData = await env.rpc({
+            model: 'mail.message',
+            method: 'message_fetch',
+            args: [domain],
+            kwargs: messageFetchKwargs,
+        }, { shadow: true });
+        dispatch('_handleThreadLoaded', threadLocalId, {
+            messagesData,
             searchDomain,
         });
     },

@@ -7,7 +7,7 @@
                 class="o_Chatter_topbar"
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
-                isDisabled="!storeProps.hasRecord"
+                isDisabled="storeProps.threadIsTemporary"
                 chatterLocalId="props.chatterLocalId"
                 t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                 t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"

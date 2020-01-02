@@ -28,8 +28,8 @@ class Chatter extends Component {
             const thread = state.threads[chatter.threadLocalId];
             return {
                 composerLocalId: thread ? thread.composerLocalId : undefined,
-                hasRecord: chatter.hasRecord,
                 threadLocalId: thread ? thread.localId : undefined,
+                threadIsTemporary: thread ? thread.isTemporary: undefined,
             };
         });
         this._threadRef = useRef('thread');
