@@ -26,11 +26,9 @@ class Chatter extends Component {
         this.storeProps = useStore((state, { chatterLocalId }) => {
             const chatter = state.chatters[chatterLocalId];
             const thread = state.threads[chatter.threadLocalId];
-            return {
-                composerLocalId: thread ? thread.composerLocalId : undefined,
-                threadLocalId: thread ? thread.localId : undefined,
-                threadIsTemporary: thread ? thread.isTemporary: undefined,
-            };
+            const composerLocalId = thread ? thread.composerLocalId : undefined;
+            const threadIsTemporary = thread ? thread.isTemporary: undefined;
+            return { chatter, composerLocalId, threadIsTemporary };
         });
         this._threadRef = useRef('thread');
     }
