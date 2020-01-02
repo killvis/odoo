@@ -8,12 +8,12 @@
                 chatterLocalId="props.chatterLocalId"
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
-                isDisabled="storeProps.thread.isTemporary"
+                isDisabled="!storeProps.thread || storeProps.thread.isTemporary"
                 t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                 t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
                 t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
             />
-            <t t-if="storeProps.thread.composerLocalId and state.isComposerVisible">
+            <t t-if="storeProps.thread and storeProps.thread.composerLocalId and state.isComposerVisible">
                 <Composer
                     class="o_Chatter_composer"
                     areButtonsInline="false"
