@@ -11,12 +11,16 @@ const FormRenderer = require('web.FormRenderer');
 FormRenderer.include({
     async on_attach_callback() {
         this._super(...arguments);
+        // When the view is re-attached (_isInDom is true) and the chatter component already exists
+        // the chatter component needs to be retargeted in the DOM by force mounting.
         if (this._chatterComponent && this._isInDom) {
             await this._forceMountChatterComponent();
         }
     },
     on_detach_callback() {
         this._super(...arguments);
+        // When the view is detached, we totally delete chatter state from store and chatter
+        // component to avoid any problem when view will be reattached
         if (this._chatterComponent) {
             this._deleteChatter();
         }
@@ -45,48 +49,6 @@ FormRenderer.include({
         this._super(...arguments);
         if (this._hasChatter) {
             this._deleteChatter();
-        }
-    },
-    //--------------------------------------------------------------------------
-    // Private (overrides)
-    //--------------------------------------------------------------------------
-    /**
-     * Overrides the function that renders the nodes to return the chatter's $el
-     * for the 'oe_chatter' div node. We just set a boolean to keep track that
-     * the form renderer needs a chatter.
-     *
-     * @override
-     * @private
-     */
-    _renderNode(node) {
-        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            // TODO {xdu} "store" the place where the oe_chatter is
-            this._hasChatter = true;
-            return null;
-        } else {
-            return this._super(...arguments);
-        }
-    },
-    /**
-     * Overrides the function to render the chatter once the form view is rendered.
-     *
-     * @private
-     */
-    async _renderView() {
-        await this._super(...arguments);
-        if (this._hasChatter) {
-            Chatter.env = this.env;
-            if (!this._chatterComponent) {
-                await this._createChatter();
-            } else {
-                if (this._isInDom) {
-                    await this._forceMountChatterComponent();
-                }
-                await this.env.store.dispatch('updateChatter', this._chatterLocalId, {
-                    threadId: this.state.res_id,
-                    threadModel: this.state.model
-                });
-            }
         }
     },
     //--------------------------------------------------------------------------
@@ -138,6 +100,42 @@ FormRenderer.include({
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;
         await this._chatterComponent.mount(this.el);
+    },
+   /**
+     * @override
+     * @private
+     */
+    _renderNode(node) {
+        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
+            // TODO {xdu} "store" the place where the oe_chatter is
+            this._hasChatter = true;
+            return null;
+        } else {
+            return this._super(...arguments);
+        }
+    },
+    /**
+     * Overrides the function to render the chatter once the form view is rendered.
+     *
+     * @override
+     * @private
+     */
+    async _renderView() {
+        await this._super(...arguments);
+        if (this._hasChatter) {
+            Chatter.env = this.env;
+            if (!this._chatterComponent) {
+                await this._createChatter();
+            } else {
+                if (this._isInDom) {
+                    await this._forceMountChatterComponent();
+                }
+                await this.env.store.dispatch('updateChatter', this._chatterLocalId, {
+                    threadId: this.state.res_id,
+                    threadModel: this.state.model
+                });
+            }
+        }
     },
 });
 });
