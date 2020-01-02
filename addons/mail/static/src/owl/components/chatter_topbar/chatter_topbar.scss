@@ -34,7 +34,7 @@
     .o-active {
         color: $o-brand-odoo;
         background-color: lighten(gray('300'), 7%);
-        border-color: $gray-300;
+        border-color: gray('300');
         border-bottom-color: transparent;
         border-top-color: transparent;
     }
