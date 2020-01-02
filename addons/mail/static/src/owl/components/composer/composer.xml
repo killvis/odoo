@@ -75,7 +75,7 @@
                         <t t-if="props.isCompact">
                             <div class="o_Composer_toolButtonSeparator"/>
                         </t>
-                        <div class="o_Composer_inputButtons">
+                        <div class="o_Composer_primaryToolButtons">
                             <EmojisButton
                                 class="o_Composer_button o_Composer_buttonEmojis o_Composer_toolButton"
                                 t-att-class="{ 'o-mobile': storeProps.isMobile }"
@@ -85,7 +85,7 @@
                             <button class="o_Composer_button o_Composer_buttonAttachment o_Composer_toolButton btn btn-secondary fa fa-paperclip" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickAddAttachment" title="Add attachment" type="button" aria-label="Add attachment"/>
                         </div>
                         <t t-if="props.isExpandable">
-                            <div class="o_Composer_otherButtons">
+                            <div class="o_Composer_secondaryToolButtons">
                                 <button class="btn btn-secondary fa fa-expand o_Composer_button o_Composer_buttonFullComposer o_Composer_toolButton" t-att-class="{ 'o-mobile': storeProps.isMobile }" t-on-click="_onClickFullComposer" title="Full composer" type="button" aria-label="Full composer"/>
                             </div>
                         </t>
