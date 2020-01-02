@@ -413,7 +413,6 @@ Composer.props = {
     },
     isCompact: {
         type: Boolean,
-        optional: true,
     },
     isDiscardOnClickAway: {
         type: Boolean,
