@@ -18,10 +18,10 @@
                     class="o_Chatter_composer"
                     areButtonsInline="false"
                     composerLocalId="storeProps.composerLocalId"
+                    hasTextInputSendOnEnterEnabled="false"
                     isCompact="false"
                     isExpandable="true"
                     isLog="state.isComposerLog"
-                    hasTextInputSendOnEnterEnabled="false"
                     t-on-o-message-posted="_onComposerMessagePosted"
                     t-ref="composer"
                 />
