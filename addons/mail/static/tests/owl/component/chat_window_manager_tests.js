@@ -551,7 +551,7 @@ QUnit.test('chat window: state conservation on toggle home menu', async function
     // Set a scroll position to chat window
     document.querySelector(`.o_Thread_messageList`).scrollTop = 142;
     // Set html content of the composer of the chat window
-    let composerTextInputTextArea = document.querySelector(`.o_ComposerTextInputTextArea`);
+    let composerTextInputTextArea = document.querySelector(`.o_ComposerTextInput_textarea`);
     composerTextInputTextArea.focus();
     document.execCommand('insertText', false, 'XDU for the win !');
     // Set attachments of the composer
@@ -577,7 +577,7 @@ QUnit.test('chat window: state conservation on toggle home menu', async function
         142,
         "verify chat window initial scrollTop"
     );
-    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInputTextArea`);
+    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInput_textarea`);
     assert.strictEqual(
         composerTextInputTextArea.value,
         "XDU for the win !",
@@ -596,7 +596,7 @@ QUnit.test('chat window: state conservation on toggle home menu', async function
         142,
         "chat window scrollTop should still be the same (1)"
     );
-    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInputTextArea`);
+    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInput_textarea`);
     assert.strictEqual(
         composerTextInputTextArea.value,
         "XDU for the win !",
@@ -616,7 +616,7 @@ QUnit.test('chat window: state conservation on toggle home menu', async function
         142,
         "chat window scrollTop should still be the same (2)"
     );
-    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInputTextArea`);
+    composerTextInputTextArea = document.querySelector(`.o_ComposerTextInput_textarea`);
     assert.strictEqual(
         composerTextInputTextArea.value,
         "XDU for the win !",
@@ -661,6 +661,7 @@ QUnit.test('open 2 different chat windows: enough screen width', async function 
                 id: 10,
             }],
         },
+        debug: true,
     });
     await this.start({
         async mockRPC(route, args) {

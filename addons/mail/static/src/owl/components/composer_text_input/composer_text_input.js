@@ -23,7 +23,7 @@ class ComposerTextInput extends Component {
         this.storeDispatch = useDispatch();
         this.storeGetters = useGetters();
         this.storeProps = useStore((state, props) => {
-            const composer = state.composers[props.composerLocalId]
+            const composer = state.composers[props.composerLocalId];
             return {
                 isMobile: state.isMobile,
                 composer,
@@ -37,17 +37,19 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Updates the composer text input content when the component is mounted to its defaults values
+     * Update the composer text input content when the component is mounted to its defaults values
      */
     mounted() {
-        this._update();
+
     }
 
     /**
      * Update the composer text input content when composer has changed
      */
     patched() {
-        this._update();
+        this._textareaRef.el.value = this.storeProps.composer.textInputContent;
+        this._updateHeight();
+        this._updateSelectionRange();
     }
 
     //--------------------------------------------------------------------------
@@ -72,7 +74,7 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Returns selection start position
+     * Return selection start position
      *
      * @returns {integer}
      */
@@ -81,32 +83,12 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Returns selection end position
+     * Return selection end position
      *
      * @returns {integer}
      */
     getSelectionEnd() {
         return this._textareaRef.el.selectionEnd;
-    }
-
-    /**
-     * Returns textarea current height
-     *
-     * @returns {integer}
-     */
-    getHeight() {
-        return this._textareaRef.el.style.height;
-    }
-
-    /**
-     * Insert some text content in the textarea.
-     *
-     * @param {string} textContent
-     */
-    insertTextContent(textContent) {
-        let partA = this.getContent().slice(0, this.getSelectionStart());
-        let partB = this.getContent().slice(this.getSelectionEnd(), this.getContent().length);
-        this._textareaRef.el.value = partA + textContent + partB;
     }
 
     /**
@@ -118,20 +100,15 @@ class ComposerTextInput extends Component {
         return this._textareaRef.el.value === "";
     }
 
-    /**
-     * Resets the textarea value of the composer text input
-     */
-    reset() {
-        this._textareaRef.el.value = "";
+    setContent(content){
+        this._textareaRef.el.value = content;
     }
 
     /**
      * @private
      */
     _onInputEditable() {
-        this._textareaRef.el.style.height = "0px";
-        this._textareaRef.el.style.overflow = "auto";
-        this._textareaRef.el.style.height = (this._textareaRef.el.scrollHeight)+"px";
+        this._updateHeight();
         this.trigger('o-input-composer-text-input');
     }
 
@@ -165,7 +142,6 @@ class ComposerTextInput extends Component {
         }
         this.trigger('o-keydown-enter');
         ev.preventDefault();
-        this._textareaRef.el.style.height = "39px";
     }
 
     /**
@@ -181,15 +157,24 @@ class ComposerTextInput extends Component {
     }
 
     /**
+     * Update the textarea selection range based on store values
      *
      * @private
      */
-    _update() {
+    _updateSelectionRange() {
         this._textareaRef.el.setSelectionRange(
             this.storeProps.composer.textInputCursorStart,
             this.storeProps.composer.textInputCursorEnd,
         );
-        this._textareaRef.el.style.height = this.storeProps.composer.textInputHeight;
+    }
+
+    /**
+     * Update the textarea height
+     * @private
+     */
+    _updateHeight() {
+        this._textareaRef.el.style.height = "0px";
+        this._textareaRef.el.style.height = (this._textareaRef.el.scrollHeight)+"px";
     }
 }
 

@@ -358,6 +358,20 @@ const actions = {
         });
     },
     /**
+     * @param content
+     * @return {string}
+     */
+    getHtmlContent({}, content) {
+        //Removing unwanted extra spaces from message
+        let value = _.escape(content).trim();
+        value = value.replace(/(\r|\n){2,}/g, '<br/><br/>');
+        value = value.replace(/(\r|\n)/g, '<br/>');
+
+        // prevent html space collapsing
+        value = value.replace(/ /g, '&nbsp;').replace(/([^>])&nbsp;([^<])/g, '$1 $2');
+        return "<p>" + value + "</p>";
+    },
+    /**
      * @param {Object} param0
      * @param {function} param0.dispatch
      * @param {Object} param0.state
@@ -467,6 +481,19 @@ const actions = {
         state.isMessagingReady = true;
         env.call('bus_service', 'startPolling');
         dispatch('_startLoopFetchPartnerImStatus');
+    },
+    /**
+     * Insert some text content in an other.
+     *
+     * @param {string} initialContent
+     * @param {string} addedContent
+     * @param {integer} selectionStart
+     * @param {integer} selectionEnd
+     */
+    insertTextContent({}, initialContent, addedContent, selectionStart, selectionEnd) {
+        let partA = initialContent.slice(0, selectionStart);
+        let partB = initialContent.slice(selectionEnd, initialContent.length);
+        return partA + addedContent + partB;
     },
     /**
      * Update existing thread or create a new thread.
@@ -864,6 +891,7 @@ const actions = {
                 res_id: thread.id
             }));
         }
+        dispatch('resetComposer', composerLocalId);
     },
     /**
      * Handles redirection to a model and id. Try to handle it in the context
@@ -1011,24 +1039,22 @@ const actions = {
     /**
      * @param {Object} state
      * @param {string} composerLocalId
-     * @param {string} composerContent
-     * @param {integer} composerSelectionStart
-     * @param {integer} composerSelectionEnd
-     * @param {integer} composerHeight
+     * @param {string} textInputContent
+     * @param {integer} textInputCursorStart
+     * @param {integer} textInputCursorEnd
+     * @param {integer} textInputHeight
      */
     saveComposerContent(
         { state },
         composerLocalId,
-        composerContent,
-        composerSelectionStart,
-        composerSelectionEnd,
-        composerHeight,
+        textInputContent,
+        textInputCursorStart,
+        textInputCursorEnd,
     ) {
         Object.assign(state.composers[composerLocalId], {
-            textInputContent : composerContent,
-            textInputCursorStart : composerSelectionStart,
-            textInputCursorEnd : composerSelectionEnd,
-            textInputHeight : composerHeight,
+            textInputContent,
+            textInputCursorStart,
+            textInputCursorEnd,
         });
     },
     /**
@@ -1493,7 +1519,6 @@ const actions = {
             textInputContent: '',
             textInputCursorStart: 0,
             textInputCursorEnd: 0,
-            textInputHeight: "39px",
         };
         if (threadLocalId) {
             const thread = state.threads[threadLocalId];

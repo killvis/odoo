@@ -163,11 +163,9 @@ class Composer extends Component {
         // TODO: take suggested recipients into account
         try {
             await this.storeDispatch('postMessage', this.props.composerLocalId, {
-                htmlContent: this._getTextInputContentAsHtml(this._textInputRef.comp.getContent()),
+                htmlContent: this.storeDispatch('getHtmlContent', this._textInputRef.comp.getContent()),
                 isLog: this.props.isLog,
             });
-            this._textInputRef.comp.reset();
-            this.storeDispatch('resetComposer', this.props.composerLocalId);
             this.storeDispatch('unlinkAttachmentsFromComposer', this.props.composerLocalId);
             // TODO: we might need to remove trigger and use the store to wait for
             // the post rpc to be done
@@ -307,7 +305,13 @@ class Composer extends Component {
      * @param {string} ev.detail.unicode
      */
     _onEmojiSelection(ev) {
-        this._textInputRef.comp.insertTextContent(ev.detail.unicode);
+        this._textInputRef.comp.setContent(this.storeDispatch(
+            'insertTextContent',
+            this._textInputRef.comp.getContent(),
+            ev.detail.unicode,
+            this._textInputRef.comp.getSelectionStart(),
+            this._textInputRef.comp.getSelectionEnd(),
+        ));
     }
 
     /**
@@ -320,9 +324,7 @@ class Composer extends Component {
             this._textInputRef.comp.getContent(),
             this._textInputRef.comp.getSelectionStart(),
             this._textInputRef.comp.getSelectionEnd(),
-            this._textInputRef.comp.getHeight(),
         );
-        this.state.hasTextInputContent = !this._textInputRef.comp.isEmpty();
     }
 
     /**
@@ -349,18 +351,6 @@ class Composer extends Component {
         }
         this._postMessage();
     }
-
-    _getTextInputContentAsHtml(textInputContent) {
-        //Removing unwanted extra spaces from message
-        let value = _.escape(textInputContent).trim();
-        value = value.replace(/(\r|\n){2,}/g, '<br/><br/>');
-        value = value.replace(/(\r|\n)/g, '<br/>');
-
-        // prevent html space collapsing
-        value = value.replace(/ /g, '&nbsp;').replace(/([^>])&nbsp;([^<])/g, '$1 $2');
-        return "<p>" + value + "</p>";
-    }
-
 }
 
 Composer.components = { AttachmentList, DropZone, EmojisButton, FileUploader, TextInput };
