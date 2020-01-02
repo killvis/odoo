@@ -30,6 +30,12 @@ FormRenderer.include({
         this.mailFields = params.mailFields;
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
+        /**
+         * Determine if the form view has a chatter
+         * (i.e. if a div .oe-chatter is detected in the arch)
+         * @type {boolean}
+         * @private
+         */
         this._hasChatter = false;
     },
     //--------------------------------------------------------------------------
