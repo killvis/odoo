@@ -15,9 +15,6 @@ QUnit.module('component', {}, function () {
 QUnit.module('ChatterTopbar', {
     beforeEach() {
         utilsBeforeEach(this);
-        this.createThread = async ({ _model, id }) => {
-            return this.env.store.dispatch('_createThread', { _model, id });
-        };
         this.createChatterTopbar = async (chatterLocalId, otherProps) => {
             ChatterTopBar.env = this.env;
             const defaultProps = {
@@ -62,14 +59,9 @@ QUnit.test('base rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const initialThreadModel = 'res.partner';
-    const initialThreadId = await this.createThread({
-        _model: 'res.partner',
-        id: 100,
-    });
     const chatterLocalId = await this.env.store.dispatch('createChatter', {
-        initialThreadId,
-        initialThreadModel,
+        initialThreadId: 100,
+        initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
     assert.strictEqual(
@@ -135,9 +127,8 @@ QUnit.test('base disabled rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const initialThreadModel = 'res.partner';
     const chatterLocalId = await this.env.store.dispatch('createChatter', {
-        initialThreadModel,
+        initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: true });
     assert.strictEqual(
@@ -202,14 +193,9 @@ QUnit.test('attachment count without attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const initialThreadModel = 'res.partner';
-    const initialThreadId = await this.createThread({
-        _model: 'res.partner',
-        id: 100,
-    });
     const chatterLocalId = await this.env.store.dispatch('createChatter', {
-        initialThreadId,
-        initialThreadModel,
+        initialThreadId: 100,
+        initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
 
@@ -256,14 +242,9 @@ QUnit.test('attachment count with attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const initialThreadModel = 'res.partner';
-    const initialThreadId = await this.createThread({
-        _model: 'res.partner',
-        id: 100,
-    });
     const chatterLocalId = await this.env.store.dispatch('createChatter', {
-        initialThreadId,
-        initialThreadModel,
+        initialThreadId:100,
+        initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
 
