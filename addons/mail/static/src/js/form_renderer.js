@@ -71,7 +71,6 @@ FormRenderer.include({
      * Overrides the function to render the chatter once the form view is rendered.
      *
      * @private
-     * @returns {Promise<void>}
      */
     async _renderView() {
         await this._super(...arguments);
@@ -97,11 +96,10 @@ FormRenderer.include({
      * Create the chatter
      *
      * @private
-     * @returns {Promise<void>}
      */
     async _createChatter() {
         // Generate chatter local id (+ fake thread or start loading real thread)
-        const chatterLocalId = this.env.store.dispatch('createChatter', {
+        const chatterLocalId = await this.env.store.dispatch('createChatter', {
             initialThreadId: this.state.res_id,
             initialThreadModel: this.state.model,
         });
@@ -117,7 +115,6 @@ FormRenderer.include({
      * Delete the chatter component
      *
      * @private
-     * @returns {Promise<void>}
      */
     _deleteChatter() {
         if (this._chatterComponent) {
@@ -137,7 +134,6 @@ FormRenderer.include({
      * but is no more added to the view as the super call to render view
      * re-rendered the view entirely and without this component.
      * @private
-     * @returns {Promise<void>}
      */
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;

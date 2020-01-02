@@ -263,7 +263,7 @@ const actions = {
      * @param {string} param1.initialThreadModel
      * @return {string}
      */
-    createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
+    async createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
         const chatterLocalId = _.uniqueId('o_Chatter');
         const chatter = {
             localId: chatterLocalId,
@@ -272,7 +272,7 @@ const actions = {
             threadModel: initialThreadModel,
         };
         state.chatters[chatterLocalId] = chatter;
-        dispatch('_computeChatter', chatterLocalId, {
+        await dispatch('_computeChatter', chatterLocalId, {
             threadId: initialThreadId,
             threadModel: initialThreadModel,
         });
@@ -1260,7 +1260,6 @@ const actions = {
      * @param {Object} param1
      * @param {string} param1.threadId
      * @param {string} param1.threadModel
-     * @returns {Promise<void>}
      */
     async updateChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel}) {
         const chatter = state.chatters[chatterLocalId];
@@ -1399,7 +1398,6 @@ const actions = {
      * @param {Object} param1
      * @param {string} param1.threadId
      * @param {string} param1.threadModel
-     * @returns {Promise<void>}
      */
     async _computeChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel }){
         const chatter = state.chatters[chatterLocalId];
