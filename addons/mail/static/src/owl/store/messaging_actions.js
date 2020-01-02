@@ -259,7 +259,7 @@ const actions = {
      * @param {Object} param0.getters
      * @param {Object} param0.state
      * @param {Object} param1
-     * @param {string|null} param1.initialThreadId
+     * @param {string} param1.initialThreadId
      * @param {string} param1.initialThreadModel
      * @return {string}
      */
