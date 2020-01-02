@@ -453,11 +453,15 @@ async function pause() {
  * Main function used to make a mocked environment with mocked messaging env.
  *
  * @param {Object} param0
+ * @param {string} [param0.arch] makes only sense when `param0.hasView` is set:
+ *   the arch to use in createView.
  * @param {Object} [param0.archs]
  * @param {boolean} [param0.autoOpenDiscuss=false] makes only sense when
  *   `param0.hasDiscuss` is set: determine whether mounted discuss should be
  *   open initially.
  * @param {boolean} [param0.debug=false]
+ * @param {Object} [param0.data] makes only sense when `param0.hasView` is set:
+ *   the data to use in createView.
  * @param {Object} [param0.discuss={}] makes only sense when `param0.hasDiscuss`
  *   is set: provide data that is passed to discuss widget (= client action) as
  *   2nd positional argument.
@@ -469,6 +473,10 @@ async function pause() {
  *   menu.
  * @param {boolean} [param0.hasView=false] if set, use createView to create a
  *   view instead of a generic widget.
+ * @param {string} [param0.model] makes only sense when `param0.hasView` is set:
+ *   the model to use in createView.
+ * @param {integer} [param0.res_id] makes only sense when `param0.hasView` is set:
+ *   the res_id to use in createView.
  * @param {Object} [param0.services]
  * @param {Object} [param0.session={}]
  * @param {string} [param0.session.name="Admin"]
@@ -477,14 +485,6 @@ async function pause() {
  * @param {integer} [param0.session.uid=2]
  * @param {Object} [param0.View] makes only sense when `param0.hasView` is set:
  *   the View class to use in createView.
- * @param {string} [param0.model] makes only sense when `param0.hasView` is set:
- *   the model to use in createView.
- * @param {Object} [param0.data] makes only sense when `param0.hasView` is set:
- *   the data to use in createView.
- * @param {string} [param0.arch] makes only sense when `param0.hasView` is set:
- *   the arch to use in createView.
- * @param {integer} [param0.res_id] makes only sense when `param0.hasView` is set:
- *   the res_id to use in createView.
  * @param {Object} [param0.viewOptions] makes only sense when `param0.hasView`
  *   is set: the view options to use in createView.
  * @param {...Object} [param0.kwargs]
