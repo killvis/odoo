@@ -322,6 +322,7 @@ const actions = {
     },
     /**
      * Delete a chatter from the store (and the linked thread if chatter has no record)
+     *
      * @param {Object} param0
      * @param {function} param0.dispatch
      * @param {Object} param0.state
