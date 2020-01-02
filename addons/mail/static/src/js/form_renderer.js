@@ -55,8 +55,6 @@ FormRenderer.include({
     // Private
     //--------------------------------------------------------------------------
     /**
-     * Create the chatter
-     *
      * @private
      */
     async _createChatter() {
