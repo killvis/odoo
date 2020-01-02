@@ -69,6 +69,8 @@ class TestNestedTaskUpdate(SavepointCase):
 
     def test_creating_subtask_sale_line_id_on_parent_go_on_child_if_same_commercial_partner(self):
         commercial_partner = self.env['res.partner'].create({'name': "Jémémy"})
+        # Trigger the computation of commercial_partner.commercial_partner (how ironic...)
+        self.env['res.partner'].flush()
         self.partner.parent_id = commercial_partner
         self.user.partner_id.parent_id = commercial_partner
         parent = self.env['project.task'].create({'name': 'parent', 'partner_id': self.partner.id, 'sale_line_id': self.order_line.id})
