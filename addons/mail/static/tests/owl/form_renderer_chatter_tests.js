@@ -148,16 +148,24 @@ QUnit.module('Chatter', {
                 }]
             }
         };
+        this.createView = async (...args) => {
+            const { widget } = await start(...args);
+            this.view = widget;
+            await afterNextRender();
+        };
     },
     afterEach: function () {
         _.debounce = this.underscoreDebounce;
         _.throttle = this.underscoreThrottle;
+        if (this.view) {
+            this.view.destroy();
+        }
     }
 });
 
 QUnit.test('basic chatter rendering', async function (assert) {
     assert.expect(1);
-    const { widget } = await start({
+    await this.createView({
         hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
@@ -191,20 +199,17 @@ QUnit.test('basic chatter rendering', async function (assert) {
         res_id: 2,
     });
 
-    await afterNextRender();
-
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
         "there should be a chatter"
     );
-    widget.destroy();
 });
 
 QUnit.test('chatter updating', async function (assert) {
     assert.expect(7);
 
-    const { widget } = await start({
+    await this.createView({
         hasView: true,
         async mockRPC(route, args) {
             const _super = this._super.bind(this, route, args); // limitation on class.js with async/await
@@ -257,7 +262,6 @@ QUnit.test('chatter updating', async function (assert) {
             <div class="oe_chatter"></div>
         </form>`,
     });
-    await afterNextRender();
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -278,9 +282,6 @@ QUnit.test('chatter updating', async function (assert) {
         "there should be a message"
     );
     assert.verifySteps(['message_fetch_res_id_2']);
-
-    // teardown
-    widget.destroy();
 });
 
 });
