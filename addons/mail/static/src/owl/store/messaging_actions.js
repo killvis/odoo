@@ -133,6 +133,7 @@ const actions = {
      * @param {string} [data.mimetype]
      * @param {string} [data.name]
      * @param {integer} [data.size]
+     * @param {Array} [data.threadLocalIds]
      * @return {string} attachment local Id
      */
     createAttachment({ dispatch, state }, data) {
