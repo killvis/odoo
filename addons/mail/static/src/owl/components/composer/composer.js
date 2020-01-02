@@ -388,9 +388,7 @@ Composer.props = {
     hasSendButton: {
         type: Boolean,
     },
-    hasTextInputSendOnEnterEnabled: {
-        type: Boolean,
-    },
+    hasTextInputSendOnEnterEnabled: Boolean,
     hasThreadName: {
         type: Boolean,
     },
