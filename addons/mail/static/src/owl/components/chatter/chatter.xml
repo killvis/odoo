@@ -5,10 +5,10 @@
         <div class="o_Chatter">
             <ChatterTopbar
                 class="o_Chatter_topbar"
+                chatterLocalId="props.chatterLocalId"
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
                 isDisabled="storeProps.threadIsTemporary"
-                chatterLocalId="props.chatterLocalId"
                 t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                 t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
                 t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
