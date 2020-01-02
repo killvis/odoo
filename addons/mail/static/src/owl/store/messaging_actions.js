@@ -901,8 +901,8 @@ const actions = {
                 model: thread._model,
                 res_id: thread.id
             }));
+            dispatch('_loadNewMessagesOnThread', thread.localId);
         }
-        dispatch('_loadNewMessagesOnThread', thread.localId);
     },
     /**
      * Handles redirection to a model and id. Try to handle it in the context
@@ -1869,6 +1869,7 @@ const actions = {
      * @param {function} param0.dispatch
      * @param {Object} param0.state
      * @param {Object} param1
+     * @param {boolean} [param1.areAttachmentsLoaded=false]
      * @param {string} [param1.channel_type]
      * @param {integer} [param1.counter]
      * @param {integer} [param1.create_uid]
@@ -1878,6 +1879,7 @@ const actions = {
      * @param {boolean} [param1.group_based_subscription]
      * @param {integer} param1.id
      * @param {boolean} [param1.isPinned=true]
+     * @param {boolean} [param1.isTemporary=false]
      * @param {boolean} [param1.is_minimized]
      * @param {boolean} [param1.is_moderator]
      * @param {boolean} [param1.mass_mailing]
