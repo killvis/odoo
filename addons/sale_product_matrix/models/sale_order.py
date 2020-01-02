@@ -99,7 +99,7 @@ class SaleOrder(models.Model):
                     new_lines.append((0, 0, dict(
                         default_so_line_vals,
                         product_id=product.id,
-                        product_uom_id=product.uom_id.id,
+                        product_uom=product.uom_id.id,
                         product_uom_qty=qty,
                         product_no_variant_attribute_value_ids=no_variant_attribute_values.ids)
                     ))
