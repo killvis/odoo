@@ -193,14 +193,8 @@ FileUploader.props = {
         type: Object,
         optional: true,
     },
-    uploadId: {
-        type: Number,
-        optional: true
-    },
-    uploadModel: {
-        type: String,
-        optional: true
-    }
+    uploadId: Number,
+    uploadModel: String,
 };
 
 FileUploader.template = 'mail.component.FileUploader';

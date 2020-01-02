@@ -698,10 +698,7 @@ ComposerTextInput.defaultProps = {
 };
 
 ComposerTextInput.props = {
-    hasSendOnEnterEnabled: {
-        type: Boolean,
-        optional: true
-    },
+    hasSendOnEnterEnabled: Boolean,
     initialHtmlContent: {
         type: String,
         optional: true,
