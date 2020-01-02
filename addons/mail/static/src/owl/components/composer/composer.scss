@@ -123,7 +123,7 @@
 .o_Composer_toolButtons {
     display: flex;
 
-    &:not(.o-composer-is-compact){
+    &:not(.o-composer-is-compact) {
         flex-direction: row;
         justify-content: space-between;
         flex: 100%;
