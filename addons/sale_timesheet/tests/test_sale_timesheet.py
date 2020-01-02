@@ -4,10 +4,10 @@ from datetime import date, timedelta
 
 from odoo.tools import float_is_zero
 from odoo.exceptions import UserError
-
+from odoo.tests import tagged
 from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheetNoChart
 
-
+@tagged('caca')
 class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
     """ This test suite provide tests for the 3 main flows of selling services:
             - Selling services based on ordered quantities
@@ -229,6 +229,9 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
 
         # invoice SO
         invoice1 = sale_order._create_invoices()
+        print (invoice1.amount_total, so_line_deliver_global_project.price_unit * 10.5)
+        if not float_is_zero(invoice1.amount_total - so_line_deliver_global_project.price_unit * 10.5, precision_digits=2):
+            import pdb; pdb.set_trace() 
         self.assertTrue(float_is_zero(invoice1.amount_total - so_line_deliver_global_project.price_unit * 10.5, precision_digits=2), 'Sale: invoice generation on timesheets product is wrong')
         self.assertEqual(timesheet1.timesheet_invoice_id, invoice1, "The timesheet1 should not be linked to the invoice 1, as we are in delivered quantity (even if invoice is in draft")
         with self.assertRaises(UserError):  # We can not modify timesheet linked to invoice (even draft ones)
