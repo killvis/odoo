@@ -2160,7 +2160,10 @@ const actions = {
                 threadLocalIds: [threadLocalId],
             }, attachmentData)));
         }
-        await dispatch('_updateThread', threadLocalId, { attachmentLocalIds, areAttachmentsLoaded: true });
+        await dispatch('_updateThread', threadLocalId, {
+            areAttachmentsLoaded: true,
+            attachmentLocalIds,
+        });
         return attachmentLocalIds;
     },
     /**
