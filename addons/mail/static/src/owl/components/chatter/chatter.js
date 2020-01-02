@@ -17,8 +17,8 @@ class Chatter extends Component {
     constructor(...args) {
         super(...args);
         this.state = useState({
-            isComposerLog: false,
             isAttachmentBoxVisible: false,
+            isComposerLog: false,
             isComposerVisible: false,
         });
         this.storeDispatch = useDispatch();
