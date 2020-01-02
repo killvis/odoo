@@ -140,10 +140,9 @@ QUnit.test('base rendering when chatter has no record', async function (assert) 
         1,
         "should have a thread in the chatter"
     );
-    assert.strictEqual(
-        document.querySelector(`.o_Chatter_thread`).dataset.threadLocalId,
-        'res.partner_-1',
-        'thread should have a temporary thread local id'
+    assert.ok(
+        document.querySelector(`.o_Chatter_thread`).classList.contains('o-is-temporary'),
+        "thread should have a temporary thread local id"
     );
     assert.strictEqual(
         document.querySelectorAll(`.o_Message`).length,
