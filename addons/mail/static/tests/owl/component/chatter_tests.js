@@ -177,7 +177,10 @@ QUnit.test('base rendering when chatter has attachments', async function (assert
             return this._super(...arguments);
         }
     });
-    const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadId: 100, initialThreadModel: 'res.partner' });
+    const chatterLocalId = await this.env.store.dispatch('createChatter', {
+        initialThreadId: 100,
+        initialThreadModel: 'res.partner'
+    });
     await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
