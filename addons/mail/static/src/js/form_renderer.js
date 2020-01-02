@@ -60,17 +60,13 @@ FormRenderer.include({
      * @private
      */
     async _createChatter() {
-        // Generate chatter local id (+ fake thread or start loading real thread)
         const chatterLocalId = await this.env.store.dispatch('createChatter', {
             initialThreadId: this.state.res_id,
             initialThreadModel: this.state.model,
         });
         this._chatterLocalId = chatterLocalId;
-
-        // Create chatter component and mount it
         this._chatterComponent = new Chatter(null, { chatterLocalId });
         await this._chatterComponent.mount(this.el); // options {position: 'self'} to replace {xdu}
-
         // TODO self._handleAttributes($el, node); ??
     },
     /**
