@@ -1855,7 +1855,6 @@ const actions = {
             body: _t("Creating a new record..."),
             id: getMessageNextTemporaryId(),
             isTemporary: true,
-            threadLocalIds: [threadLocalId],
         });
         dispatch('_linkMessageToThread', { messageLocalId, threadLocalId });
         const thread = state.threads[threadLocalId];
