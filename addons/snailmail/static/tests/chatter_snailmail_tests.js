@@ -22,8 +22,6 @@ var getArch = function () {
 
 QUnit.module('snailmail', {}, function () {
 
-// FIXME {xdu} Tests skipped as module has to be readapted due to the use of owl.
-
 QUnit.module('Chatter', {
     before: function () {
         this.services = mailTestUtils.getMailServices();
@@ -108,6 +106,7 @@ QUnit.module('Chatter', {
     }
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Sent', async function (assert) {
     assert.expect(7);
 
@@ -144,6 +143,7 @@ QUnit.skip('Sent', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Canceled', async function (assert) {
     assert.expect(7);
 
@@ -179,6 +179,7 @@ QUnit.skip('Canceled', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Pending', async function (assert) {
     assert.expect(7);
 
@@ -215,6 +216,7 @@ QUnit.skip('Pending', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('No Price Available', async function (assert) {
     assert.expect(11);
 
@@ -269,6 +271,7 @@ QUnit.skip('No Price Available', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Format Error', async function (assert) {
     assert.expect(8);
 
@@ -319,6 +322,7 @@ QUnit.skip('Format Error', async function (assert) {
     testUtils.mock.unpatch(ThreadWidget);
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Credit Error', async function (assert) {
     assert.expect(14);
 
@@ -387,6 +391,7 @@ QUnit.skip('Credit Error', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Trial Error', async function (assert) {
     assert.expect(14);
 
@@ -456,6 +461,7 @@ QUnit.skip('Trial Error', async function (assert) {
     form.destroy();
 });
 
+// FIXME {xdu} Test skipped as module has to be readapted due to the use of owl.
 QUnit.skip('Missing Required Fields', async function (assert) {
     assert.expect(8);
 
