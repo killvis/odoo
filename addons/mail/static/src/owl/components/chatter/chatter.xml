@@ -8,16 +8,16 @@
                 chatterLocalId="props.chatterLocalId"
                 isComposerLog="state.isComposerLog"
                 isComposerVisible="state.isComposerVisible"
-                isDisabled="storeProps.threadIsTemporary"
+                isDisabled="storeProps.thread.isTemporary"
                 t-on-o-chatter-topbar-log-note="_onTopbarLogNote"
                 t-on-o-chatter-topbar-select-attachment="_onTopbarSelectAttachment"
                 t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
             />
-            <t t-if="storeProps.composerLocalId and state.isComposerVisible">
+            <t t-if="storeProps.thread.composerLocalId and state.isComposerVisible">
                 <Composer
                     class="o_Chatter_composer"
                     areButtonsInline="false"
-                    composerLocalId="storeProps.composerLocalId"
+                    composerLocalId="storeProps.thread.composerLocalId"
                     hasTextInputSendOnEnterEnabled="false"
                     isCompact="false"
                     isExpandable="true"
@@ -39,7 +39,7 @@
                     haveMessagesAuthorRedirect="true"
                     order="'desc'"
                     threadLocalId="storeProps.chatter.threadLocalId"
-                    t-att-class="{ 'o-is-temporary': storeProps.threadIsTemporary }"
+                    t-att-class="{ 'o-is-temporary': storeProps.thread.isTemporary }"
                     t-ref="thread"
                 />
             </t>
