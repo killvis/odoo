@@ -383,11 +383,12 @@ const actions = {
         });
         const attachmentLocalIds = [];
         for (const attachmentData of attachmentsData) {
-            attachmentLocalIds.push(await dispatch('_insertAttachment', Object.assign({
+            const attachmentLocalId = await dispatch('_insertAttachment', Object.assign({
                 res_id: thread.id,
                 res_model: thread.model,
                 threadLocalIds: [threadLocalId],
-            }, attachmentData)));
+            }, attachmentData));
+            attachmentLocalIds.push(attachmentLocalId);
         }
         await dispatch('_updateThread', threadLocalId, { attachmentLocalIds });
         return attachmentLocalIds;
