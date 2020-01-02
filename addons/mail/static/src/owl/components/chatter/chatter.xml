@@ -14,19 +14,17 @@
                 t-on-o-chatter-topbar-send-message="_onTopbarSendMessage"
             />
             <t t-if="storeProps.composerLocalId and state.isComposerVisible">
-                <div class="o_Chatter_composerContainer">
-                    <Composer
-                        class="o_Chatter_composer"
-                        areButtonsInline="false"
-                        composerLocalId="storeProps.composerLocalId"
-                        isCompact="false"
-                        isExpandable="true"
-                        isLog="state.isComposerLog"
-                        hasTextInputSendOnEnterEnabled="false"
-                        t-on-o-message-posted="_onComposerMessagePosted"
-                        t-ref="composer"
-                    />
-                </div>
+                <Composer
+                    class="o_Chatter_composer"
+                    areButtonsInline="false"
+                    composerLocalId="storeProps.composerLocalId"
+                    isCompact="false"
+                    isExpandable="true"
+                    isLog="state.isComposerLog"
+                    hasTextInputSendOnEnterEnabled="false"
+                    t-on-o-message-posted="_onComposerMessagePosted"
+                    t-ref="composer"
+                />
             </t>
             <t t-if="state.isAttachmentBoxVisible">
                 <AttachmentBox
