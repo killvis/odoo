@@ -15,7 +15,7 @@ QUnit.module('component', {}, function () {
 QUnit.module('Chatter', {
     beforeEach() {
         utilsBeforeEach(this);
-        this.createChatter = async ({ chatterLocalId }, otherProps) => {
+        this.createChatterComponent = async ({ chatterLocalId }, otherProps) => {
             Chatter.env = this.env;
             this.chatter = new Chatter(null, Object.assign({ chatterLocalId }, otherProps));
             await this.chatter.mount(this.widget.el);
@@ -82,7 +82,7 @@ QUnit.test('base rendering when chatter has no attachment', async function (asse
         }
     });
     const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadId: 100, initialThreadModel: 'res.partner' });
-    await this.createChatter({ chatterLocalId });
+    await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -119,7 +119,7 @@ QUnit.test('base rendering when chatter has no record', async function (assert) 
     assert.expect(7);
     await this.start({});
     const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadModel: 'res.partner' });
-    await this.createChatter({ chatterLocalId });
+    await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -179,7 +179,7 @@ QUnit.test('base rendering when chatter has attachments', async function (assert
         }
     });
     const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadId: 100, initialThreadModel: 'res.partner' });
-    await this.createChatter({ chatterLocalId });
+    await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -219,7 +219,7 @@ QUnit.test('show attachment box', async function (assert) {
         }
     });
     const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadId: 100, initialThreadModel: 'res.partner' });
-    await this.createChatter({ chatterLocalId });
+    await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
@@ -260,7 +260,7 @@ QUnit.test('composer show/hide on log note/send message', async function (assert
 
     await this.start();
     const chatterLocalId = await this.env.store.dispatch('createChatter', { initialThreadId: 100, initialThreadModel: 'res.partner' });
-    await this.createChatter({ chatterLocalId });
+    await this.createChatterComponent({ chatterLocalId });
     assert.strictEqual(
         document.querySelectorAll(`.o_Chatter`).length,
         1,
