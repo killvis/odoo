@@ -239,7 +239,6 @@ class SaleOrder(models.Model):
 
     @api.depends('partner_id', 'company_id')
     def _compute_partner_information(self):
-        print("compute_partner_information")
         for order in self:
             order = order.with_company(order.company_id)
             partner = order.partner_id
