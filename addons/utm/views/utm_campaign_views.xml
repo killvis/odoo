@@ -45,7 +45,7 @@
         <field name="name">utm.campaign.view.tree</field>
         <field name="model">utm.campaign</field>
         <field name="arch" type="xml">
-            <tree string="UTM Campaigns">
+            <tree string="UTM Campaigns" multi_edit="1">
                 <field name="name"/>
                 <field name="user_id"/>
                 <field name="stage_id"/>
