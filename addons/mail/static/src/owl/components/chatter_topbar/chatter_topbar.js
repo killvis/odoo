@@ -2,7 +2,6 @@ odoo.define('mail.component.ChatterTopbar', function (require) {
 'use strict';
 
 const { Component } = owl;
-const { useState } = owl.hooks;
 const useStore = require('mail.hooks.useStore');
 
 class ChatterTopbar extends Component {
