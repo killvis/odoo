@@ -1161,17 +1161,20 @@ class StockMove(SavepointCase):
             'product_uom_qty': 4.0,
         })
         move._action_confirm()
-        move.with_context(debug=True)._action_assign()
+        move._action_assign()
         self.assertEqual(len(move + move.split_move_ids), 3)  # two reserved moves, one unreserved
         self.assertEqual(move.product_uom_qty, 2)
         for split_move in move.split_move_ids:
             self.assertEqual(split_move.reserved_qty, 1)
             self.assertEqual(split_move.product_uom_qty, 1)
         self.env['stock.quant']._update_available_quantity(self.product_serial, self.stock_location, 4.0)
-        move.with_context(debug=True)._action_assign()
+        move._action_assign()
         self.assertEqual(len(move + move.split_move_ids), 4)
+        for move in move + move.split_move_ids:
+            self.assertEqual(move.reserved_qty, 1)
+            self.assertEqual(move.product_uom_qty, 1)
+            self.assertEqual(move.product_qty, 1)
 
-    @unittest.skip(reason='unskip me')
     def test_availability_6(self):
         """ Check that, in the scenario where a move is in a bigger uom than the uom of the quants
         and this uom only allows entire numbers, we don't make a partial reservation when the
@@ -1214,22 +1217,21 @@ class StockMove(SavepointCase):
 
         # Check it isn't possible to set any value to quantity_done
         with self.assertRaises(UserError):
-            move.quantity_done = 0.1
+            move.done_qty= 0.1
             move._action_done()
 
         with self.assertRaises(UserError):
-            move.quantity_done = 1.1
+            move.done_qty = 1.1
             move._action_done()
 
         with self.assertRaises(UserError):
-            move.quantity_done = 0.9
+            move.done_qty = 0.9
             move._action_done()
 
-        move.quantity_done = 1
+        move.done_qty = 1
         move._action_done()
         self.assertEqual(self.env['stock.quant']._get_available_quantity(self.product, self.customer_location), 12.0)
 
-    @unittest.skip(reason='unskip me')
     def test_availability_7(self):
         """ Check that, in the scenario where a move is in a bigger uom than the uom of the quants
         and this uom only allows entire numbers, we only reserve quantity honouring the uom's
@@ -1243,7 +1245,7 @@ class StockMove(SavepointCase):
             lot_id = self.env['stock.production.lot'].create({
                 'name': 'lot%s' % str(i),
                 'product_id': self.product_serial.id,
-            'company_id': self.env.company.id,
+                'company_id': self.env.company.id,
             })
             self.env['stock.quant']._update_available_quantity(self.product_serial, self.stock_location, 1.0, lot_id=lot_id)
 
@@ -1258,17 +1260,19 @@ class StockMove(SavepointCase):
         })
         move._action_confirm()
         move._action_assign()
-        self.assertEqual(move.state, 'assigned')
-        self.assertEqual(len(move.move_line_ids.mapped('product_uom_id')), 1)
-        self.assertEqual(move.move_line_ids.mapped('product_uom_id'), self.uom_unit)
+        for move in move + move.split_move_ids:
+            self.assertEqual(move.state, 'assigned')
+            self.assertEqual(move.reserved_qty, 1)
+            self.assertEqual(move.product_uom, self.uom_unit)
+            move.done_qty = 1
 
-        for move_line in move.move_line_ids:
-            move_line.qty_done = 1
-        move._action_done()
+        (move + move.split_move_ids).with_context(debug=True)._action_done()
 
-        self.assertEqual(move.product_uom_qty, 1)
-        self.assertEqual(move.product_uom.id, self.uom_dozen.id)
-        self.assertEqual(move.state, 'done')
+        for move in move + move.split_move_ids:
+            self.assertEqual(move.state, 'done')
+            self.assertEqual(move.reserved_qty, 0)
+            self.assertEqual(move.product_qty, 1)
+
         self.assertEqual(self.env['stock.quant']._get_available_quantity(self.product_serial, self.customer_location), 12.0)
         self.assertEqual(len(self.gather_relevant(self.product_serial, self.customer_location)), 12)
 

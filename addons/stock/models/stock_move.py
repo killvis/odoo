@@ -204,6 +204,7 @@ class StockMove(models.Model):
         'res.partner', 'From Owner',
         check_company=True,
         help="When validating the transfer, the products will be taken from this owner.")
+    # add origin_location_id, origin_location_dest_id
 
     @api.onchange('product_id', 'picking_type_id')
     def onchange_product(self):
@@ -1251,6 +1252,7 @@ class StockMove(models.Model):
                         to_update['lot_id'] = reserved_quant.lot_id.id
                         to_update['owner_id'] = reserved_quant.owner_id.id
                         to_update['product_uom_qty'] = 1
+                        to_update['product_uom'] = reserved_quant.product_uom_id.id
                         quantity -= 1
                     for i in range(0, int(quantity)):
                         move_lines_per_move[self.id].append(dict(self._action_assign_prepare_move_vals(quantity=1, reserved_quant=reserved_quant), to_create=1))
@@ -1311,6 +1313,7 @@ class StockMove(models.Model):
                 lot_id=reserved_quant.lot_id.id or False,
                 package_id=reserved_quant.package_id.id or False,
                 owner_id=reserved_quant.owner_id.id or False,
+                product_uom=reserved_quant.product_uom_id.id,
             )
         return {**self_vals, **vals}
 
@@ -1678,8 +1681,8 @@ class StockMove(models.Model):
             self.write({'lot_id': lot.id})
 
     def _action_done(self, cancel_backorder=False):
-#        if self.env.context.get('debug'):
-#            import pudb; pudb.set_trace()
+        if self.env.context.get('debug'):
+            import pudb; pudb.set_trace()
         self.filtered(lambda move: move.state == 'draft')._action_confirm()  # MRP allows scrapping draft moves
         moves = self.exists().filtered(lambda x: x.state not in ('done', 'cancel'))
         moves_todo = self.env['stock.move']
@@ -1753,8 +1756,8 @@ class StockMove(models.Model):
 
         :param ml_to_ignore: recordset of `stock.move.line` that should NOT be unreserved
         """
-        if self.env.context.get('debug'):
-            import pudb; pudb.set_trace()
+#        if self.env.context.get('debug'):
+#            import pudb; pudb.set_trace()
         self.ensure_one()
 
         if ml_to_ignore is None:
