@@ -119,7 +119,7 @@ class StockScrap(models.Model):
             'product_id': self.product_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': self.scrap_qty,
-            'reserved_qty': 0,
+            'reserved_uom_qty': 0,
             'scrapped': True,
             'state': 'draft',
         }

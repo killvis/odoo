@@ -182,6 +182,10 @@ class StockMove(models.Model):
     origin_move_id = fields.Many2one('stock.move')
     split_move_ids = fields.One2many('stock.move', 'origin_move_id')
     reserved_qty = fields.Float()
+    reserved_uom_qty = fields.Float(
+        'Real Quantity', compute='_compute_reserved_uom_qty',# inverse='_set_product_qty',
+        digits=0, store=True, compute_sudo=True,
+        help='Reserved Quantity in the UoM of the move')
     done_qty = fields.Float()
     lot_name = fields.Char('Lot/Serial Number Name')
     lot_id = fields.Many2one(
@@ -297,6 +301,13 @@ class StockMove(models.Model):
         for move in self:
             move.product_qty = move.product_uom._compute_quantity(
                 move.product_uom_qty, move.product_id.uom_id, rounding_method=rounding_method)
+
+    @api.depends('product_id', 'product_uom', 'reserved_qty')
+    def _compute_reserved_uom_qty(self):
+        rounding_method = 'HALF-UP'
+        for move in self:
+            move.reserved_uom_qty = move.product_id.uom_id._compute_quantity(
+                move.reserved_qty, move.product_uom, rounding_method=rounding_method)
 
     def _get_move_lines(self):
         """ This will return the move lines to consider when applying _quantity_done_compute on a stock.move.
@@ -1183,6 +1194,8 @@ class StockMove(models.Model):
     def _update_reserved_quantity(self, need, available_quantity, location_id, lot_id=None, package_id=None, owner_id=None, strict=True, move_lines_per_move=None):
         """ Create or update move lines.
         """
+#        if self.env.context.get('debug'):
+#            import pudb; pudb.set_trace()
         self.ensure_one()
 
         if not lot_id:
@@ -1230,7 +1243,7 @@ class StockMove(models.Model):
                     to_update = move_line
                     break
             if to_update:
-                to_update['reserved_qty'] += self.product_id.uom_id._compute_quantity(quantity, self.env['uom.uom'].browse(to_update['product_uom']), rounding_method='HALF-UP')
+                to_update['reserved_qty'] += quantity
                 to_update['to_write'] = 1
                 to_update['package_id'] = reserved_quant.package_id.id
                 to_update['lot_id'] = reserved_quant.lot_id.id
@@ -1612,9 +1625,10 @@ class StockMove(models.Model):
 
                 # if this move line is force assigned, unreserve elsewhere if needed
                 if not move._should_bypass_reservation() and float_compare(move.done_qty, move.reserved_qty, precision_rounding=rounding) > 0:
-                    extra_qty = move.done_qty - move.reserved_qty
-#                    if self.env.context.get('debug'):
-#                        import pudb; pudb.set_trace()
+                    extra_qty = move.done_qty - move.reserved_uom_qty
+                    extra_qty = move.product_uom._compute_quantity(extra_qty, move.product_id.uom_id)
+                    if self.env.context.get('debug'):
+                        import pudb; pudb.set_trace()
                     move._free_reservation(move.product_id, move.location_id, extra_qty, lot_id=move.lot_id, package_id=move.package_id, owner_id=move.owner_id, ml_to_ignore=done)
                 # unreserve what's been reserved
                 if not move._should_bypass_reservation() and move.product_id.type == 'product' and move.reserved_qty:

@@ -3834,13 +3834,15 @@ class StockMove(SavepointCase):
         move1._action_confirm()
         move1._action_assign()
         self.assertEqual(move1.state, 'assigned')
+        self.assertEqual(move1.reserved_qty, 1)
+        self.assertEqual(move1.reserved_uom_qty, 1)
 
         scrap = self.env['stock.scrap'].create({
             'product_id': self.product.id,
             'product_uom_id':self.product.uom_id.id,
             'scrap_qty': 1,
         })
-        scrap.with_context(debug=True).do_scrap()
+        scrap.do_scrap()
         self.assertEqual(move1.state, 'confirmed')
         self.assertEqual(move1.reserved_qty, 0)
 
@@ -3915,7 +3917,8 @@ class StockMove(SavepointCase):
         })
         move1._action_confirm()
         move1._action_assign()
-        self.assertEqual(move1.reserved_qty, 0.33)
+        self.assertEqual(move1.reserved_qty, 3.96)
+        self.assertEqual(move1.reserved_uom_qty, 0.33)
 
         # scrap a unit
         scrap = self.env['stock.scrap'].create({
@@ -3924,7 +3927,7 @@ class StockMove(SavepointCase):
             'scrap_qty': 1,
             'picking_id': picking.id,
         })
-        scrap.with_context(debug=True).action_validate()
+        scrap.action_validate()
 
         self.assertEqual(scrap.state, 'done')
         self.assertEqual(move1.reserved_qty, 0.25)
