@@ -38,6 +38,7 @@ EMPTY_DICT = frozendict()
 
 RENAMED_ATTRS = [('select', 'index'), ('digits_compute', 'digits')]
 DEPRECATED_ATTRS = [("oldname", "use an upgrade script instead.")]
+TRANSLATABLE_ATTRS = set(['string', 'help'])
 
 IR_MODELS = (
     'ir.model', 'ir.model.data', 'ir.model.fields', 'ir.model.fields.selection',
@@ -339,6 +340,13 @@ class Field(MetaField('DummyField', (object,), {})):
         if not (self.args.get('automatic') or self.args.get('manual')):
             # magic and custom fields do not inherit from parent classes
             for field in reversed(resolve_mro(model, name, self._can_setup_from)):
+                if (set(field.args) & TRANSLATABLE_ATTRS & set(attrs)):
+                    conflict = list(set(field.args) & TRANSLATABLE_ATTRS & set(attrs))[0]
+                    was, now = attrs[conflict], field.args[conflict]
+                    if was != now:
+                        _logger.warning("Field %s:%s: parameter %r is set twice, was %r and is now %r",
+                                        model._name, name, conflict, was, now)
+
                 attrs.update(field.args)
                 if '_module' in field.args:
                     modules.add(field.args['_module'])
