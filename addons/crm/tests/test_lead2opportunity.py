@@ -1,9 +1,85 @@
 # -*- coding: utf-8 -*-
 
-from .common import TestCrmCommon
+from unittest.mock import patch
+
+from odoo.addons.crm.tests.common import TestCrmCommon
+from odoo.fields import Datetime
+from odoo.tests.common import tagged, users
 
 
+@tagged('lead_manage')
 class TestLead2opportunity2win(TestCrmCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestLead2opportunity2win, cls).setUpClass()
+
+        cls.sales_team_convert = cls.env['crm.team'].create({
+            'name': 'Convert Sales Team',
+            'alias_name': False,
+            'use_leads': True,
+            'use_opportunities': True,
+            'company_id': False,
+            'user_id': cls.user_sales_manager.id,
+            'member_ids': [(4, cls.user_sales_salesman.id)],
+        })
+        cls.lead_1.write({'date_open': Datetime.from_string('2020-01-15 11:30:00')})
+
+        cls.crm_lead_dt_patcher = patch('odoo.addons.crm.models.crm_lead.fields.Datetime', wraps=Datetime)
+        cls.crm_lead_dt_mock = cls.crm_lead_dt_patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.crm_lead_dt_patcher.stop()
+        super(TestLead2opportunity2win, cls).tearDownClass()
+
+    @users('user_sales_manager')
+    def test_lead_convert_convert(self):
+        date = Datetime.from_string('2020-01-20 16:00:00')
+        self.crm_lead_dt_mock.now.return_value = date
+
+        self.assertFalse(self.lead_1.date_conversion)
+        self.assertEqual(self.lead_1.date_open, Datetime.from_string('2020-01-15 11:30:00'))
+
+        convert = self.env['crm.lead2opportunity.partner'].with_context({
+            'active_model': 'crm.lead',
+            'active_id': self.lead_1.id,
+            'active_ids': self.lead_1.ids,
+        }).create({})
+
+        # test internals of convert wizard
+        # self.assertEqual(convert.lead_id, self.lead_1)
+        self.assertEqual(convert.user_id, self.lead_1.user_id)
+        self.assertEqual(convert.team_id, self.lead_1.team_id)
+        self.assertFalse(convert.partner_id)
+        self.assertEqual(convert.name, 'convert')
+        self.assertEqual(convert.action, 'create')
+
+        convert.write({'user_id': self.user_sales_salesman.id})
+        convert._onchange_user()
+        self.assertEqual(convert.user_id, self.user_sales_salesman)
+        self.assertEqual(convert.team_id, self.sales_team_convert)
+
+        convert.action_apply()
+        self.assertEqual(self.lead_1.type, 'opportunity')
+
+    @users('user_sales_manager')
+    def test_lead_convert_various(self):
+        self.lead_1.write({'contact_name': False})
+
+        convert = self.env['crm.lead2opportunity.partner'].with_context({
+            'active_model': 'crm.lead',
+            'active_id': self.lead_1.id,
+        }).create({})
+        self.assertEqual(convert.action, 'nothing')
+
+        self.lead_1.write({'partner_id': self.contact_1.id})
+
+        convert = self.env['crm.lead2opportunity.partner'].with_context({
+            'active_model': 'crm.lead',
+            'active_id': self.lead_1.id,
+        }).create({})
+        self.assertEqual(convert.action, 'exist')
 
     def test_lead2opportunity2win(self):
         """ Tests for Test Lead 2 opportunity 2 win """
