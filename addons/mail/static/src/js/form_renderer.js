@@ -32,6 +32,8 @@ FormRenderer.include({
         this._super(...arguments);
         this.env = this.call('messaging', 'getMessagingEnv');
         this.mailFields = params.mailFields;
+        // Do not load chatter in form view dialogs
+        this._preventChatterLoad = params.fromFormViewDialog;
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         /**
@@ -65,7 +67,6 @@ FormRenderer.include({
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
         await this._chatterComponent.mount(this.el); // options {position: 'self'} to replace {xdu}
-        // TODO self._handleAttributes($el, node); ??
     },
     /**
      * Delete the chatter component
@@ -116,7 +117,8 @@ FormRenderer.include({
      */
     async _renderView() {
         await this._super(...arguments);
-        if (this._hasChatter) {
+
+        if (this._hasChatter && !this._preventChatterLoad) {
             Chatter.env = this.env;
             if (!this._chatterComponent) {
                 await this._createChatter();
