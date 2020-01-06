@@ -3888,7 +3888,6 @@ class StockMove(SavepointCase):
         scrapped_move.quantity_done = 8
         self.assertEqual(scrap.scrap_qty, 8, 'Scrap quantity is not updated.')
 
-    @unittest.skip(reason="pour bientot")
     def test_scrap_5(self):
         """ Scrap the product of a reserved move line where the product is reserved in another
         unit of measure. Check that the move line is correctly updated after the scrap.
@@ -3916,7 +3915,7 @@ class StockMove(SavepointCase):
         })
         move1._action_confirm()
         move1._action_assign()
-        self.assertEqual(move1.reserved_availability, 0.33)
+        self.assertEqual(move1.reserved_qty, 0.33)
 
         # scrap a unit
         scrap = self.env['stock.scrap'].create({
@@ -3925,10 +3924,10 @@ class StockMove(SavepointCase):
             'scrap_qty': 1,
             'picking_id': picking.id,
         })
-        scrap.action_validate()
+        scrap.with_context(debug=True).action_validate()
 
         self.assertEqual(scrap.state, 'done')
-        self.assertEqual(move1.reserved_availability, 0.25)
+        self.assertEqual(move1.reserved_qty, 0.25)
 
     def test_scrap_6(self):
         """ Check that scrap correctly handle UoM. """

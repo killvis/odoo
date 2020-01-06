@@ -146,7 +146,7 @@ class StockMove(models.Model):
     reserved_availability = fields.Float(
         'Quantity Reserved', compute='_compute_reserved_availability',
         digits='Product Unit of Measure',
-        readonly=True, help='Quantity that has already been reserved for this move')
+        readonly=True, help='Quantity that has already been reserved for this move')  # FIXME SLE: to remove?
     availability = fields.Float(
         'Forecasted Quantity', compute='_compute_product_availability',
         readonly=True, help='Quantity in stock that can still be reserved for this move')
@@ -1728,8 +1728,8 @@ class StockMove(models.Model):
 
         :param ml_to_ignore: recordset of `stock.move.line` that should NOT be unreserved
         """
-#        if self.env.context.get('debug'):
-#            import pudb; pudb.set_trace()
+        if self.env.context.get('debug'):
+            import pudb; pudb.set_trace()
         self.ensure_one()
 
         if ml_to_ignore is None:
