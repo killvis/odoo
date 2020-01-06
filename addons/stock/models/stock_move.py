@@ -1194,8 +1194,6 @@ class StockMove(models.Model):
     def _update_reserved_quantity(self, need, available_quantity, location_id, lot_id=None, package_id=None, owner_id=None, strict=True, move_lines_per_move=None):
         """ Create or update move lines.
         """
-#        if self.env.context.get('debug'):
-#            import pudb; pudb.set_trace()
         self.ensure_one()
 
         if not lot_id:
@@ -1236,32 +1234,43 @@ class StockMove(models.Model):
             taken_quantity = 0
 
         # Find a candidate move line to update or create a new one.
+        tracking = self.product_id.tracking
         for reserved_quant, quantity in quants:
-            to_update = False
-            for move_line in move_lines_per_move[self.id]:
-                if self._reservation_is_updatable(move_line, quantity, reserved_quant):
-                    to_update = move_line
-                    break
-            if to_update:
-                to_update['reserved_qty'] += quantity
-                to_update['to_write'] = 1
-                to_update['package_id'] = reserved_quant.package_id.id
-                to_update['lot_id'] = reserved_quant.lot_id.id
-                to_update['owner_id'] = reserved_quant.owner_id.id
-            else:
-                if self.product_id.tracking == 'serial':
-                    candidate = list(filter(lambda m: m['id'] == self.id, move_lines_per_move[self.id]))
-                    if candidate and candidate[0] and candidate[0]['reserved_qty'] == 0:
-                        candidate[0]['reserved_qty'] += 1
-                        candidate[0]['to_write'] = 1
-                        # TODO SLE: call prepare move vals?
-                        candidate[0]['package_id'] = reserved_quant.package_id.id
-                        candidate[0]['lot_id'] = reserved_quant.lot_id.id
-                        candidate[0]['owner_id'] = reserved_quant.owner_id.id
+            if tracking == 'serial':
+                # two cases: edit or not `self`
+                if float_compare(need, taken_quantity, precision_rounding=self.product_id.uom_id.rounding) == 0:
+                    to_update = False
+                    for move_line in move_lines_per_move[self.id]:
+                        if self._reservation_is_updatable(move_line, quantity, reserved_quant):
+                            to_update = move_line
+                            break
+                    if to_update:
+                        to_update['reserved_qty'] += 1
+                        to_update['to_write'] = 1
+                        to_update['package_id'] = reserved_quant.package_id.id
+                        to_update['lot_id'] = reserved_quant.lot_id.id
+                        to_update['owner_id'] = reserved_quant.owner_id.id
+                        to_update['product_uom_qty'] = 1
                         quantity -= 1
-
                     for i in range(0, int(quantity)):
                         move_lines_per_move[self.id].append(dict(self._action_assign_prepare_move_vals(quantity=1, reserved_quant=reserved_quant), to_create=1))
+                else:
+                    for i in range(0, int(quantity)):
+                        move_lines_per_move[self.id].append(dict(self._action_assign_prepare_move_vals(quantity=1, reserved_quant=reserved_quant), to_create=1))
+                    self.product_uom_qty -= quantity
+            else:
+                to_update = False
+                for move_line in move_lines_per_move[self.id]:
+                    if self._reservation_is_updatable(move_line, quantity, reserved_quant):
+                        to_update = move_line
+                        break
+                if to_update:
+                    to_update['reserved_qty'] += quantity
+                    to_update['to_write'] = 1
+                    to_update['package_id'] = reserved_quant.package_id.id
+                    to_update['lot_id'] = reserved_quant.lot_id.id
+                    to_update['owner_id'] = reserved_quant.owner_id.id
+                    quantity = 0
                 else:
                     move_lines_per_move[self.id].append(dict(self._action_assign_prepare_move_vals(quantity=quantity, reserved_quant=reserved_quant), to_create=1))
         return taken_quantity
@@ -1324,6 +1333,8 @@ class StockMove(models.Model):
         equal to its `product_qty`. If it is less, the stock move is considered
         partially available.
         """
+#        if self.env.context.get('debug'):
+#            import pudb; pudb.set_trace()
         reserved_availability = {move: move.reserved_availability for move in self}
         roundings = {move: move.product_id.uom_id.rounding for move in self}
         move_lines_per_move = defaultdict(list)
@@ -1627,8 +1638,8 @@ class StockMove(models.Model):
                 if not move._should_bypass_reservation() and float_compare(move.done_qty, move.reserved_qty, precision_rounding=rounding) > 0:
                     extra_qty = move.done_qty - move.reserved_uom_qty
                     extra_qty = move.product_uom._compute_quantity(extra_qty, move.product_id.uom_id)
-                    if self.env.context.get('debug'):
-                        import pudb; pudb.set_trace()
+#                    if self.env.context.get('debug'):
+#                        import pudb; pudb.set_trace()
                     move._free_reservation(move.product_id, move.location_id, extra_qty, lot_id=move.lot_id, package_id=move.package_id, owner_id=move.owner_id, ml_to_ignore=done)
                 # unreserve what's been reserved
                 if not move._should_bypass_reservation() and move.product_id.type == 'product' and move.reserved_qty:

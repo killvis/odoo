@@ -1147,13 +1147,11 @@ class StockMove(SavepointCase):
         self.assertEqual(customer_quants.quantity, 30)
         self.assertEqual(customer_quants.reserved_quantity, 0)
 
-    @unittest.skip(reason='unskip me')
     def test_availability_5(self):
         """ Check that rerun action assign only create new stock move
         lines instead of adding quantity in existing one.
         """
         self.env['stock.quant']._update_available_quantity(self.product_serial, self.stock_location, 2.0)
-        # move from shelf1
         move = self.env['stock.move'].create({
             'name': 'test_edit_moveline_1',
             'location_id': self.stock_location.id,
@@ -1163,12 +1161,15 @@ class StockMove(SavepointCase):
             'product_uom_qty': 4.0,
         })
         move._action_confirm()
-        move._action_assign()
-
+        move.with_context(debug=True)._action_assign()
+        self.assertEqual(len(move + move.split_move_ids), 3)  # two reserved moves, one unreserved
+        self.assertEqual(move.product_uom_qty, 2)
+        for split_move in move.split_move_ids:
+            self.assertEqual(split_move.reserved_qty, 1)
+            self.assertEqual(split_move.product_uom_qty, 1)
         self.env['stock.quant']._update_available_quantity(self.product_serial, self.stock_location, 4.0)
-        move._action_assign()
-
-        self.assertEqual(len(move.move_line_ids), 4.0)
+        move.with_context(debug=True)._action_assign()
+        self.assertEqual(len(move + move.split_move_ids), 4)
 
     @unittest.skip(reason='unskip me')
     def test_availability_6(self):
@@ -2233,7 +2234,7 @@ class StockMove(SavepointCase):
 
         move2.product_uom_qty = 2
         move2._action_assign()
-        move2.with_context(debug=True).product_uom_qty = 3
+        move2.product_uom_qty = 3
         self.assertEqual(move2.state, 'partially_available')
 
         (move2 + move3)._action_assign()
