@@ -20,8 +20,8 @@ class ChatterTopbar extends Component {
                 attachmentsAmount: thread && thread.attachmentLocalIds
                     ? thread.attachmentLocalIds.length
                     : 0,
-                // TODO SEB this is currently always 0
-                followersAmount: 0
+                // TODO SEB this is currently always 0 (yes I know - XDU)
+                followersAmount: 0,
             };
         });
     }
