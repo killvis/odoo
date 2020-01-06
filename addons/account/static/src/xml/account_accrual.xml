@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <div t-name="account.AccrualRenderer" owl="1">
+        <table t-if="props.move_data.length" class="table table-sm o_list_table table table-sm table-hover table-striped o_list_table_grouped">
+            <thead><tr>
+                <th>Account</th>
+                <th>Label</th>
+                <th>Debit</th>
+                <th>Credit</th>
+            </tr></thead>
+            <t t-foreach="props.move_data" t-as="move">
+                <AccruedMove move="move"/>
+            </t>
+        </table>
+        <t t-if="props.discarded_number">
+            <span><t t-esc="props.discarded_number"/> moves are not shown in the preview</span>
+        </t>
+    </div>
+
+    <tbody t-name="account.AccruedMoveWidget" owl="1">
+        <tr style="background-color: #dee2e6;">
+            <td colspan="4">
+                <span class="font-weight-bold" t-esc="props.move.date"/>, <t t-esc="props.move.ref"/> - <t t-esc="props.move.partner_id"/>
+            </td>
+        </tr>
+        <t t-foreach="props.move.line_ids" t-as="move_line">
+            <AccruedMoveLine move_line="move_line[2]"/>
+        </t>
+    </tbody>
+
+    <tr t-name="account.AccruedMoveLineWidget" owl="1">
+        <td t-esc="props.move_line.account_id"/>
+        <td t-esc="props.move_line.name"/>
+        <td t-esc="props.move_line.debit" class="text-right"/>
+        <td t-esc="props.move_line.credit" class="text-right"/>
+    </tr>
+
+</templates>
