@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 import odoo
 from odoo import api, fields, models, tools, _
 from odoo.addons.iap import jsonrpc
-from odoo.addons.crm.models import crm_stage
+from odoo.addons.crm.models import crm_lead
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class CRMRevealRule(models.Model):
     team_id = fields.Many2one('crm.team', string='Sales Team')
     tag_ids = fields.Many2many('crm.lead.tag', string='Tags')
     user_id = fields.Many2one('res.users', string='Salesperson')
-    priority = fields.Selection(crm_stage.AVAILABLE_PRIORITIES, string='Priority')
+    priority = fields.Selection(crm_lead.AVAILABLE_PRIORITIES, string='Priority')
     lead_ids = fields.One2many('crm.lead', 'reveal_rule_id', string='Generated Lead / Opportunity')
     leads_count = fields.Integer(compute='_compute_leads_count', string='Number of Generated Leads')
     opportunity_count = fields.Integer(compute='_compute_leads_count', string='Number of Generated Opportunity')

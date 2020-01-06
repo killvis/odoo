@@ -3,14 +3,6 @@
 
 from odoo import api, fields, models
 
-AVAILABLE_PRIORITIES = [
-    ('0', 'Low'),
-    ('1', 'Medium'),
-    ('2', 'High'),
-    ('3', 'Very High'),
-]
-
-
 class Stage(models.Model):
     """ Model for case stages. This models the main stages of a document
         management flow. Main CRM objects (leads, opportunities, project

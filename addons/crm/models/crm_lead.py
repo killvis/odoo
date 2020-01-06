@@ -47,6 +47,13 @@ CRM_LEAD_FIELDS_TO_MERGE = [
     'email_cc',
     'website']
 
+AVAILABLE_PRIORITIES = [
+    ('0', 'Low'),
+    ('1', 'Medium'),
+    ('2', 'High'),
+    ('3', 'Very High'),
+]
+
 
 class Lead(models.Model):
     _name = "crm.lead"
@@ -74,8 +81,8 @@ class Lead(models.Model):
         index=True, required=True, tracking=15,
         default=lambda self: 'lead' if self.env['res.users'].has_group('crm.group_use_lead') else 'opportunity')
     priority = fields.Selection(
-        crm_stage.AVAILABLE_PRIORITIES, string='Priority', index=True,
-        default=crm_stage.AVAILABLE_PRIORITIES[0][0])
+        AVAILABLE_PRIORITIES, string='Priority', index=True,
+        default=AVAILABLE_PRIORITIES[0][0])
     team_id = fields.Many2one(
         'crm.team', string='Sales Team', index=True, tracking=True,
         compute='_compute_team_id', readonly=False, store=True)
@@ -1121,7 +1128,7 @@ class Lead(models.Model):
             'email_from': msg_dict.get('from'),
             'partner_id': msg_dict.get('author_id', False),
         }
-        if msg_dict.get('priority') in dict(crm_stage.AVAILABLE_PRIORITIES):
+        if msg_dict.get('priority') in dict(AVAILABLE_PRIORITIES):
             defaults['priority'] = msg_dict.get('priority')
         defaults.update(custom_values)
 
