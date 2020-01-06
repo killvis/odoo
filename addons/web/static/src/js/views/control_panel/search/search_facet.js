@@ -21,7 +21,11 @@ class SearchFacet extends Component {
     //--------------------------------------------------------------------------
 
     get domains() {
-        return this.props.filters.map(f => f.domain).join(' ');
+        switch (this.props.group.type) {
+            case 'filter':
+            case 'favorite':
+                return this.props.filters.map(f => f.domain);
+        }
     }
 
     /**

@@ -8,16 +8,9 @@ const SearchMenu = require('web.SearchMenu');
 const { useState } = owl;
 
 class FavoriteMenu extends SearchMenu {
-    // custom_events: _.extend({}, DropdownMenu.prototype.custom_events, {
-    //     favorite_submenu_toggled: '_onSubMenuToggled',
-    // }),
-
-    /**
-     * @param {Object} action
-     */
     constructor() {
         super(...arguments);
-        this.category = 'favorite';
+
         this.title = this.env._t("Favorites");
         this.icon = 'fa fa-star';
 
@@ -26,8 +19,21 @@ class FavoriteMenu extends SearchMenu {
     }
 
     //--------------------------------------------------------------------------
+    // Getters
+    //--------------------------------------------------------------------------
+
+    get items() {
+        return this.getters.getFiltersOfType('favorite');
+    }
+
+    //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
+
+    _onAddNewFavorite() {
+        this.dispatch('deleteFavorite', this.state.deleteDialog.favorite.id);
+        this.state.deleteDialog = false;
+    }
 
     _onDrag(item, ev) {
         if (!item.editable) {
@@ -91,6 +97,9 @@ class FavoriteMenu extends SearchMenu {
 }
 
 FavoriteMenu.components = Object.assign({}, SearchMenu.components, { AddNewFavoriteMenu, Dialog });
+FavoriteMenu.props = Object.assign({}, SearchMenu.props, {
+    viewType: String,
+})
 FavoriteMenu.template = 'FavoriteMenu';
 
 return FavoriteMenu;

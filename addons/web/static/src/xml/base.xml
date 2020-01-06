@@ -8,7 +8,7 @@
         <button type="button"
             class="dropdown-item"
             t-ref="fallback-focus"
-            t-on-click="state.open = !state.open"
+            t-on-click="_toggleOpen"
             >
             Save Current Search
         </button>
@@ -114,6 +114,7 @@
                     <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
                         action="props.action"
                         class="o_favorite_menu"
+                        viewType="props.viewType"
                         fields="props.fields"
                     />
                 </div>
@@ -195,6 +196,7 @@
                             <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
                                 action="props.action"
                                 fields="props.fields"
+                                viewType="props.viewType"
                             />
                         </div>
                         <button type="button"
@@ -577,8 +579,12 @@
             title="Remove"
             t-on-click="dispatch('deactivateGroup', props.group.id)"
         />
-        <Tooltip t-if="state.displayTooltip" target="el" title="values.join(' ')">
-            <t t-esc="domains"/>
+        <Tooltip t-if="state.displayTooltip and domains"
+            target="el"
+            title="values.join(' ')"
+            help="env._t('Domains')"
+            >
+            <li t-foreach="domains" t-as="domain" t-key="domain_index" t-esc="domain"/>
         </Tooltip>
     </div>
 </t>
@@ -587,12 +593,12 @@
     <div class="btn-group o_dropdown" t-att-class="{ show: state.open }">
         <button type="button"
             class="o_dropdown_toggler_btn btn btn-secondary"
-            aria-expanded="false"
+            t-att-aria-expanded="state.open ? 'true' : 'false'"
             tabindex="-1"
-            t-on-keydown="_onButtonKeydown"
             t-on-click="state.open = !state.open"
+            t-on-keydown="_onButtonKeydown"
             >
-            <i t-att-class="icon"/>
+            <i t-if="icon" t-att-class="icon"/>
             <span class="o_dropdown_title" t-esc="title"/>
             <i t-if="env.device.isMobile" t-attf-class="fa fa-chevron-{{ state.open ? 'down' : 'right' }} float-right mt4"/>
             <i t-else="" t-attf-class="o_dropdown_caret fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
@@ -627,7 +633,7 @@
             <t t-set="buttons">
                 <button type="button"
                     class="btn btn-primary"
-                    t-on-click="dispatch('deleteFavorite', state.deleteDialog.favorite.id)"
+                    t-on-click="_onAddNewFavorite"
                     >
                     Ok
                 </button>
@@ -768,80 +774,95 @@
         <t t-if="Object.keys(items).length">
             <t t-foreach="sections" t-as="section" t-key="section.name">
                 <t t-set="sectionItems" t-value="items[section.name]"/>
-                <div t-if="sectionItems.length" class="btn-group o_dropdown" t-att-class="{ show: state.open }">
-                    <t t-if="section.name === 'buttons'">
-                        <a t-foreach="sectionItems" t-as="item" t-key="item.title" t-att-class="item.classname"
-                            t-att-title="item.title or None"
-                            t-att-data-section="section.name"
-                            t-att-data-index="item_index"
-                            t-att-href="item.url or '#'"
-                            target="_blank"
-                            t-raw="item.label"
-                        />
-                    </t>
-                    <button t-else="" type="button"
-                        class="o_dropdown_toggler_btn btn btn-secondary"
-                        t-on-click="state.open = !state.open"
-                        t-on-keydown="_onButtonKeydown"
-                        >
-                        <t t-if="section.name === 'files'" t-raw="sectionItems.length || ''"/>
-                        <t t-esc="section.label"/>
-                        <i t-attf-class="o_dropdown_caret fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
-                    </button>
-                    <ul t-if="state.open" class="o_dropdown_menu dropdown-menu show" role="menu">
-                        <li t-foreach="sectionItems" t-as="item" t-key="item.title" class="o_menu_item" role="menuitem">
-                            <t t-if="section.name === 'files'">
-                                <t t-set="item.title">
-                                    <b>Attachment : </b><br/>
-                                    <t t-raw="item.name"/>
-                                </t>
-                                <t t-if="item.create_uid and item.create_uid[0]" t-set="item.title">
-                                    <t t-raw="item.title"/><br/>
-                                    <b>Created by : </b><br/>
-                                    <t t-raw="item.create_uid[1]"/>  <t t-esc="item.create_date_string" />
-                                </t>
-                                <t t-if="item.create_uid and item.write_uid and item.create_uid[0] != item.write_uid[0]" t-set="item.title">
-                                    <t t-raw="item.title"/><br/>
-                                    <b>Modified by : </b><br/>
-                                    <t t-raw="item.write_uid[1]"/>  <t t-esc="item.write_date_string"/>
-                                </t>
-                            </t>
-                            <a t-attf-class="dropdown-item {{ item.classname }}"
-                                t-att-title="item.title or None"
-                                t-att-href="item.url or '#'"
-                                t-on-click="_onItemClick(item)"
-                                t-on-keydown="_onItemKeydown"
-                                >
-                                <t t-raw="item.label"/>
-                                <span t-if="section.name === 'files' and props.editable and !item.callback"
-                                    class="fa fa-trash-o o_sidebar_delete_attachment"
-                                    t-att-data-id="item.id"
-                                    title="Delete this attachment"
-                                    role="img"
-                                    aria-label="Delete this attachment"
-                                />
-                            </a>
-                        </li>
-                        <li class="o_menu_item" role="menuitem">
-                            <CustomFileInput
-                                action="'/web/binary/upload_attachment'"
-                                multi_upload="true"
-                                model="props.model"
-                                id="props.activeIds and props.activeIds[0]"
-                                t-on-uploaded="_onFileUploaded"
-                                >
-                                <div t-if="section.name === 'files' and props.editable"
-                                    class="dropdown-item o_sidebar_add_attachment"
-                                    >
-                                    <span>Add...</span>
-                                </div>
-                            </CustomFileInput>
-                        </li>
-                    </ul>
-                </div>
+                <SidebarSearchMenu t-if="sectionItems.length"
+                    activeIds="props.activeIds"
+                    editable="props.editable"
+                    items="sectionItems"
+                    model="props.model"
+                    section="section"
+                    t-on-execute_action="_onExecuteAction"
+                />
             </t>
         </t>
     </aside>
+</t>
+
+<t t-name="Sidebar.SearchMenu" owl="1">
+    <div class="btn-group o_dropdown" t-att-class="{ show: state.open }">
+        <t t-if="props.section.name === 'buttons'">
+            <a t-foreach="props.items" t-as="item" t-key="item.title" t-att-class="item.classname"
+                t-att-title="item.title or None"
+                t-att-data-section="props.section.name"
+                t-att-data-index="item_index"
+                t-att-href="item.url or '#'"
+                target="_blank"
+                t-raw="item.label"
+            />
+        </t>
+        <button t-else="" type="button"
+            class="o_dropdown_toggler_btn btn btn-secondary"
+            t-att-aria-expanded="state.open ? 'true' : 'false'"
+            t-on-click="state.open = !state.open"
+            t-on-keydown="_onButtonKeydown"
+            >
+            <t t-if="props.section.name === 'files'" t-raw="props.items.length || ''"/>
+            <span class="o_dropdown_title" t-esc="env._t(props.section.label)"/>
+            <i t-if="env.device.isMobile" t-attf-class="fa fa-chevron-{{ state.open ? 'down' : 'right' }} float-right mt4"/>
+            <i t-else="" t-attf-class="o_dropdown_caret fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
+        </button>
+        <ul t-if="state.open" class="o_dropdown_menu dropdown-menu show" role="menu">
+            <li t-foreach="props.items" t-as="item" t-key="item.title" class="o_menu_item"
+                role="menuitem"
+                t-on-keydown="_onKeydown"
+                >
+                <t t-if="props.section.name === 'files'">
+                    <t t-set="item.title">
+                        <b>Attachment : </b><br/>
+                        <t t-raw="item.name"/>
+                    </t>
+                    <t t-if="item.create_uid and item.create_uid[0]" t-set="item.title">
+                        <t t-raw="item.title"/><br/>
+                        <b>Created by : </b><br/>
+                        <t t-raw="item.create_uid[1]"/>  <t t-esc="item.create_date_string" />
+                    </t>
+                    <t t-if="item.create_uid and item.write_uid and item.create_uid[0] != item.write_uid[0]" t-set="item.title">
+                        <t t-raw="item.title"/><br/>
+                        <b>Modified by : </b><br/>
+                        <t t-raw="item.write_uid[1]"/>  <t t-esc="item.write_date_string"/>
+                    </t>
+                </t>
+                <a t-attf-class="dropdown-item {{ item.classname }}"
+                    t-att-title="item.title or None"
+                    t-att-href="item.url or '#'"
+                    t-on-click="_onItemClick(item)"
+                    >
+                    <t t-raw="item.label"/>
+                    <span t-if="props.section.name === 'files' and props.editable and !item.callback"
+                        class="fa fa-trash-o o_sidebar_delete_attachment"
+                        t-att-data-id="item.id"
+                        title="Delete this attachment"
+                        role="img"
+                        aria-label="Delete this attachment"
+                    />
+                </a>
+            </li>
+            <li class="o_menu_item" role="menuitem">
+                <CustomFileInput
+                    action="'/web/binary/upload_attachment'"
+                    multi_upload="true"
+                    model="props.model"
+                    id="props.activeIds and props.activeIds[0]"
+                    t-on-uploaded="_onFileUploaded"
+                    >
+                    <div t-if="props.section.name === 'files' and props.editable"
+                        class="dropdown-item o_sidebar_add_attachment"
+                        >
+                        <span>Add...</span>
+                    </div>
+                </CustomFileInput>
+            </li>
+        </ul>
+    </div>
 </t>
 
 <t t-name="Tooltip" owl="1">

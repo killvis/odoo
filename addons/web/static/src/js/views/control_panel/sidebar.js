@@ -1,19 +1,54 @@
 odoo.define('web.Sidebar', function (require) {
     "use strict";
 
-    const { _t } = require('web.core');
     const Context = require('web.Context');
     const CustomFileInput = require('web.CustomFileInput');
     const pyUtils = require('web.py_utils');
     const SearchMenu = require('web.SearchMenu');
 
-    const { useState } = owl;
+    const { Component } = owl;
 
-    class Sidebar extends SearchMenu {
-        constructor() {
-            super(...arguments);
-            this.state = useState({ open: false });
+    class SidebarSearchMenu extends SearchMenu {
+
+        /**
+         * Method triggered when the user clicks on a toolbar dropdown
+         * @private
+         * @param {Object} item
+         * @param {MouseEvent} ev
+         */
+        _onItemClick(item, ev) {
+            if (item.callback) {
+                item.callback([item]);
+            } else if (item.action) {
+                this.trigger('execute_action', item.action);
+            } else if (item.url) {
+                return;
+            }
+            ev.preventDefault();
         }
+
+        /**
+         * @private
+         * @param {KeyboardEvent} ev
+         */
+        _onKeydown(ev) {
+            if (ev.key === 'Escape') {
+                ev.target.blur();
+            }
+        }
+    }
+
+    SidebarSearchMenu.components = Object.assign({}, SearchMenu.components, { CustomFileInput });
+    SidebarSearchMenu.props = Object.assign({}, SearchMenu.props, {
+        activeIds: Array,
+        editable: Boolean,
+        items: Object,
+        model: String,
+        section: Object,
+    });
+    SidebarSearchMenu.template = 'Sidebar.SearchMenu';
+
+    class Sidebar extends Component {
 
         mounted() {
             this._addTooltips();
@@ -24,40 +59,38 @@ odoo.define('web.Sidebar', function (require) {
         }
 
         //--------------------------------------------------------------------------
-        // Properties
+        // Getters
         //--------------------------------------------------------------------------
+
+        get items() {
+            const items = { print: [], other: [] };
+            for (const section in this.props.items) {
+                items[section] = Object.assign([], this.props.items[section]);
+            }
+            for (const type in this.props.actions) {
+                switch (type) {
+                    case 'action':
+                    case 'print':
+                    case 'relate':
+                        const section = type === 'print' ? 'print' : 'other';
+                        const newItems = this.props.actions[type].map(action => {
+                            return { action, label: action.name };
+                        });
+                        items[section].unshift(...newItems);
+                        break;
+                    case 'other':
+                        items.other.unshift(...this.props.actions.other);
+                        break;
+                }
+            }
+            return items;
+        }
 
         get sections() {
             const items = this.items;
             return this.props.sections.filter(
                 s => items[s.name].length || (s.name === 'files' && this.props.editable)
             );
-        }
-
-        get items() {
-            const actions = this.props.actions;
-            const items = {};
-            if (Object.keys(actions).length) {
-                ['print', 'action', 'relate'].forEach(type => {
-                    if (actions[type] && actions[type].length) {
-                        const section = type === 'print' ? 'print' : 'other';
-                        const newItems = actions[type].map(action => {
-                            return { label: action.name, action };
-                        });
-                        if (!items[section]) {
-                            items[section] = [];
-                        }
-                        items[section].unshift(...newItems);
-                    }
-                });
-                if ('other' in actions) {
-                    if (!items.other) {
-                        items.other = [];
-                    }
-                    items.other.unshift(...actions.other);
-                }
-            }
-            return Object.assign({}, this.props.items, items);
         }
 
         //--------------------------------------------------------------------------
@@ -74,13 +107,18 @@ odoo.define('web.Sidebar', function (require) {
             });
         }
 
+        //--------------------------------------------------------------------------
+        // Handlers
+        //--------------------------------------------------------------------------
+
         /**
-         * Performs the action for the item clicked after getting the data
-         * necessary with a trigger up
+         * Perform the action for the item clicked after getting the data
+         * necessary with a trigger.
          * @private
-         * @param  {Object} item
+         * @param {OwlEvent} ev
          */
-        async _executeItemAction(item) {
+        async _onExecuteAction(ev) {
+            const action = ev.detail;
             const activeIdsContext = {
                 active_id: this.props.activeIds[0],
                 active_ids: this.props.activeIds,
@@ -94,7 +132,7 @@ odoo.define('web.Sidebar', function (require) {
             const result = await this.rpc({
                 route: '/web/action/load',
                 params: {
-                    action_id: item.action.id,
+                    action_id: action.id,
                     context: context,
                 },
             });
@@ -104,40 +142,9 @@ odoo.define('web.Sidebar', function (require) {
             result.flags.new_window = true;
             this.trigger('do_action', { action: result });
         }
-
-        //--------------------------------------------------------------------------
-        // Handlers
-        //--------------------------------------------------------------------------
-
-        /**
-         * Method triggered when the user clicks on a toolbar dropdown
-         * @private
-         * @param {Object} item
-         * @param {MouseEvent} ev
-         */
-        _onItemClick(item, ev) {
-            if (item.callback) {
-                item.callback([item]);
-            } else if (item.action) {
-                this._executeItemAction(item);
-            } else if (item.url) {
-                return;
-            }
-            ev.preventDefault();
-        }
-
-        /**
-         * @private
-         * @param {KeyboardEvent} ev
-         */
-        _onItemKeydown(ev) {
-            if (ev.key === 'Escape') {
-                ev.target.blur();
-            }
-        }
     }
 
-    Sidebar.components = { CustomFileInput };
+    Sidebar.components = { SidebarSearchMenu };
     Sidebar.defaultProps = {
         actions: {},
         editable: true,
@@ -146,8 +153,8 @@ odoo.define('web.Sidebar', function (require) {
             other: [],
         },
         sections: [
-            { name: 'print', label: _t('Print') },
-            { name: 'other', label: _t('Action') },
+            { name: 'print', label: "Print" },
+            { name: 'other', label: "Action" },
         ],
     };
     Sidebar.props = null;

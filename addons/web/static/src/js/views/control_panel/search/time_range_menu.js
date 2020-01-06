@@ -11,7 +11,6 @@ class TimeRangeMenu extends SearchMenu {
     constructor() {
         super(...arguments);
 
-        this.category = 'timeRange';
         this.icon = 'fa fa-calendar';
         this.title = this.env._t("Time Ranges");
 
@@ -45,6 +44,14 @@ class TimeRangeMenu extends SearchMenu {
             comparisonRangeId,
             rangeId,
         });
+    }
+
+    //--------------------------------------------------------------------------
+    // Getters
+    //--------------------------------------------------------------------------
+
+    get items() {
+        return this.getters.getFiltersOfType('timeRange');
     }
 
     //--------------------------------------------------------------------------

@@ -85,7 +85,7 @@
         <button type="button"
             class="dropdown-item"
             t-ref="fallback-focus"
-            t-on-click="state.open = !state.open"
+            t-on-click="_toggleOpen"
             >
             Add to my Dashboard
         </button>
@@ -109,7 +109,7 @@
 <t t-name="board.FavoriteMenu" t-inherit="web.FavoriteMenu" t-inherit-mode="extension" owl="1">
     <xpath expr="//ul[@role='menu']" position="inside">
         <t t-if="props.action.type === 'ir.actions.act_window'">
-            <AddToBoardMenu action="props.action" favorites="items"/>
+            <AddToBoardMenu action="props.action" favorites="items" viewType="props.viewType"/>
         </t>
     </xpath>
 </t>

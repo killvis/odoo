@@ -36,8 +36,8 @@ odoo.define('web.SearchBar', function (require) {
                 focusedItem: 0,
                 inputValue: "",
             });
-            this.focus = useFocusOnUpdate();
-            this.focus();
+            this.focusOnUpdate = useFocusOnUpdate();
+            this.focusOnUpdate();
             useExternalListener(window, 'keydown', this._onWindowKeydown);
 
             this.allowMouseenter = false;
@@ -102,7 +102,7 @@ odoo.define('web.SearchBar', function (require) {
             this.allowMouseenter = false;
             this.state.sources = [];
             this.state.focusedItem = 0;
-            this.focus();
+            this.focusOnUpdate();
         }
 
         /**

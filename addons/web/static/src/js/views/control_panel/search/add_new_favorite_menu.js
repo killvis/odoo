@@ -29,8 +29,8 @@ class AddNewFavoriteMenu extends SearchMenuItem {
             open: false,
         });
 
-        const focusOnMounted = useFocusOnUpdate();
-        focusOnMounted();
+        this.focusOnUpdate = useFocusOnUpdate();
+        this.focusOnUpdate();
     }
 
     //--------------------------------------------------------------------------
@@ -101,12 +101,13 @@ class AddNewFavoriteMenu extends SearchMenuItem {
 
     /**
      * Hide and display the submenu which allows adding custom filters.
-     *
      * @private
      */
-    _toggleMenu() {
+    _toggleOpen() {
         this.state.open = !this.state.open;
-        this.trigger('favorite_submenu_toggled');
+        if (this.state.open) {
+            this.focusOnUpdate();
+        }
     }
 
     //--------------------------------------------------------------------------

@@ -12,16 +12,14 @@ odoo.define('web.SearchMenu', function (require) {
             super(...arguments);
 
             this.dropdownMenu = useRef('dropdown');
-            if (this.env.controlPanelStore) {
+            if ('controlPanelStore' in this.env) {
                 this.dispatch = useDispatch(this.env.controlPanelStore);
                 this.getters = useGetters(this.env.controlPanelStore);
             }
             this.state = useState({ open: false });
-            useExternalListener(window, 'click', this._onWindowActionEvent);
+            useExternalListener(window, 'click', this._onWindowClick, true);
             useExternalListener(window, 'keydown', this._onWindowKeydown);
-            useExternalListener(window, 'scroll', this._onWindowActionEvent, true);
 
-            this.offset = null;
             this.symbol = this.env.device.isMobile ? 'fa fa-chevron-right float-right mt4' : false;
         }
 
@@ -30,21 +28,12 @@ odoo.define('web.SearchMenu', function (require) {
         //--------------------------------------------------------------------------
 
         get items() {
-            return this.getters.getFiltersOfType(this.category);
+            return [];
         }
 
         //--------------------------------------------------------------------------
         // Handlers
         //--------------------------------------------------------------------------
-
-        _onItemClick(ev) {
-            const { itemId, optionId } = ev.detail;
-            if (optionId) {
-                this.dispatch('toggleFilterWithOptions', itemId, optionId);
-            } else {
-                this.dispatch('toggleFilter', itemId);
-            }
-        }
 
         _onButtonKeydown(ev) {
             switch (ev.key) {
@@ -60,15 +49,20 @@ odoo.define('web.SearchMenu', function (require) {
             }
         }
 
-        _onRemove(item) {
-            this.env.store.dispatch('removeFavorite', item);
+        _onItemClick(ev) {
+            const { itemId, optionId } = ev.detail;
+            if (optionId) {
+                this.dispatch('toggleFilterWithOptions', itemId, optionId);
+            } else {
+                this.dispatch('toggleFilter', itemId);
+            }
         }
 
         /**
          * @private
          * @param {Event} ev
          */
-        _onWindowActionEvent(ev) {
+        _onWindowClick(ev) {
             if (this.state.open && !this.el.contains(ev.target)) {
                 this.state.open = false;
             }

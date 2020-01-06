@@ -7,9 +7,17 @@ odoo.define('web.FilterMenu', function (require) {
     class FilterMenu extends SearchMenu {
         constructor() {
             super(...arguments);
-            this.category = 'filter';
-            this.title = this.env._t("Filters");
+
             this.icon = 'fa fa-filter';
+            this.title = this.env._t("Filters");
+        }
+
+        //--------------------------------------------------------------------------
+        // Getters
+        //--------------------------------------------------------------------------
+
+        get items() {
+            return this.getters.getFiltersOfType('filter');
         }
     }
 

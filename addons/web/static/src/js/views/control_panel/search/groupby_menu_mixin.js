@@ -10,6 +10,7 @@ class TODO_findMeAName extends GroupByMenu {
         super(...arguments);
 
         this.symbol = !this.props.noSymbol && this.symbol;
+        window.top.gbmixin = this;
     }
 
     //--------------------------------------------------------------------------
@@ -17,7 +18,18 @@ class TODO_findMeAName extends GroupByMenu {
     //--------------------------------------------------------------------------
 
     get items() {
-        return Object.values(this.props.groupBys);
+        const groupBys = [];
+        Object.values(this.props.groupBys).forEach(groupBy => {
+            const gb = Object.assign({}, groupBy);
+            if (gb.hasOptions) {
+                gb.options = gb.options.map(({ description, optionId, groupNumber }) => {
+                    const isActive = gb.currentOptionIds.has(optionId);
+                    return { description, optionId, groupNumber, isActive};
+                });
+            }
+            groupBys.push(gb);
+        });
+        return groupBys;
     }
 
     //--------------------------------------------------------------------------

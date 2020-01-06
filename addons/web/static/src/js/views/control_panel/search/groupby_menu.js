@@ -18,10 +18,22 @@ var INTERVAL_OPTIONS = controlPanelParameters.INTERVAL_OPTIONS;
 class GroupByMenu extends SearchMenu {
     constructor() {
         super(...arguments);
-        this.category = 'groupBy';
-        this.title = this.env._t("Group By");
+
         this.icon = 'fa fa-bars';
+        this.title = this.env._t("Group By");
     }
+
+    //--------------------------------------------------------------------------
+    // Getters
+    //--------------------------------------------------------------------------
+
+    get items() {
+        return this.getters.getFiltersOfType('groupBy');
+    }
+
+    //--------------------------------------------------------------------------
+    // Handlers
+    //--------------------------------------------------------------------------
 
     _onCreateNewGroupBy(ev) {
         this.dispatch('createNewGroupBy', ev.detail);

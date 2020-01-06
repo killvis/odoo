@@ -191,12 +191,11 @@ var FormController = BasicController.extend({
     },
     /**
      * Instantiate and render the sidebar if a sidebar is requested
-     * Sets this.sidebar
-     * @param {jQuery} [$node] a jQuery node where the sidebar should be
-     *   inserted
+     * Sets this.sidebar.
+     *
      * @return {Promise}
      **/
-    _getSidebarProps: function ($node) {
+    _getSidebarProps: function () {
         if (!this.hasSidebar) {
             return {};
         }
@@ -235,7 +234,7 @@ var FormController = BasicController.extend({
             });
         }
         return Object.assign(props, {
-            actions: Object.assign(this.toolbarActions, { otherItems }),
+            actions: Object.assign(this.toolbarActions, { other: otherItems }),
             activeIds: this.getSelectedIds(),
             context: this.model.get(this.handle).getContext(),
             editable: this.is_action_enabled('edit'),

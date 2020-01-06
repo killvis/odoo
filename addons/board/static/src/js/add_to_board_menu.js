@@ -6,6 +6,7 @@ odoo.define('board.AddToBoardMenu', function (require) {
     const FavoriteMenu = require('web.FavoriteMenu');
     const pyUtils = require('web.py_utils');
     const SearchMenuItem = require('web.SearchMenuItem');
+    const { sprintf } = require('web.utils');
     const { useFocusOnUpdate } = require('web.custom_hooks');
 
     const { useState, useStore } = owl.hooks;
@@ -17,6 +18,7 @@ odoo.define('board.AddToBoardMenu', function (require) {
          */
         constructor() {
             super(...arguments);
+
             this.interactive = true;
             this.query = useStore(state => state.query, { store: this.env.controlPanelStore });
             this.state = useState({
@@ -24,8 +26,8 @@ odoo.define('board.AddToBoardMenu', function (require) {
                 name: this.props.action.name || "",
             });
 
-            const focusOnMounted = useFocusOnUpdate();
-            focusOnMounted();
+            this.focusOnUpdate = useFocusOnUpdate();
+            this.focusOnUpdate();
         }
 
         //--------------------------------------------------------------------------
@@ -41,11 +43,12 @@ odoo.define('board.AddToBoardMenu', function (require) {
          * @returns {Promise}
          */
         async _addToBoard() {
+            const searchQuery = this.env.controlPanelStore.getQuery();
             const context = new Context(this.props.action.context);
-            context.add(this.query.context);
+            context.add(searchQuery.context);
             context.add({
-                group_by: this.query.groupBy,
-                orderedBy: this.query.orderedBy,
+                group_by: searchQuery.groupBy,
+                orderedBy: searchQuery.orderedBy,
             });
 
             this.trigger('get_controller_query_params', {
@@ -58,7 +61,7 @@ odoo.define('board.AddToBoardMenu', function (require) {
             });
 
             const domainArray = new Domain(this.props.action.domain || []);
-            const domain = Domain.prototype.normalizeArray(domainArray.toArray().concat(this.query.domain));
+            const domain = Domain.prototype.normalizeArray(domainArray.toArray().concat(searchQuery.domain));
 
             const evalutatedContext = pyUtils.eval('context', context);
             for (const key in evalutatedContext) {
@@ -83,7 +86,7 @@ odoo.define('board.AddToBoardMenu', function (require) {
             });
             if (result) {
                 this._doNotify(
-                    _.str.sprintf(this.env._t("'%s' added to dashboard"), this.state.name),
+                    sprintf(this.env._t("'%s' added to dashboard"), this.state.name),
                     this.env._t('Please refresh your browser for the changes to take effect.')
                 );
             } else {
@@ -95,7 +98,7 @@ odoo.define('board.AddToBoardMenu', function (require) {
             this.env.bus.trigger('call_service', {
                 data: {
                     args: [{ title, message, type: 'warning' }],
-                    callback: _ => _,
+                    callback: x => x,
                     method: 'notify',
                     service: 'notification',
                 },
@@ -106,11 +109,22 @@ odoo.define('board.AddToBoardMenu', function (require) {
             this.env.bus.trigger('call_service', {
                 data: {
                     args: [{ title, message, type: 'danger' }],
-                    callback: _ => _,
+                    callback: x => x,
                     method: 'notify',
                     service: 'notification',
                 },
             });
+        }
+
+        /**
+         * Hide and display the submenu which allows adding to board.
+         * @private
+         */
+        _toggleOpen() {
+            this.state.open = !this.state.open;
+            if (this.state.open) {
+                this.focusOnUpdate();
+            }
         }
 
 
