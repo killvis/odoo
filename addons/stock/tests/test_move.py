@@ -1102,8 +1102,10 @@ class StockMove(SavepointCase):
         self.assertEqual(move1.state, 'assigned')
         self.assertEqual(move1.reserved_qty, 1.0)
 
-    @unittest.skip(reason='unskip me')
     def test_availability_4(self):
+        """With two stock moves reserved for a total quantity Q, process all the quantity Q on the
+        first move and validate it. The second move should be unreserved.
+        """
         self.env['stock.quant']._update_available_quantity(self.product, self.stock_location, 30.0)
         move1 = self.env['stock.move'].create({
             'name': 'test_availability_4',
@@ -1129,14 +1131,14 @@ class StockMove(SavepointCase):
         move2._action_assign()
 
         # set 15 as quantity done for the first and 30 as the second
-        move1.move_line_ids.qty_done = 15
-        move2.move_line_ids.qty_done = 30
+        move1.done_qty = 15
+        move2.done_qty = 30
 
         # validate the second, the first should be unreserved
         move2._action_done()
 
         self.assertEqual(move1.state, 'confirmed')
-        self.assertEqual(move1.move_line_ids.qty_done, 15)
+        self.assertEqual(move1.done_qty, 15)
         self.assertEqual(move2.state, 'done')
 
         stock_quants = self.gather_relevant(self.product, self.stock_location)
@@ -3816,7 +3818,6 @@ class StockMove(SavepointCase):
         self.assertEqual(move.scrapped, True)
         self.assertEqual(self.env['stock.quant']._get_available_quantity(self.product_consu, self.stock_location), 0)
 
-    @unittest.skip(reason="pour bientot")
     def test_scrap_3(self):
         """ Scrap the product of a reserved move line. Check that the move line is
         correctly deleted and that the associated stock move is not assigned anymore.
@@ -3839,9 +3840,9 @@ class StockMove(SavepointCase):
             'product_uom_id':self.product.uom_id.id,
             'scrap_qty': 1,
         })
-        scrap.do_scrap()
+        scrap.with_context(debug=True).do_scrap()
         self.assertEqual(move1.state, 'confirmed')
-        self.assertEqual(len(move1.move_line_ids), 0)
+        self.assertEqual(move1.reserved_qty, 0)
 
     @unittest.skip(reason="pour bientot")
     def test_scrap_4(self):
@@ -3947,7 +3948,6 @@ class StockMove(SavepointCase):
         insufficient_qty_wizard.action_done()
         self.assertEqual(self.env['stock.quant']._gather(self.product, self.stock_location).quantity, -11)
 
-    @unittest.skip(reason='unskip me')
     def test_in_date_1(self):
         """ Check that moving a tracked quant keeps the incoming date.
         """
@@ -3962,8 +3962,8 @@ class StockMove(SavepointCase):
         })
         move1._action_confirm()
         move1._action_assign()
-        move1.move_line_ids.lot_name = 'lot1'
-        move1.move_line_ids.qty_done = 1
+        move1.lot_name = 'lot1'
+        move1.done_qty = 1
         move1._action_done()
 
         quant = self.gather_relevant(self.product_lot, self.stock_location)
@@ -3983,7 +3983,7 @@ class StockMove(SavepointCase):
         })
         move2._action_confirm()
         move2._action_assign()
-        move2.move_line_ids.qty_done = 1
+        move2.done_qty = 1
         move2._action_done()
 
         quant = self.gather_relevant(self.product_lot, self.pack_location)

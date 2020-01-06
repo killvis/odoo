@@ -463,6 +463,23 @@ class StockMove(models.Model):
         return res
 
     def write(self, vals):
+        if 'reserved_qty' in vals and not self.env.context.get('bypass_reservation_update'):
+            for move in self:
+                if move.state not in ('partially_available', 'assigned') or move._should_bypass_reservation():
+                    continue
+                qty_to_decrease = move.reserved_qty - move.product_uom._compute_quantity(vals['reserved_qty'], move.product_id.uom_id, rounding_method='HALF-UP')
+                try:
+                    self.env['stock.quant']._update_reserved_quantity(
+                        move.product_id, move.location_id, -qty_to_decrease, lot_id=move.lot_id,
+                        package_id=move.package_id, owner_id=move.owner_id, strict=True)
+                except UserError:
+                    if move.lot_id:
+                        self.envn['stock.quant']._update_reserved_quantity(
+                            move.product_id,move.location_id, -qty_to_decrease, lot_id=False,
+                            package_id=move.package_id, owner_id=move.owner_id, strict=True)
+                    else:
+                        raise
+
         # Handle the write on the initial demand by updating the reserved quantity and logging
         # messages according to the state of the stock.move records.
         receipt_moves_to_reassign = self.env['stock.move']
@@ -669,6 +686,7 @@ class StockMove(models.Model):
         return action
 
     def _do_unreserve(self):
+        # FIXME SLE: do it in one loop
         moves_to_unreserve = self.env['stock.move']
         for move in self:
             if move.state == 'cancel':
@@ -690,17 +708,6 @@ class StockMove(models.Model):
                 continue
             if float_is_zero(move.reserved_qty, precision_digits=precision):
                 continue
-            try:
-                self.env['stock.quant']._update_reserved_quantity(
-                    move.product_id, move.location_id, -move.reserved_qty, lot_id=move.lot_id,
-                    package_id=move.package_id, owner_id=move.owner_id, strict=True)
-            except UserError:
-                if move.lot_id:
-                    self.env['stock.quant']._update_reserved_quantity(
-                        move.product_id, move.location_id, -move.reserved_qty, lot_id=False,
-                        package_id=move.package_id, owner_id=move.owner_id, strict=True)
-                else:
-                    raise
             moves_to_recompute += move
         if moves_to_recompute:
             moves_to_recompute.write({'reserved_qty': 0})
@@ -1315,8 +1322,6 @@ class StockMove(models.Model):
         to_assign = self.browse()
         to_partially_available = self.browse()
 
-        if self.env.context.get('debug'):
-            import pudb; pudb.set_trace()
         for move in self:
             if move.state not in ('confirmed', 'waiting', 'partially_available'):
                 continue
@@ -1598,6 +1603,7 @@ class StockMove(models.Model):
 
         (self - to_delete)._check_company()
 
+
         # Now, we can actually move the quant.
         done = self.env['stock.move']
         for move in self - to_delete:
@@ -1605,11 +1611,13 @@ class StockMove(models.Model):
                 rounding = move.product_uom.rounding
 
                 # if this move line is force assigned, unreserve elsewhere if needed
-                if not move._should_bypass_reservation() and float_compare(move.done_qty, move.product_qty, precision_rounding=rounding) > 0:
-                    extra_qty = move.done_qty - move.product_qty
-                    move._free_reservation(move.product_id, move.location_id, extra_qty, lot_id=move.lot_id, package_id=move.package_id, owner_id=move.owner_id, move_to_ignore=done)
+                if not move._should_bypass_reservation() and float_compare(move.done_qty, move.reserved_qty, precision_rounding=rounding) > 0:
+                    extra_qty = move.done_qty - move.reserved_qty
+#                    if self.env.context.get('debug'):
+#                        import pudb; pudb.set_trace()
+                    move._free_reservation(move.product_id, move.location_id, extra_qty, lot_id=move.lot_id, package_id=move.package_id, owner_id=move.owner_id, ml_to_ignore=done)
                 # unreserve what's been reserved
-                if not move._should_bypass_reservation() and move.product_id.type == 'product' and move.product_qty:
+                if not move._should_bypass_reservation() and move.product_id.type == 'product' and move.reserved_qty:
                     try:
                         Quant._update_reserved_quantity(move.product_id, move.location_id, -move.reserved_qty, lot_id=move.lot_id, package_id=move.package_id, owner_id=move.owner_id, strict=True)
                     except UserError:
@@ -1645,8 +1653,8 @@ class StockMove(models.Model):
             self.write({'lot_id': lot.id})
 
     def _action_done(self, cancel_backorder=False):
-        if self.env.context.get('debug'):
-            import pudb; pudb.set_trace()
+#        if self.env.context.get('debug'):
+#            import pudb; pudb.set_trace()
         self.filtered(lambda move: move.state == 'draft')._action_confirm()  # MRP allows scrapping draft moves
         moves = self.exists().filtered(lambda x: x.state not in ('done', 'cancel'))
         moves_todo = self.env['stock.move']
@@ -1712,6 +1720,70 @@ class StockMove(models.Model):
         if picking and not cancel_backorder:
             picking._create_backorder()
         return moves_todo
+
+    def _free_reservation(self, product_id, location_id, quantity, lot_id=None, package_id=None, owner_id=None, ml_to_ignore=None):
+        """ When editing a done move line or validating one with some forced quantities, it is
+        possible to impact quants that were not reserved. It is therefore necessary to edit or
+        unlink the move lines that reserved a quantity now unavailable.
+
+        :param ml_to_ignore: recordset of `stock.move.line` that should NOT be unreserved
+        """
+#        if self.env.context.get('debug'):
+#            import pudb; pudb.set_trace()
+        self.ensure_one()
+
+        if ml_to_ignore is None:
+            ml_to_ignore = self.env['stock.move']
+        ml_to_ignore |= self
+
+        # Check the available quantity, with the `strict` kw set to `True`. If the available
+        # quantity is greather than the quantity now unavailable, there is nothing to do.
+        available_quantity = self.env['stock.quant']._get_available_quantity(
+            product_id, location_id, lot_id=lot_id, package_id=package_id, owner_id=owner_id, strict=True
+        )
+        if quantity > available_quantity:
+            # We now have to find the move lines that reserved our now unavailable quantity. We
+            # take care to exclude ourselves and the move lines were work had already been done.
+            outdated_move_lines_domain = [
+                ('state', 'not in', ['done', 'cancel']),
+                ('product_id', '=', product_id.id),
+                ('lot_id', '=', lot_id.id if lot_id else False),
+                ('location_id', '=', location_id.id),
+                ('owner_id', '=', owner_id.id if owner_id else False),
+                ('package_id', '=', package_id.id if package_id else False),
+                ('reserved_qty', '>', 0.0),
+                ('id', 'not in', ml_to_ignore.ids),
+            ]
+            current_picking_first = lambda cand: cand.picking_id != self.picking_id
+            outdated_candidates = self.env['stock.move'].search(outdated_move_lines_domain).sorted(current_picking_first)
+
+            # As the move's state is not computed over the move lines, we'll have to manually
+            # recompute the moves which we adapted their lines.
+            move_to_recompute_state = self.env['stock.move']
+
+            rounding = self.product_uom.rounding
+            for candidate in outdated_candidates:
+                if float_compare(candidate.reserved_qty, quantity, precision_rounding=rounding) <= 0:
+                    quantity -= candidate.reserved_qty
+                    move_to_recompute_state |= candidate
+                    candidate.reserved_qty = 0.0
+                    # FIXME SLE: what do we do here? unlink only if spit_move_ids? + reset the initial demand of the original move?
+#                    if candidate.done_qty:
+#                        candidate.reserved_qty = 0.0
+#                    else:
+#                        candidate.unlink()
+                    if float_is_zero(quantity, precision_rounding=rounding):
+                        break
+                else:
+                    # split this move line and assign the new part to our extra move
+                    quantity_split = float_round(
+                        candidate.reserved_qty - quantity,
+                        precision_rounding=self.product_uom.rounding,
+                        rounding_method='UP')
+                    candidate.reserved_qty = self.product_id.uom_id._compute_quantity(quantity_split, candidate.product_uom, rounding_method='HALF-UP')
+                    move_to_recompute_state |= candidate
+                    break
+            move_to_recompute_state._recompute_state()
 
     def unlink(self):
         if any(move.state not in ('draft', 'cancel') for move in self):
