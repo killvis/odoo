@@ -59,16 +59,16 @@ odoo.define('web.ControlPanelStore', function (require) {
      * --------
      */
 
-    const {
-        COMPARISON_TIME_RANGE_OPTIONS,
+    const dataManager = require('web.data_manager');
+    const Domain = require('web.Domain');
+    const pyUtils = require('web.py_utils');
+
+    const { parseArch } = require('web.viewUtils');
+    const { Store } = owl;
+    const { COMPARISON_TIME_RANGE_OPTIONS,
         DEFAULT_INTERVAL, DEFAULT_PERIOD, DEFAULT_YEAR,
         INTERVAL_OPTIONS, OPTION_GENERATORS,
-        TIME_RANGE_OPTIONS, YEAR_OPTIONS,
-    } = require('web.controlPanelParameters');
-    const Domain = require('web.Domain');
-    const { parseArch } = require('web.viewUtils');
-    const pyUtils = require('web.py_utils');
-    const dataManager = require('web.data_manager');
+        TIME_RANGE_OPTIONS, YEAR_OPTIONS } = require('web.controlPanelParameters');
 
     let filterId = 0;
     let groupId = 0;
@@ -92,7 +92,7 @@ odoo.define('web.ControlPanelStore', function (require) {
     // ControlPanelStore
     //-----------------------------------------------------------------------------------------------
 
-    class ControlPanelStore extends owl.Store {
+    class ControlPanelStore extends Store {
         constructor(config) {
             super({
                 actions: {},
@@ -101,13 +101,15 @@ odoo.define('web.ControlPanelStore', function (require) {
                 state: {}
             });
 
-
             this.withSearchBar = 'withSearchBar' in config ? config.withSearchBar : true;
 
             if (this.withSearchBar) {
+
                 this._defineActions();
                 this._defineGetters();
+
                 this._setProperties(config);
+
                 if (config.importedState) {
                     this.importState(config.importedState);
                 } else {
@@ -123,6 +125,7 @@ odoo.define('web.ControlPanelStore', function (require) {
         /**
          * Activate a filter of type 'timeRange' with provided fieldName, rangeId, and comparisonRangeId.
          * If that filter does not exist it is created on the fly.
+         *
          * @param {string} fieldName
          * @param {string} rangeId
          * @param {string} [comparisonRangeId]
@@ -131,15 +134,15 @@ odoo.define('web.ControlPanelStore', function (require) {
             const groupId = this._getGroupIdOfType('timeRange');
             let timeRange = Object.values(state.filters).find(f => {
                 return f.type === 'timeRange' &&
-                        f.fieldName === fieldName &&
-                        f.rangeId === rangeId &&
-                        f.comparisonRangeId === comparisonRangeId;
+                    f.fieldName === fieldName &&
+                    f.rangeId === rangeId &&
+                    f.comparisonRangeId === comparisonRangeId;
             });
             let timeRangeId;
             if (timeRange) {
                 timeRangeId = timeRange.id;
             } else {
-                timeRangeId = filterId ++;
+                timeRangeId = filterId++;
                 const field = this.fields[fieldName];
                 timeRange = Object.assign(this._extractTimeRange(fieldName, rangeId, comparisonRangeId), {
                     type: 'timeRange',
@@ -164,6 +167,15 @@ odoo.define('web.ControlPanelStore', function (require) {
         clearQuery({ state }) {
             state.query.forEach(groupId => {
                 const group = state.groups[groupId];
+                group.activeFilterIds.forEach(({ filterId }) => {
+                    const filter = state.filters[filterId];
+                    if (filter.autoCompleteValues) {
+                        filter.autoCompleteValues = [];
+                    }
+                    if (filter.hasOptions) {
+                        f.currentOptionIds = [];
+                    }
+                });
                 group.activeFilterIds = [];
             });
             state.query = [];
@@ -172,6 +184,7 @@ odoo.define('web.ControlPanelStore', function (require) {
         /**
          * Create a new filter of type 'favorite' and toggle it.
          * It belongs to the unique group of favorites.
+         *
          * @param {Object} preFilter
          */
         async createNewFavorite({ state, dispatch }, preFilter) {
@@ -179,14 +192,14 @@ odoo.define('web.ControlPanelStore', function (require) {
             dispatch('clearQuery');
             const group = {
                 activeFilterIds: [],
-                id: groupId ++,
+                id: groupId++,
                 type: 'favorite',
             };
             state.groups[group.id] = group;
             state.query.push(group.id);
             const filter = Object.assign(preFavorite, {
                 groupId: group.id,
-                id: filterId ++,
+                id: filterId++,
                 type: 'favorite',
             });
             state.filters[filter.id] = filter;
@@ -196,29 +209,29 @@ odoo.define('web.ControlPanelStore', function (require) {
         /**
          * @param {Object[]} filters
          */
-        createNewFilters({ state }, filters) {
-            if (!filters.length) {
+        createNewFilters({ state }, prefilters) {
+            if (!prefilters.length) {
                 return;
             }
             const group = {
                 activeFilterIds: [],
-                id: groupId ++,
+                id: groupId++,
                 type: 'filter',
             };
             state.groups[group.id] = group;
             state.query.push(group.id);
 
-            filters.forEach(preFilter => {
+            prefilters.forEach(preFilter => {
                 const filter = Object.assign(preFilter, {
                     groupId: group.id,
                     groupNumber: groupNumber,
-                    id: filterId ++,
+                    id: filterId++,
                     type: 'filter',
                 });
                 state.filters[filter.id] = filter;
                 group.activeFilterIds.push({ filterId: filter.id });
             });
-            groupNumber ++;
+            groupNumber++;
         }
 
         /**
@@ -231,8 +244,8 @@ odoo.define('web.ControlPanelStore', function (require) {
                 fieldName: field.name,
                 fieldType: field.type,
                 groupId: groupId,
-                groupNumber: groupNumber ++,
-                id: filterId ++,
+                groupNumber: groupNumber++,
+                id: filterId++,
                 type: 'groupBy',
             };
             state.filters[filter.id] = filter;
@@ -246,6 +259,8 @@ odoo.define('web.ControlPanelStore', function (require) {
         }
 
         /**
+         * Deactivate a group with provided groupId
+         *
          * @param {number} groupId
          */
         deactivateGroup({ state }, groupId) {
@@ -256,6 +271,9 @@ odoo.define('web.ControlPanelStore', function (require) {
                     if (filter.autoCompleteValues) {
                         filter.autoCompleteValues = [];
                     }
+                    if (filter.hasOptions) {
+                        filter.currentOptionIds = [];
+                    }
                 }
                 group.activeFilterIds = [];
                 const groupIndex = state.query.indexOf(groupId);
@@ -265,8 +283,9 @@ odoo.define('web.ControlPanelStore', function (require) {
 
         /**
          * Delete a filter of type 'favorite' with given filterId server side and
-         * in control panel model. Of course this forces the filter to be removed
+         * in control panel store. Of course the filter is also removed
          * from the search query.
+         *
          * @param {string} filterId
          */
         async deleteFavorite({ state, dispatch }, filterId) {
@@ -283,7 +302,7 @@ odoo.define('web.ControlPanelStore', function (require) {
         }
 
         /**
-         * Activate a field filter and compute its domain from its auto-completion
+         * Activate a filter of type 'field' and compute its domain from its auto-completion
          * values.
          */
         toggleAutoCompletionFilter({ state }, { filterId, label, value, type }) {
@@ -295,6 +314,8 @@ odoo.define('web.ControlPanelStore', function (require) {
             const group = state.groups[filter.groupId];
             if (!group.activeFilterIds.some(active => active.filterId === filter.id)) {
                 group.activeFilterIds.push({ filterId: filter.id });
+            }
+            if (state.query.indexOf(group.id) === -1) {
                 state.query.push(group.id);
             }
         }
@@ -439,7 +460,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                         f.options = f.options.map(o => {
                             const { description, optionId, groupNumber } = o;
                             const isActive = f.currentOptionIds.includes(o.optionId);
-                            return { description, optionId, groupNumber, isActive};
+                            return { description, optionId, groupNumber, isActive };
                         });
                     }
                     fs.push(f);
@@ -629,14 +650,14 @@ odoo.define('web.ControlPanelStore', function (require) {
         _createGroupOfFilters(pregroup, type) {
             const group = {
                 activeFilterIds: [],
-                id: groupId ++,
+                id: groupId++,
                 type,
             };
             this.state.groups[group.id] = group;
             pregroup.forEach(preFilter => {
                 const filter = Object.assign(preFilter, {
                     groupId: group.id,
-                    id: filterId ++,
+                    id: filterId++,
                 });
                 this.state.filters[filter.id] = filter;
             });
@@ -683,7 +704,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                     }
                     currentTag = preFilter.tag;
                     currentGroup = [];
-                    groupNumber ++;
+                    groupNumber++;
                 }
                 if (preFilter.tag !== 'separator') {
                     const filter = {
@@ -835,7 +856,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {number} rangeId
          * @param {number} comparisonRangeId
          */
-        _extractTimeRange (fieldName, rangeId, comparisonRangeId) {
+        _extractTimeRange(fieldName, rangeId, comparisonRangeId) {
             const field = this.fields[fieldName];
             const timeRange = {
                 fieldName: fieldName,
@@ -1220,7 +1241,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {boolean} [evaluation=false]
          * @returns {Object}
          */
-        _getTimeRanges(evaluation=false) {
+        _getTimeRanges(evaluation = false) {
             // groupOfTimeRanges can be undefined in case withSearchBar is false
             const groupId = this._getGroupIdOfType('timeRange');
             const groupOfTimeRanges = this.state.groups[groupId];
@@ -1235,12 +1256,12 @@ odoo.define('web.ControlPanelStore', function (require) {
                         rangeDescription: filter.rangeDescription,
                     };
                     if (filter.comparisonRangeId) {
-                        timeRanges.comparisonRange =  Domain.prototype.stringToArray(filter.comparisonRange);
+                        timeRanges.comparisonRange = Domain.prototype.stringToArray(filter.comparisonRange);
                         timeRanges.comparisonRangeDescription = filter.comparisonRangeDescription;
                     }
                     return timeRanges;
                 } else {
-                   return {
+                    return {
                         field: filter.fieldName,
                         range: filter.rangeId,
                         comparisonRange: filter.comparisonRangeId,
@@ -1421,7 +1442,7 @@ odoo.define('web.ControlPanelStore', function (require) {
             this.referenceMoment = moment();
             this.optionGenerators = Object.values(OPTION_GENERATORS).map(option => {
                 const description = option.description ?
-                    this.env._t(option.description):
+                    this.env._t(option.description) :
                     this.referenceMoment.clone()
                         .set(option.setParam)
                         .add(option.addParam)
