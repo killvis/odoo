@@ -32,13 +32,13 @@
                     threadLocalId="storeProps.chatter.threadLocalId"
                 />
             </t>
-            <t t-if="storeProps.chatter.threadLocalId">
+            <t t-if="storeProps.thread">
                 <Thread
                     class="o_Chatter_thread"
                     hasComposer="false"
                     haveMessagesAuthorRedirect="true"
                     order="'desc'"
-                    threadLocalId="storeProps.chatter.threadLocalId"
+                    threadLocalId="storeProps.thread.localId"
                     t-att-class="{ 'o-is-temporary': storeProps.thread.isTemporary }"
                     t-ref="thread"
                 />
