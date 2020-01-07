@@ -53,7 +53,7 @@ var ControlPanelRenderer = Renderer.extend({
 
         this.$subMenus = null;
         this.action = params.action;
-        this.displaySearchMenu = true;
+        this.displayDropdown = true;
         this.isMobile = config.device.isMobile;
         this.menusSetup = false;
         this.searchMenuTypes = params.searchMenuTypes || [];
@@ -91,7 +91,7 @@ var ControlPanelRenderer = Renderer.extend({
         var superDef = this._super.apply(this, arguments);
         var searchDef = this._renderSearch();
         return Promise.all([superDef, searchDef]).then(function () {
-            self._setSearchMenusVisibility();
+            self._setDropdownsVisibility();
         });
     },
     /**
@@ -306,16 +306,16 @@ var ControlPanelRenderer = Renderer.extend({
         });
     },
     /**
-     * Hide or show the search menus according to this.displaySearchMenu.
+     * Hide or show the search menus according to this.displayDropdown.
      *
      * @private
      */
-    _setSearchMenusVisibility: function () {
+    _setDropdownsVisibility: function () {
         this.$('.o_searchview_more')
-            .toggleClass('fa-search-plus', !this.displaySearchMenu)
-            .toggleClass('fa-search-minus', this.displaySearchMenu);
+            .toggleClass('fa-search-plus', !this.displayDropdown)
+            .toggleClass('fa-search-minus', this.displayDropdown);
         this.$('.o_search_options')
-            .toggleClass('o_hidden', !this.displaySearchMenu);
+            .toggleClass('o_hidden', !this.displayDropdown);
     },
     /**
      * Create a new menu of the given type and append it to this.$subMenus.
@@ -381,8 +381,8 @@ var ControlPanelRenderer = Renderer.extend({
      * @private
      */
     _onMore: function () {
-        this.displaySearchMenu = !this.displaySearchMenu;
-        this._setSearchMenusVisibility();
+        this.displayDropdown = !this.displayDropdown;
+        this._setDropdownsVisibility();
     },
 });
 

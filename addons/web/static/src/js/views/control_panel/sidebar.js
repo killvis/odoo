@@ -3,12 +3,12 @@ odoo.define('web.Sidebar', function (require) {
 
     const Context = require('web.Context');
     const CustomFileInput = require('web.CustomFileInput');
+    const DropdownMenu = require('web.DropdownMenu');
     const pyUtils = require('web.py_utils');
-    const SearchMenu = require('web.SearchMenu');
 
     const { Component } = owl;
 
-    class SidebarSearchMenu extends SearchMenu {
+    class SidebarDropdownMenu extends DropdownMenu {
 
         /**
          * Method triggered when the user clicks on a toolbar dropdown
@@ -38,15 +38,15 @@ odoo.define('web.Sidebar', function (require) {
         }
     }
 
-    SidebarSearchMenu.components = Object.assign({}, SearchMenu.components, { CustomFileInput });
-    SidebarSearchMenu.props = Object.assign({}, SearchMenu.props, {
+    SidebarDropdownMenu.components = Object.assign({}, DropdownMenu.components, { CustomFileInput });
+    SidebarDropdownMenu.props = Object.assign({}, DropdownMenu.props, {
         activeIds: Array,
         editable: Boolean,
         items: Object,
         model: String,
         section: Object,
     });
-    SidebarSearchMenu.template = 'Sidebar.SearchMenu';
+    SidebarDropdownMenu.template = 'Sidebar.DropdownMenu';
 
     class Sidebar extends Component {
 
@@ -144,7 +144,7 @@ odoo.define('web.Sidebar', function (require) {
         }
     }
 
-    Sidebar.components = { SidebarSearchMenu };
+    Sidebar.components = { SidebarDropdownMenu };
     Sidebar.defaultProps = {
         actions: {},
         editable: true,

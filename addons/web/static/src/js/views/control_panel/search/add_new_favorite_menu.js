@@ -1,14 +1,14 @@
 odoo.define('web.AddNewFavoriteMenu', function (require) {
 "use strict";
 
-const SearchMenuItem = require('web.SearchMenuItem');
+const DropdownMenuItem = require('web.DropdownMenuItem');
 const { useFocusOnUpdate } = require('web.custom_hooks');
 
 const { useDispatch, useRef, useState } = owl.hooks;
 
 let favoriteId = 0;
 
-class AddNewFavoriteMenu extends SearchMenuItem {
+class AddNewFavoriteMenu extends DropdownMenuItem {
 
     /**
      * @param {Object} params

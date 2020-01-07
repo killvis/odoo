@@ -708,7 +708,7 @@ var utils = {
             for (const value in valuesDict) {
                 string = string.replace(`%(${value})s`, valuesDict[value]);
             }
-        } else if (values.length > 1) {
+        } else {
             for (const value of values) {
                 string = string.replace(/%s/, value);
             }

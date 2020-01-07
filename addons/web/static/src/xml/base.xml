@@ -72,11 +72,11 @@
                 t-ref="searchView"
                 >
                 <div class="o_searchview" role="search" aria-autocomplete="list" >
-                    <i t-attf-class="o_searchview_more fa fa-search-{{ state.displaySearchMenus ? 'minus' : 'plus' }}"
+                    <i t-attf-class="o_searchview_more fa fa-search-{{ state.displayDropdowns ? 'minus' : 'plus' }}"
                         title="Advanced Search..."
                         role="img"
                         aria-label="Advanced Search..."
-                        t-on-click.prevent="state.displaySearchMenus = !state.displaySearchMenus"
+                        t-on-click.prevent="state.displayDropdowns = !state.displayDropdowns"
                     />
                     <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
                 </div>
@@ -90,7 +90,7 @@
                 <Sidebar t-if="props.sidebar" t-props="props.sidebar"/>
             </div>
             <div class="o_cp_right">
-                <div t-if="props.cp_content.searchViewButtons or (props.withSearchBar and state.displaySearchMenus)"
+                <div t-if="props.cp_content.searchViewButtons or (props.withSearchBar and state.displayDropdowns)"
                     class="btn-group o_search_options position-static"
                     role="search"
                     t-ref="searchViewButtons"
@@ -139,75 +139,72 @@
 </t>
 
 <t t-name="ControlPanelMobile" owl="1">
-    <div class="o_control_panel">
+    <!-- Mobile search view open -->
+    <div t-if="state.isFiltering" class="o_mobile_search">
+        <div class="o_mobile_search_header">
+            <button type="button"
+                class="o_mobile_search_button btn float-left"
+                t-on-click.stop="state.isFiltering = !state.isFiltering"
+                >
+                <i class="fa fa-arrow-left"/>
+                <strong class="ml8">FILTER</strong>
+            </button>
+            <button type="button"
+                class="o_mobile_search_button btn"
+                t-on-click.stop="dispatch('clearQuery')"
+                >
+                CLEAR
+            </button>
+        </div>
+        <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
+        <div class="o_mobile_search_filter o_search_options"
+            t-ref="searchViewButtons"
+            t-on-update_query.stop="_onUpdateQuery"
+            >
+            <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
+                action="props.action"
+                fields="props.fields"
+            />
+            <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
+                action="props.action"
+                fields="props.fields"
+            />
+            <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
+                action="props.action"
+                fields="props.fields"
+            />
+            <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
+                action="props.action"
+                fields="props.fields"
+                viewType="props.viewType"
+            />
+        </div>
+        <button type="button"
+            class="btn btn-primary o_mobile_search_show_result fixed-bottom"
+            t-on-click.stop="state.isFiltering = !state.isFiltering"
+            >
+            SEE RESULT
+        </button>
+    </div>
+    <div t-else="" class="o_control_panel">
         <div class="o_cp_top">
             <ol t-if="props.withBreadcrumbs and !state.isSearching" class="breadcrumb" role="navigation">
-                <li t-foreach="props.breadcrumbs" t-as="bc" t-key="bc_index"
-                    class="breadcrumb-item"
-                    t-att-accesskey="bc_last and 'b'"
-                    t-on-click.prevent="trigger('breadcrumb_clicked', { controllerID: bc.controllerID })"
-                    >
-                    <a t-if="bc.title" href="#" t-esc="bc.title"/>
-                    <em t-else="" class="text-warning">Unnamed</em>
-                </li>
+                <t t-set="breadcrumb" t-value="props.breadcrumbs[props.breadcrumbs.length - 1]"/>
+                <li t-if="breadcrumb"
+                    class="breadcrumb-item o_back_button btn btn-secondary"
+                    accesskey="b"
+                    t-on-click.prevent="trigger('breadcrumb_clicked', { controllerID: breadcrumb.controllerID })"
+                />
                 <li class="breadcrumb-item active" t-esc="props.title"/>
             </ol>
             <div t-if="props.cp_content.searchView or props.withSearchBar"
                 class="o_cp_searchview"
-                t-att-class="{ o_searchview_quick: props.isSearching }"
+                t-att-class="{ o_searchview_quick: state.isSearching }"
                 role="search"
                 t-ref="searchView"
                 >
-                <div class="o_searchview" role="search" aria-autocomplete="list" t-on-keydown="_onKeydown">
-                    <!-- Mobile search view open -->
-                    <div t-if="state.isFiltering" class="o_mobile_search">
-                        <div class="o_mobile_search_header">
-                            <button type="button"
-                                class="o_mobile_search_button btn float-left"
-                                t-on-click.stop="state.isFiltering = !state.isFiltering"
-                                >
-                                <i class="fa fa-arrow-left"/>
-                                <strong class="ml8">FILTER</strong>
-                            </button>
-                            <button type="button"
-                                class="o_mobile_search_button btn"
-                                t-on-click.stop="dispatch('clearQuery')"
-                                >
-                                CLEAR
-                            </button>
-                        </div>
-                        <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
-                        <div class="o_mobile_search_filter o_search_options"
-                            t-ref="searchViewButtons"
-                            t-on-update_query.stop="_onUpdateQuery"
-                            >
-                            <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
-                                action="props.action"
-                                fields="props.fields"
-                            />
-                            <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
-                                action="props.action"
-                                fields="props.fields"
-                            />
-                            <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
-                                action="props.action"
-                                fields="props.fields"
-                            />
-                            <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
-                                action="props.action"
-                                fields="props.fields"
-                                viewType="props.viewType"
-                            />
-                        </div>
-                        <button type="button"
-                            class="btn btn-primary o_mobile_search_show_result fixed-bottom"
-                            t-on-click.stop="state.isFiltering = !state.isFiltering"
-                            >
-                            SEE RESULT
-                        </button>
-                    </div>
-                    <!-- Standard search view layout -->
-                    <t t-else="">
+                <div class="o_searchview" role="search" aria-autocomplete="list">
+                    <t t-if="!state.isFiltering">
                         <t t-if="state.isSearching">
                             <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
                             <button type="button"
@@ -228,7 +225,6 @@
                 <div class="o_cp_buttons" role="toolbar" aria-label="Control panel toolbar" t-ref="buttons">
                     <t t-slot="buttons"/>
                 </div>
-                <Sidebar t-if="props.sidebar" t-props="props.sidebar"/>
             </div>
             <div class="o_cp_right">
                 <Pager class="o_cp_pager" role="'search'" t-props="props.pager"/>
@@ -303,6 +299,233 @@
     </div>
 </t>
 
+<t t-name="DropdownMenu" owl="1">
+    <div class="btn-group o_dropdown" t-att-class="{ show: state.open }">
+        <button type="button"
+            class="o_dropdown_toggler_btn btn btn-secondary"
+            t-att-aria-expanded="state.open ? 'true' : 'false'"
+            tabindex="-1"
+            t-on-click="state.open = !state.open"
+            t-on-keydown="_onButtonKeydown"
+            >
+            <i t-if="icon" t-att-class="icon"/>
+            <span class="o_dropdown_title" t-esc="title"/>
+            <i t-if="displayCaret" t-attf-class="o_dropdown_caret fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
+            <i t-else="" t-attf-class="fa fa-chevron-{{ state.open ? 'down' : 'right' }} float-right mt4"/>
+        </button>
+        <ul t-if="state.open" class="o_dropdown_menu dropdown-menu show" role="menu">
+            <t t-set="currentGroup" t-value="null"/>
+            <t t-foreach="items" t-as="item" t-key="item_index">
+                <li t-if="currentGroup !== null and currentGroup !== item.groupNumber" class="dropdown-divider" role="separator"/>
+                <DropdownMenuItem t-props="item" t-on-item_click="_onItemClick"/>
+                <t t-set="currentGroup" t-value="item.groupNumber"/>
+            </t>
+        </ul>
+    </div>
+</t>
+
+<t t-name="DropdownMenuItem" owl="1">
+    <li t-if="interactive" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
+        <a class="o_menu_item_parent dropdown-item"
+            t-att-class="{ selected: props.isActive }"
+            role="menuitem"
+            href="#"
+            t-ref="fallback-focus"
+            t-on-click.prevent="state.open = !state.open"
+            >
+            <t t-esc="props.description"/>
+            <i t-attf-class="o_icon_right fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
+        </a>
+        <ul t-if="state.open" class="o_menu_item_options">
+            <t t-set="currentGroup" t-value="null"/>
+            <t t-foreach="props.options" t-as="option" t-key="option_index">
+                <li t-if="currentGroup !== null and currentGroup !== option.groupNumber"
+                    class="dropdown-divider"
+                    role="separator"
+                />
+                <li role="menuitem">
+                    <a class="o_item_option dropdown-item pl-5"
+                        t-att-class="{ selected: option.isActive }"
+                        role="menuitem"
+                        href="#"
+                        t-esc="option.description"
+                        t-on-click.prevent="trigger('item_click', { itemId: props.id, optionId: option.optionId })"
+                    />
+                </li>
+                <t t-set="currentGroup" t-value="option.groupNumber"/>
+            </t>
+        </ul>
+    </li>
+    <li t-else="" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
+        <a class="dropdown-item"
+            t-att-class="{ selected: props.isActive }"
+            role="menuitem"
+            href="#"
+            t-on-click.prevent="trigger('item_click', { itemId: props.id })"
+            >
+            <t t-esc="props.description"/>
+            <i t-if="props.removable"
+                class="o_icon_right fa fa-trash-o"
+                title="Delete filter"
+                t-on-click.stop.prevent="trigger('remove_filter', props.id)"
+            />
+            <i t-if="props.editable"
+                class="o_icon_right fa fa-pencil"
+                title="Edit filter"
+                t-on-click.stop.prevent="trigger('edit_filter', props.id)"
+            />
+        </a>
+    </li>
+</t>
+
+<t t-name="FavoriteMenu" t-inherit="DropdownMenu" t-inherit-mode="primary" owl="1">
+    <xpath expr="//ul[@role='menu']" position="inside">
+        <AddNewFavoriteMenu action="props.action" favorites="items"/>
+    </xpath>
+    <xpath expr="//DropdownMenuItem" position="attributes">
+        <attribute name="t-on-drag">_onDrag</attribute>
+        <attribute name="t-on-remove_filter">_onRemoveFavorite</attribute>
+        <attribute name="t-on-edit_filter">_onEditFavorite</attribute>
+    </xpath>
+    <xpath expr="//div[1]" position="inside">
+        <Dialog t-if="state.editDialog"
+            title="'Edit favorite'"
+            size="'small'"
+            t-on-dialog_closed="state.editDialog = false"
+            >
+            <div class="o_favorite_name">
+                <label t-attf-for="o_favorite_name_{{ id }}">Name</label>
+                <input type="text" t-attf-id="o_favorite_name_{{ id }}"
+                    class="o_input"
+                    t-att-value="state.editDialog.favorite.description"
+                />
+            </div>
+            <div class="o_favorite_domain">
+                <label>Domains</label>
+                <FilterMenuGenerator class="o_menu_generator"
+                    fields="props.fields"
+                    items="state.editDialog.domains"
+                    standAlone="'true'"
+                    t-on-create_new_filters.stop="_onCreateNewFilters"
+                />
+            </div>
+            <t t-set="buttons">
+                <button type="button"
+                    class="btn btn-primary"
+                    t-on-click="_editFavorite"
+                    >
+                    Save
+                </button>
+                <button type="button"
+                    class="btn btn-secondary"
+                    t-on-click="state.editDialog = false"
+                    >
+                    Cancel
+                </button>
+            </t>
+        </Dialog>
+        <Dialog t-if="state.deleteDialog"
+            title="'Warning'"
+            size="'medium'"
+            t-on-dialog_closed="state.deleteDialog = false"
+            >
+            <t t-if="state.deleteDialog.favorite.userId">
+                Are you sure that you want to remove this filter?
+            </t>
+            <t t-else="">
+                This filter is global and will be removed for everybody if you continue.
+            </t>
+            <t t-set="buttons">
+                <button type="button"
+                    class="btn btn-primary"
+                    t-on-click="_removeFavorite"
+                    >
+                    Ok
+                </button>
+                <button type="button"
+                    class="btn btn-secondary"
+                    t-on-click="state.deleteDialog = false"
+                    >
+                    Cancel
+                </button>
+            </t>
+        </Dialog>
+    </xpath>
+</t>
+
+<t t-name="FilterMenu" t-inherit="DropdownMenu" t-inherit-mode="primary" owl="1">
+    <xpath expr="//ul[@role='menu']" position="inside">
+        <t t-if="Object.keys(props.fields).length">
+            <li t-if="items.length" class="dropdown-divider" role="separator"/>
+            <FilterMenuGenerator class="o_menu_generator"
+                fields="props.fields"
+                t-on-create_new_filters.stop="_onCreateNewFilters"
+            />
+        </t>
+    </xpath>
+</t>
+
+<t t-name="GroupByMenu" t-inherit="DropdownMenu" t-inherit-mode="primary" owl="1">
+    <xpath expr="//ul[@role='menu']" position="inside">
+        <t t-if="Object.keys(props.fields).length">
+            <li t-if="items.length" class="dropdown-divider" role="separator"/>
+            <GroupByMenuGenerator class="o_menu_generator"
+                fields="props.fields"
+                t-on-create_new_groupby.stop="_onCreateNewGroupBy"
+            />
+        </t>
+    </xpath>
+</t>
+
+<t t-name="TimeRangeMenu" owl="1" t-inherit="DropdownMenu" t-inherit-mode="primary">
+    <xpath expr="//t[@t-foreach='items']" position="replace">
+        <li class="o_menu_item dropdown-item-text" role="menuitem">
+            <label t-attf-for="field_select_{{id}}">Based On</label>
+            <select t-attf-id="field_select_{{id}}" class="o_input" t-on-change="_onFieldNameChanged">
+                <option t-foreach="fields" t-as="field" t-key="field.name"
+                    t-att-selected="state.fieldName === field.name"
+                    t-att-value="field.name"
+                    t-esc="field.description"
+                />
+            </select>
+        </li>
+        <li class="o_menu_item dropdown-item-text" role="menuitem">
+            <label t-attf-for="range_select_{{id}}">Range</label>
+            <select t-attf-id="range_select_{{id}}" class="o_input" t-on-change="_onRangeChanged">
+                <optgroup t-foreach="periodGroups" t-as="group" t-key="group" label="">
+                    <t t-foreach="Object.values(periodOptions)" t-as="option" t-key="option_index">
+                        <option t-if="option.groupNumber === group"
+                            t-att-selected="state.rangeId === option.id"
+                            t-att-value="option.id"
+                            t-esc="env._t(option.description)"
+                        />
+                    </t>
+                </optgroup>
+            </select>
+        </li>
+        <li class="o_menu_item dropdown-item-text" role="menuitem">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" t-attf-id="checkbox_select_{{id}}"
+                    class="custom-control-input"
+                    t-att-checked="state.isComparing"
+                    t-on-change="state.isComparing = !state.isComparing"
+                />
+                <label t-attf-for="checkbox_select_{{id}}" class="custom-control-label">Compare To</label>
+            </div>
+            <select t-if="state.isComparing" class="o_input" t-on-change="_onComparisonRangeChanged">
+                <option t-foreach="Object.values(comparisonTimeRangeOptions)" t-as="option" t-key="option_index"
+                    t-att-selected="state.comparisonRangeId === option.id"
+                    t-att-value="option.id"
+                    t-esc="env._t(option.description)"
+                />
+            </select>
+        </li>
+        <li class="o_menu_item dropdown-item-text" role="menuitem">
+            <button type="button" class="btn btn-primary" t-on-click="_onApply">Apply</button>
+        </li>
+    </xpath>
+</t>
+
 <t t-name="Pager" owl="1">
     <nav t-att-role="props.role" aria-label="Pager">
         <div class="o_pager">
@@ -352,8 +575,9 @@
 
 <t t-name="FilterMenuGenerator" owl="1">
     <div>
-        <button type="button"
-            class="o_add_custom_filter dropdown-item"
+        <button t-if="!props.standAlone" type="button"
+            class="o_add_custom_filter"
+            t-att-class="{ 'dropdown-item': !props.standAlone }"
             aria-expanded="false"
             t-ref="fallback-focus"
             t-on-click="state.open = !state.open"
@@ -361,9 +585,10 @@
             >
             Add Custom Filter
         </button>
-        <t t-if="state.open">
+        <t t-if="props.standAlone or state.open">
             <div t-foreach="state.conditions" t-as="condition" t-key="condition_index"
-                class=" o_filter_condition dropdown-item-text"
+                class=" o_filter_condition"
+                t-att-class="{ 'dropdown-item-text': !props.standAlone }"
                 >
                 <t t-set="fieldType" t-value="fields[condition.field].type"/>
                 <t t-set="selectedOperator" t-value="OPERATORS[FIELDTYPES[fieldType]][condition.operator]"/>
@@ -428,7 +653,7 @@
                     t-on-click="_onRemoveCondition(condition_index)"
                 />
             </div>
-            <div class="o_add_filter_menu dropdown-item-text">
+            <div class="o_add_filter_menu" t-att-class="{ 'dropdown-item-text': !props.standAlone }">
                 <button type="button" class="btn btn-primary o_apply_filter" t-on-click="_onApply">Apply</button>
                 <button type="button"
                     class="btn btn-secondary o_add_condition"
@@ -589,192 +814,12 @@
     </div>
 </t>
 
-<t t-name="SearchMenu" owl="1">
-    <div class="btn-group o_dropdown" t-att-class="{ show: state.open }">
-        <button type="button"
-            class="o_dropdown_toggler_btn btn btn-secondary"
-            t-att-aria-expanded="state.open ? 'true' : 'false'"
-            tabindex="-1"
-            t-on-click="state.open = !state.open"
-            t-on-keydown="_onButtonKeydown"
-            >
-            <i t-if="icon" t-att-class="icon"/>
-            <span class="o_dropdown_title" t-esc="title"/>
-            <i t-if="env.device.isMobile" t-attf-class="fa fa-chevron-{{ state.open ? 'down' : 'right' }} float-right mt4"/>
-            <i t-else="" t-attf-class="o_dropdown_caret fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
-        </button>
-        <ul t-if="state.open" class="o_dropdown_menu dropdown-menu show" role="menu">
-            <t t-set="currentGroup" t-value="null"/>
-            <t t-foreach="items" t-as="item" t-key="item_index">
-                <li t-if="currentGroup !== null and currentGroup !== item.groupNumber" class="dropdown-divider" role="separator"/>
-                <SearchMenuItem t-props="item" t-on-item_click="_onItemClick"/>
-                <t t-set="currentGroup" t-value="item.groupNumber"/>
-            </t>
-        </ul>
-    </div>
-</t>
-
-<t t-name="FavoriteMenu" t-inherit="SearchMenu" t-inherit-mode="primary" owl="1">
-    <xpath expr="//ul[@role='menu']" position="inside">
-        <AddNewFavoriteMenu action="props.action" favorites="items"/>
-    </xpath>
-    <xpath expr="//SearchMenuItem" position="attributes">
-        <attribute name="t-on-remove_filter">_onRemoveFavorite</attribute>
-        <attribute name="t-on-edit_filter">_onEditFavorite</attribute>
-    </xpath>
-    <xpath expr="//div[1]" position="inside">
-        <Dialog t-if="state.deleteDialog" title="'Warning'" size="'medium'">
-            <t t-if="state.deleteDialog.favorite.userId">
-                Are you sure that you want to remove this filter?
-            </t>
-            <t t-else="">
-                This filter is global and will be removed for everybody if you continue.
-            </t>
-            <t t-set="buttons">
-                <button type="button"
-                    class="btn btn-primary"
-                    t-on-click="_onAddNewFavorite"
-                    >
-                    Ok
-                </button>
-                <button type="button"
-                    class="btn btn-secondary"
-                    t-on-click="state.deleteDialog = false"
-                    >
-                    Cancel
-                </button>
-            </t>
-        </Dialog>
-    </xpath>
-</t>
-
-<t t-name="FilterMenu" t-inherit="SearchMenu" t-inherit-mode="primary" owl="1">
-    <xpath expr="//ul[@role='menu']" position="inside">
-        <t t-if="Object.keys(props.fields).length and items.length">
-            <li class="dropdown-divider" role="separator"/>
-            <FilterMenuGenerator class="o_menu_generator" fields="props.fields" items="items"/>
-        </t>
-    </xpath>
-</t>
-
-<t t-name="GroupByMenu" t-inherit="SearchMenu" t-inherit-mode="primary" owl="1">
-    <xpath expr="//ul[@role='menu']" position="inside">
-        <t t-if="Object.keys(props.fields).length and items.length">
-            <li class="dropdown-divider" role="separator"/>
-            <GroupByMenuGenerator class="o_menu_generator" fields="props.fields" items="items" t-on-create_new_groupby="_onCreateNewGroupBy"/>
-        </t>
-    </xpath>
-</t>
-
-<t t-name="TimeRangeMenu" owl="1" t-inherit="SearchMenu" t-inherit-mode="primary">
-    <xpath expr="//t[@t-foreach='items']" position="replace">
-        <li class="o_menu_item dropdown-item-text" role="menuitem">
-            <label t-attf-for="field_select_{{id}}">Based On</label>
-            <select t-attf-id="field_select_{{id}}" class="o_input" t-on-change="_onFieldNameChanged">
-                <option t-foreach="fields" t-as="field" t-key="field.name"
-                    t-att-selected="state.fieldName === field.name"
-                    t-att-value="field.name"
-                    t-esc="field.description"
-                />
-            </select>
-        </li>
-        <li class="o_menu_item dropdown-item-text" role="menuitem">
-            <label t-attf-for="range_select_{{id}}">Range</label>
-            <select t-attf-id="range_select_{{id}}" class="o_input" t-on-change="_onRangeChanged">
-                <optgroup t-foreach="periodGroups" t-as="group" t-key="group" label="">
-                    <t t-foreach="Object.values(periodOptions)" t-as="option" t-key="option_index">
-                        <option t-if="option.groupNumber === group"
-                            t-att-selected="state.rangeId === option.id"
-                            t-att-value="option.id"
-                            t-esc="env._t(option.description)"
-                        />
-                    </t>
-                </optgroup>
-            </select>
-        </li>
-        <li class="o_menu_item dropdown-item-text" role="menuitem">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" t-attf-id="checkbox_select_{{id}}"
-                    class="custom-control-input"
-                    t-att-checked="state.isComparing"
-                    t-on-change="state.isComparing = !state.isComparing"
-                />
-                <label t-attf-for="checkbox_select_{{id}}" class="custom-control-label">Compare To</label>
-            </div>
-            <select t-if="state.isComparing" class="o_input" t-on-change="_onComparisonRangeChanged">
-                <option t-foreach="Object.values(comparisonTimeRangeOptions)" t-as="option" t-key="option_index"
-                    t-att-selected="state.comparisonRangeId === option.id"
-                    t-att-value="option.id"
-                    t-esc="env._t(option.description)"
-                />
-            </select>
-        </li>
-        <li class="o_menu_item dropdown-item-text" role="menuitem">
-            <button type="button" class="btn btn-primary" t-on-click="_onApply">Apply</button>
-        </li>
-    </xpath>
-</t>
-
-<t t-name="SearchMenuItem" owl="1">
-    <li t-if="interactive" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
-        <a class="o_menu_item_parent dropdown-item"
-            t-att-class="{ selected: props.isActive }"
-            role="menuitem"
-            href="#"
-            t-ref="fallback-focus"
-            t-on-click.prevent="state.open = !state.open"
-            >
-            <t t-esc="props.description"/>
-            <i t-attf-class="o_icon_right fa fa-caret-{{ state.open ? 'down' : 'right' }}"/>
-        </a>
-        <ul t-if="state.open" class="o_menu_item_options">
-            <t t-set="currentGroup" t-value="null"/>
-            <t t-foreach="props.options" t-as="option" t-key="option_index">
-                <li t-if="currentGroup !== null and currentGroup !== option.groupNumber"
-                    class="dropdown-divider"
-                    role="separator"
-                />
-                <li role="menuitem">
-                    <a class="o_item_option dropdown-item pl-5"
-                        t-att-class="{ selected: option.isActive }"
-                        role="menuitem"
-                        href="#"
-                        t-esc="option.description"
-                        t-on-click.prevent="trigger('item_click', { itemId: props.id, optionId: option.optionId })"
-                    />
-                </li>
-                <t t-set="currentGroup" t-value="option.groupNumber"/>
-            </t>
-        </ul>
-    </li>
-    <li t-else="" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
-        <a class="dropdown-item"
-            t-att-class="{ selected: props.isActive }"
-            role="menuitem"
-            href="#"
-            t-on-click.prevent="trigger('item_click', { itemId: props.id })"
-            >
-            <t t-esc="props.description"/>
-            <i t-if="props.removable"
-                class="o_icon_right fa fa-trash-o"
-                title="Delete filter"
-                t-on-click.stop.prevent="trigger('remove_filter', props.id)"
-            />
-            <i t-if="props.editable"
-                class="o_icon_right fa fa-pencil"
-                title="Edit filter"
-                t-on-click.stop.prevent="trigger('edit_filter', props.id)"
-            />
-        </a>
-    </li>
-</t>
-
 <t t-name="Sidebar" owl="1">
     <aside class="o_cp_sidebar">
         <t t-if="Object.keys(items).length">
             <t t-foreach="sections" t-as="section" t-key="section.name">
                 <t t-set="sectionItems" t-value="items[section.name]"/>
-                <SidebarSearchMenu t-if="sectionItems.length"
+                <SidebarDropdownMenu t-if="sectionItems.length"
                     activeIds="props.activeIds"
                     editable="props.editable"
                     items="sectionItems"
@@ -787,7 +832,7 @@
     </aside>
 </t>
 
-<t t-name="Sidebar.SearchMenu" owl="1">
+<t t-name="Sidebar.DropdownMenu" owl="1">
     <div class="btn-group o_dropdown" t-att-class="{ show: state.open }">
         <t t-if="props.section.name === 'buttons'">
             <a t-foreach="props.items" t-as="item" t-key="item.title" t-att-class="item.classname"
@@ -1305,6 +1350,12 @@
     </div>
     <div t-else="">Select a model to add a filter.</div>
 </t>
+
+<t t-name="DomainSelectorDialog" t-inherit="OwlDialog" t-inherit-mode="primary" owl="1">
+    <xpath>
+    </xpath>
+</t>
+
 <t t-name="DomainNode.ControlPanel">
     <div t-if="!widget.readonly &amp;&amp; !widget.noControlPanel" class="o_domain_node_control_panel" role="toolbar" aria-label="Domain node">
         <button class="btn o_domain_delete_node_button" title="Delete node" aria-label="Delete node"><i class="fa fa-times"/></button>
@@ -1824,59 +1875,6 @@
         <t t-call="FieldBinaryFileUploader.attachment_preview"/>
     </t>
 </div>
-
-<t t-name="DropdownMenu.MenuItems">
-    <t t-if="widget.items.length !== 0">
-        <t t-set="group" t-value="0"/>
-        <t t-foreach="widget.items" t-as="item">
-            <div t-if="group !== item.groupNumber" role="separator" class="dropdown-divider" data-removable="1"/>
-            <div t-attf-class="o_menu_item"
-                t-att-data-id="item.id">
-                <a role="menuitem" href="#" t-attf-class="dropdown-item#{item.isActive ? ' selected ' : ''}">
-                    <t t-esc="item.description"/>
-                    <span t-if="item.isRemovable" t-att-data-id="item.id" class="o_trash_button" > <span class="fa fa-trash-o"></span> </span>
-                    <span t-if="item.hasOptions" t-att-data-id="item.id" class="o_submenu_switcher">
-                        <span t-att-class="widget.openItems[item.id] ? 'fa fa-caret-down' : 'fa fa-caret-right'"></span>
-                    </span>
-                </a>
-                <ul t-if="item.hasOptions &amp;&amp; widget.openItems[item.id]" class="list-unstyled">
-                    <t t-set="subgroup" t-value="0"/>
-                    <t t-foreach="item.options" t-as="option">
-                        <li t-if="subgroup !== option.groupId" role="separator" class="dropdown-divider" data-removable="1"/>
-                        <li class="o_item_option"
-                            t-att-data-item_id="item.id" t-att-data-option_id="option.optionId">
-                            <a role="menuitem" href="#" t-attf-class="dropdown-item#{item.currentOptionIds.has(option.optionId) ? ' selected': ''} pl-5"><t t-esc="option.description"/></a>
-                        </li>
-                        <t t-set="subgroup" t-value="option.groupId"/>
-                    </t>
-                </ul>
-            </div>
-            <t t-set="group" t-value="item.groupNumber"/>
-        </t>
-    </t>
-</t>
-
-<div t-name="web.DropdownMenu" t-att-class="widget.dropdownStyle.el.class" t-att="widget.dropdownStyle.el.attrs">
-    <button t-att-class="widget.dropdownStyle.mainButton.class" data-toggle="dropdown" aria-expanded="false" tabindex="-1" data-flip="false" data-boundary="viewport">
-        <span t-att-class="widget.dropdownIcon"/> <t t-esc="widget.dropdownTitle"/> <span t-if="widget.dropdownSymbol" t-att-class="widget.dropdownSymbol"/>
-    </button>
-    <div class="dropdown-menu o_dropdown_menu" role="menu">
-        <t t-call="DropdownMenu.MenuItems"/>
-    </div>
-</div>
-
-<t t-name="SearchView.filters">
-    <t t-foreach="widget.filters" t-as="filter">
-        <a t-if="!filter.visible || filter.visible()"
-           href="#"
-           class="dropdown-item"
-           t-att-title="filter.attrs.string ? filter.attrs.help : undefined"
-           t-att-data-index="filter_index"
-           role="menuitem">
-            <t t-esc="filter.attrs.string or filter.attrs.help or filter.attrs.name or 'Ω'"/>
-        </a>
-    </t>
-</t>
 
 <div t-name="ExportDialog" class="o_export">
     <div class="row o-export-panel no-gutters">

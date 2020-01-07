@@ -1,54 +1,80 @@
 odoo.define("web.DomainSelectorDialog", function (require) {
 "use strict";
 
-var core = require("web.core");
-var Dialog = require("web.Dialog");
-var DomainSelector = require("web.DomainSelector");
-
-var _t = core._t;
+const Dialog = require("web.OwlDialog");
+const DomainSelector = require("web.DomainSelector");
 
 /**
  * @class DomainSelectorDialog
  */
-return Dialog.extend({
-    init: function (parent, model, domain, options) {
-        this.model = model;
-        this.options = _.extend({
-            readonly: true,
-            debugMode: false,
-        }, options || {});
+class DomainSelectorDialog extends Dialog {
+    constructor() {
+        super(...arguments);
 
-        var buttons;
-        if (this.options.readonly) {
-            buttons = [
-                {text: _t("Close"), close: true},
-            ];
-        } else {
-            buttons = [
-                {text: _t("Save"), classes: "btn-primary", close: true, click: function () {
-                    this.trigger_up("domain_selected", {domain: this.domainSelector.getDomain()});
-                }},
-                {text: _t("Discard"), close: true},
-            ];
+        this.domainSelectorRef = useRef('domain-selector');
+    }
+
+    mounted() {
+        // this restores default modal height (bootstrap) and allows field selector to overflow
+        this.el.dialogRef.style.overflow = 'visible';
+        this.el.dialogRef.closest('.modal-dialog').style.height = 'auto';
+
+        const footer = this.footerRef.el;
+        for (const button of this.buttons) {
+            const buttEl = Object.assign(document.createElement('button'), {
+                className: ['btn'].concat(button.classes).join(' '),
+                onclick: ev => {
+                    this.trigger('dialog_closed');
+                    if (button.click) {
+                        button.click(ev);
+                    }
+                },
+                innerText: button.text,
+            });
+            buttEl.appendChild(footer);
         }
+    }
 
-        this._super(parent, _.extend({}, {
-            title: _t("Domain"),
-            buttons: buttons,
-        }, options || {}));
+    get buttons() {
+        const buttons = [];
+        if (this.props.readonly) {
+            buttons.push({
+                text: this.env._t("Close"),
+            });
+        } else {
+            buttons.push(
+                {
+                    text: this.env._t("Save"),
+                    classes: "btn-primary",
+                    click: ev => {
+                        this.trigger('domain_selected', {
+                            domain: this.domainSelectorRef.getDomain(),
+                        });
+                    }
+                },
+                {
+                    text: this.env._t("Discard"), close: true
+                },
+            );
+        }
+        return buttons;
+    }
+}
 
-        this.domainSelector = new DomainSelector(this, model, domain, options);
-    },
-    start: function () {
-        var self = this;
-        this.opened().then(function () {
-            // this restores default modal height (bootstrap) and allows field selector to overflow
-            self.$el.css('overflow', 'visible').closest('.modal-dialog').css('height', 'auto');
-        });
-        return Promise.all([
-            this._super.apply(this, arguments),
-            this.domainSelector.appendTo(this.$el)
-        ]);
-    },
+DomainSelectorDialog.components = Object.assign({}, Dialog.components, {
+    DomainSelector,
 });
+DomainSelectorDialog.defaultProps = Object.assign({}, Dialog.defaultProps, {
+    title: "Domain",
+    readonly: true,
+    debugMode: false,
+});
+DomainSelectorDialog.props = Object.assign({}, Dialog.props, {
+    model: String,
+    domain: String,
+    readonly: Boolean,
+    debugMode: Boolean,
+});
+DomainSelectorDialog.template = 'DomainSelectorDialog';
+
 });

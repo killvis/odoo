@@ -282,6 +282,7 @@
         <script type="text/javascript" src="/web/static/src/js/chrome/apps_menu.js"></script>
 
         <script type="text/javascript" src="/web/static/src/js/widgets/dropdown_menu.js"></script>
+        <script type="text/javascript" src="/web/static/src/js/widgets/dropdown_menu_item.js"></script>
         <script type="text/javascript" src="/web/static/src/js/widgets/pie_chart.js"></script>
         <script type="text/javascript" src="/web/static/src/js/widgets/ribbon.js"></script>
         <script type="text/javascript" src="/web/static/src/js/widgets/signature.js"></script>
@@ -318,8 +319,6 @@
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/pager.js"></script>
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/search_bar.js"></script>
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/search_facet.js"></script>
-        <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/search_menu.js"></script>
-        <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/search_menu_item.js"></script>
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/filter_menu.js"></script>
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/filter_menu_generator.js"></script>
         <script type="text/javascript" src="/web/static/src/js/views/control_panel/search/groupby_menu.js"></script>

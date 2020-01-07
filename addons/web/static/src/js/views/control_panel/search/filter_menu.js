@@ -1,10 +1,10 @@
 odoo.define('web.FilterMenu', function (require) {
     "use strict";
 
-    const SearchMenu = require('web.SearchMenu');
+    const DropdownMenu = require('web.DropdownMenu');
     const FilterMenuGenerator = require('web.FilterMenuGenerator');
 
-    class FilterMenu extends SearchMenu {
+    class FilterMenu extends DropdownMenu {
         constructor() {
             super(...arguments);
 
@@ -16,12 +16,27 @@ odoo.define('web.FilterMenu', function (require) {
         // Getters
         //--------------------------------------------------------------------------
 
+        /**
+         * @override
+         */
         get items() {
             return this.getters.getFiltersOfType('filter');
         }
+
+        //--------------------------------------------------------------------------
+        // Handlers
+        //--------------------------------------------------------------------------
+
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onCreateNewFilters(ev) {
+            this.dispatch('createNewFilters', ev.detail);
+        }
     }
 
-    FilterMenu.components = Object.assign({ FilterMenuGenerator }, SearchMenu.components);
+    FilterMenu.components = Object.assign({ FilterMenuGenerator }, DropdownMenu.components);
     FilterMenu.template = 'FilterMenu';
 
     return FilterMenu;

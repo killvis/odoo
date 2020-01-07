@@ -3,8 +3,8 @@ odoo.define('web.FilterMenuGenerator', function (require) {
 
     const { DatePicker, DateTimePicker } = require('web.datepicker_owl');
     const Domain = require('web.Domain');
+    const DropdownMenuItem = require('web.DropdownMenuItem');
     const { parse } = require('web.field_utils');
-    const SearchMenuItem = require('web.SearchMenuItem');
 
     const { useDispatch, useState } = owl.hooks;
 
@@ -24,7 +24,7 @@ odoo.define('web.FilterMenuGenerator', function (require) {
         selection: 'selection',
     };
 
-    class FilterMenuGenerator extends SearchMenuItem {
+    class FilterMenuGenerator extends DropdownMenuItem {
         constructor() {
             super(...arguments);
 
@@ -38,8 +38,6 @@ odoo.define('web.FilterMenuGenerator', function (require) {
                 conditions: [],
                 open: false,
             });
-
-            this._addCondition();
 
             this.OPERATORS = {
                 boolean: [
@@ -96,6 +94,9 @@ odoo.define('web.FilterMenuGenerator', function (require) {
                     { symbol: "=", text: this.env._lt("is not set"), value: [false] },
                 ],
             };
+
+            // Initiate base conditions.
+            this.props.items.forEach(item => this._addCondition(item));
         }
 
         //--------------------------------------------------------------------------
@@ -114,12 +115,22 @@ odoo.define('web.FilterMenuGenerator', function (require) {
         // Private
         //--------------------------------------------------------------------------
 
-        _addCondition() {
+        _addCondition(item) {
             const condition = {
-                field: 0,
-                operator: 0,
                 value: [],
             };
+            if (item) {
+                const [fieldName, operatorValue, rawValue] = item;
+                const field = this.props.fields[fieldName];
+                condition.field = this.fields.indexOf(field);
+                condition.operator = this.OPERATORS[FIELDTYPES[field.type]].findIndex(
+                    o => o.symbol === operatorValue
+                );
+                condition.value.push(rawValue);
+            } else {
+                condition.field = 0;
+                condition.operator = 0;
+            }
             this.state.conditions.push(condition);
         }
 
@@ -181,12 +192,12 @@ odoo.define('web.FilterMenuGenerator', function (require) {
                 return preFilter;
             });
 
-            this.dispatch('createNewFilters', preFilters);
+            this.trigger('create_new_filters', preFilters);
 
             // Reset state
             this.state.open = false;
             this.state.conditions = [];
-            this._addCondition();
+            this.props.items.forEach(item => this._addCondition(item));
         }
 
         _onDateChanged(condition, valueIndex, ev) {
@@ -229,6 +240,9 @@ odoo.define('web.FilterMenuGenerator', function (require) {
     }
 
     FilterMenuGenerator.components = { DatePicker, DateTimePicker };
+    FilterMenuGenerator.defaultProps = {
+        items: [[]],
+    };
     FilterMenuGenerator.template = 'FilterMenuGenerator';
 
     return FilterMenuGenerator;

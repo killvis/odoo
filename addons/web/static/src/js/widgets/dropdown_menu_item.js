@@ -1,10 +1,10 @@
-odoo.define('web.SearchMenuItem', function (require) {
+odoo.define('web.DropdownMenuItem', function (require) {
     "use strict";
 
     const { Component, useState, hooks } = owl;
     const { useDispatch, useRef } = hooks;
 
-    class SearchMenuItem extends Component {
+    class DropdownMenuItem extends Component {
         constructor() {
             super(...arguments);
 
@@ -62,10 +62,10 @@ odoo.define('web.SearchMenuItem', function (require) {
         }
     }
 
-    SearchMenuItem.components = { SearchMenuItem };
-    SearchMenuItem.defaultProps = {};
-    // SearchMenuItem.props = {};
-    SearchMenuItem.template = 'SearchMenuItem';
+    DropdownMenuItem.components = { DropdownMenuItem };
+    DropdownMenuItem.defaultProps = {};
+    // DropdownMenuItem.props = {};
+    DropdownMenuItem.template = 'DropdownMenuItem';
 
-    return SearchMenuItem;
+    return DropdownMenuItem;
 });

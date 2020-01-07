@@ -6,9 +6,9 @@ odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
     const Domain = require('web.Domain');
     const FavoriteMenu = require('web.FavoriteMenu');
     const pyUtils = require('web.py_utils');
-    const SearchMenuItem = require('web.SearchMenuItem');
+    const DropdownItem = require('web.DropdownItem');
 
-    class AddToGoogleSpreadsheetMenu extends SearchMenuItem {
+    class AddToGoogleSpreadsheetMenu extends DropdownItem {
 
         //--------------------------------------------------------------------------
         // Handlers

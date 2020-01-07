@@ -5,13 +5,13 @@ odoo.define('board.AddToBoardMenu', function (require) {
     const Domain = require('web.Domain');
     const FavoriteMenu = require('web.FavoriteMenu');
     const pyUtils = require('web.py_utils');
-    const SearchMenuItem = require('web.SearchMenuItem');
+    const DropdownMenuItem = require('web.DropdownMenuItem');
     const { sprintf } = require('web.utils');
     const { useFocusOnUpdate } = require('web.custom_hooks');
 
     const { useState, useStore } = owl.hooks;
 
-    class AddToBoardMenu extends SearchMenuItem {
+    class AddToBoardMenu extends DropdownMenuItem {
         /**
          * @param {Object} props
          * @param {Object} props.action an ir.actions description

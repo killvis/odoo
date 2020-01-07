@@ -1,12 +1,12 @@
 odoo.define('web.GroupByMenuGenerator', function (require) {
     "use strict";
 
+    const DropdownMenuItem = require('web.DropdownMenuItem');
     const { GROUPABLE_TYPES } = require('web.controlPanelParameters');
-    const SearchMenuItem = require('web.SearchMenuItem');
 
     const { useState } = owl.hooks;
 
-    class GroupByMenuGenerator extends SearchMenuItem {
+    class GroupByMenuGenerator extends DropdownMenuItem {
         constructor() {
             super(...arguments);
 

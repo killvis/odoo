@@ -52,7 +52,7 @@ odoo.define('web.ControlPanel', function (require) {
 
         get initialState() {
             return {
-                displaySearchMenus: true,
+                displayDropdowns: true,
                 openedMenu: null,
             };
         }
