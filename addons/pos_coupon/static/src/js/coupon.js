@@ -17,7 +17,7 @@ odoo.define('pos_coupon.pos', function(require) {
      * of items `number_items` and the rule: buy `n` take `m`.
      *
      * e.g.
-     *     rule: buy 2 take 1                    rule: buy 2 take 2
+     *     rule: buy 2 take 1                    rule: buy 2 take 3
      *     +------------+--------+--------+      +------------+--------+--------+
      *     |number_items| charged|    free|      |number_items| charged|    free|
      *     +------------+--------+--------+      +------------+--------+--------+
