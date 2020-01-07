@@ -38,6 +38,7 @@ EMPTY_DICT = frozendict()
 
 RENAMED_ATTRS = [('select', 'index'), ('digits_compute', 'digits')]
 DEPRECATED_ATTRS = [("oldname", "use an upgrade script instead.")]
+POST_CREATE_FIELDS = ['create_date', 'create_uid', 'write_date', 'write_uid']
 
 IR_MODELS = (
     'ir.model', 'ir.model.data', 'ir.model.fields', 'ir.model.fields.selection',
@@ -682,7 +683,7 @@ class Field(MetaField('DummyField', (object,), {})):
                 if field is self and index:
                     self.recursive = True
 
-                if not field.pre_compute:
+                if not field.pre_compute or fname in POST_CREATE_FIELDS:
                     self.pre_compute = False
 
                 field_seq.append(field)
