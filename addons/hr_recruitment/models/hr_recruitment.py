@@ -224,8 +224,8 @@ class Applicant(models.Model):
 
     @api.depends('job_id')
     def _compute_department(self):
-        for applicant in self.filtered(lambda a: a.job_id):
-            applicant.department_id = applicant.job_id.department_id.id
+        for applicant in self:
+            applicant.department_id = applicant.job_id.department_id or applicant.department_id
 
     @api.depends('job_id')
     def _compute_stage(self):
