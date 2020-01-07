@@ -394,7 +394,9 @@ options.registry.CarouselItem = options.Class.extend({
     },
 });
 
-options.registry.navTabs = options.Class.extend({
+options.registry.NavTabs = options.Class.extend({
+    isTopOption: true,
+
     /**
      * @override
      */
@@ -504,6 +506,65 @@ options.registry.navTabs = options.Class.extend({
                 'aria-labelledby': idLink,
             });
         }
+    },
+});
+
+options.registry.NavTabsStyle = options.Class.extend({
+
+    //--------------------------------------------------------------------------
+    // Options
+    //--------------------------------------------------------------------------
+
+    /**
+     * Set the style of the tabs.
+     *
+     * @see this.selectClass for parameters
+     */
+    setStyle: function (previewMode, widgetValue, params) {
+        const $nav = this.$target.find('ul.nav');
+        const isPills = widgetValue === 'pills';
+        $nav.toggleClass('nav-tabs card-header-tabs', !isPills);
+        $nav.toggleClass('nav-pills', isPills);
+        this.$target.find('.s_tabs_nav').toggleClass('card-header', !isPills).toggleClass('mb-3', isPills);
+        this.$target.toggleClass('card', !isPills);
+        this.$target.find('.s_tabs_content').toggleClass('card-body', !isPills);
+        if (!isPills) {
+            // TODO: adapt with branch => master-link-option-widgets-qsm
+            this.setDirection(previewMode, 'horizontal', params);
+        }
+    },
+    /**
+     * Horizontal/vertical nav.
+     *
+     * @see this.selectClass for parameters
+     */
+    setDirection: function (previewMode, widgetValue, params) {
+        const isVertical = widgetValue === 'vertical';
+        this.$target.find('.s_tabs_main').toggleClass('row s_col_no_resize s_col_no_bgcolor', isVertical);
+        this.$target.find('ul.nav').toggleClass('flex-column', isVertical);
+        this.$target.find('ul.nav > li > a ').toggleClass('py-2', isVertical);
+        this.$target.find('.s_tabs_nav').toggleClass('col-md-3', isVertical);
+        this.$target.find('.s_tabs_content').toggleClass('col-md-9', isVertical);
+        if (isVertical) {
+            this.$target.find('ul.nav').removeClass('justify-content-center justify-content-end nav-fill nav-justified');
+        }
+    },
+
+    //--------------------------------------------------------------------------
+    // Private
+    //--------------------------------------------------------------------------
+
+    /**
+     * @override
+     */
+    _computeWidgetState: function (methodName, params) {
+        switch (methodName) {
+            case 'setStyle':
+                return this.$target.find('ul.nav').hasClass('nav-pills') ? 'pills' : 'tabs';
+            case 'setDirection':
+                return this.$target.find('ul.nav').hasClass('flex-column') ? 'vertical' : 'horizontal';
+        }
+        return this._super(...arguments);
     },
 });
 
@@ -1172,6 +1233,17 @@ options.registry.SnippetMove = options.Class.extend({
 
         return this._super(...arguments);
     },
+    /**
+     * @override
+     */
+    onFocus: function () {
+        // TODO improve this: hack to hide options section if snippet move is
+        // the only one.
+        const $allOptions = this.$el.parent();
+        if ($allOptions.find('we-customizeblock-option').length <= 1) {
+            $allOptions.addClass('d-none');
+        }
+    },
 
     //--------------------------------------------------------------------------
     // Options
@@ -1183,12 +1255,20 @@ options.registry.SnippetMove = options.Class.extend({
      * @see this.selectClass for parameters
      */
     moveSnippet: function (previewMode, widgetValue, params) {
+        const isNavItem = this.$target[0].classList.contains('nav-item');
+        let $tabPane = (isNavItem) ? $(this.$target.find('.nav-link').hash) : '';
         switch (widgetValue) {
             case 'prev':
                 this.$target.prev().before(this.$target);
+                if (isNavItem) {
+                    $tabPane.prev().before($tabPane);
+                }
                 break;
             case 'next':
                 this.$target.next().after(this.$target);
+                if (isNavItem) {
+                    $tabPane.next().after($tabPane);
+                }
                 break;
         }
     },

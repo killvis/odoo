@@ -106,7 +106,7 @@
     <t t-call="web_editor.snippet_options"/>
 
     <!-- COLOR | .s_three_columns | .s_comparisons -->
-    <div data-selector=".s_three_columns .row > div, .s_comparisons .row > div, .s_tabs .row > div"
+    <div data-selector=".s_three_columns .row > div, .s_comparisons .row > div"
          data-target=".card">
         <we-colorpicker string="Color"
             data-select-style="true"
@@ -170,11 +170,6 @@
         <we-button data-remove-slide="true" data-no-preview="true" class="fa fa-fw fa-minus"/>
     </div>
 
-    <div data-js="navTabs" data-selector="section .row > div" data-target=".nav-tabs">
-        <we-button data-add-tab="1" data-no-preview="true">Add Tab</we-button>
-        <we-button data-remove-tab="1" data-name="remove_tab_opt" data-no-preview="true">Remove Tab</we-button>
-    </div>
-
     <!-- Accordion -->
     <div data-js="collapse"
          data-selector='.accordion > .card'
@@ -200,7 +195,7 @@
         <we-button class="fa fa-fw fa-angle-down" data-move-snippet="next" data-no-preview="true"/>
     </div>
     <div data-js="SnippetMove"
-         data-selector=".row:not(.s_col_no_resize) > div">
+         data-selector=".row:not(.s_col_no_resize) > div, .nav-item">
         <we-button class="fa fa-fw fa-angle-left" data-move-snippet="prev" data-no-preview="true"/>
         <we-button class="fa fa-fw fa-angle-right" data-move-snippet="next" data-no-preview="true"/>
     </div>
@@ -301,7 +296,7 @@
 
     <div data-js="sizing_y"
         data-selector="section, .row > div, .parallax, .s_hr, .s_btn, .carousel-item"
-        data-exclude="section:has(> .carousel), .o_gallery .carousel-item, .s_company_team_member > div"/>
+        data-exclude="section:has(> .carousel), .o_gallery .carousel-item, .s_company_team_member > div, .s_tabs .s_tabs_main > div"/>
 
     <div data-js="sizing_x"
         data-selector=".row > div"
@@ -351,7 +346,7 @@
     <!-- Anchor Name -->
     <div data-js="anchor"
         data-selector=":not(p).oe_structure > *, :not(p)[data-oe-type=html] > *"
-        data-exclude=".modal *">
+        data-exclude=".modal *, .oe_structure .oe_structure *, [data-oe-type=html] .oe_structure *">
         <we-button class="fa fa-fw fa-link"
                    title="Create a link to target this section"
                    data-no-preview="true"/>
@@ -444,6 +439,53 @@
                 data-no-preview="true"
                 data-name="scroll_button_opt"/>
         </we-row>
+    </div>
+
+    <!-- Tabs -->
+    <div data-js="NavTabs" data-selector="section" data-target=".s_tabs_wrap">
+        <we-button data-add-tab=""
+                    data-no-preview="true"
+                    class="fa fa-fw fa-plus"
+                    title="Add Tab"
+                    aria-label="Add Tab"/>
+        <we-button data-remove-tab=""
+                    data-name="remove_tab_opt"
+                    data-no-preview="true"
+                    class="fa fa-fw fa-minus"
+                    title="Remove Tab"
+                    aria-label="Remove Tab"/>
+    </div>
+    <div data-js="NavTabsStyle" data-selector="section" data-target=".s_tabs_wrap">
+        <we-select string="Style">
+            <we-button data-set-style="tabs">Tabs</we-button>
+            <we-button data-set-style="pills" data-name="pills_opt">Buttons</we-button>
+        </we-select>
+        <we-colorpicker string="Tabs color"
+            data-select-style="true"
+            data-css-property="background-color"
+            data-color-prefix="bg-"/>
+        <we-select string="Direction" data-dependencies="pills_opt">
+            <we-button data-set-direction="horizontal" data-name="horizontal_opt">Horizontal</we-button>
+            <we-button data-set-direction="vertical">Vertical</we-button>
+        </we-select>
+        <we-select string="Alignment" data-apply-to="ul.nav" data-dependencies="horizontal_opt">
+            <we-button data-select-class="">Left</we-button>
+            <we-button data-select-class="justify-content-center">Center</we-button>
+            <we-button data-select-class="justify-content-end">Right</we-button>
+        </we-select>
+        <we-select string="Fill and justify" data-apply-to="ul.nav" data-dependencies="horizontal_opt">
+            <we-button data-select-class="">Regular</we-button>
+            <we-button data-select-class="nav-fill">Fill</we-button>
+            <we-button data-select-class="nav-justified">Justified</we-button>
+        </we-select>
+        <we-divider/>
+        <we-select string="Transition">
+            <we-button data-select-class="">No Slide Effect</we-button>
+            <we-button data-select-class="s_tabs_slide_up">Slide Up</we-button>
+            <we-button data-select-class="s_tabs_slide_down">Slide Down</we-button>
+            <we-button data-select-class="s_tabs_slide_left">Slide Left</we-button>
+            <we-button data-select-class="s_tabs_slide_right">Slide Right</we-button>
+        </we-select>
     </div>
 </template>
 </odoo>
