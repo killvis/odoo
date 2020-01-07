@@ -135,7 +135,7 @@ class IrDefault(models.Model):
                         AND {}
                     ORDER BY d.user_id, d.company_id, d.id
                 """
-        params = [model_name, self.env.uid, self.env.company.id]
+        params = [model_name, self.env.uid, self.env.company.id if self.env.company else None]
         if condition:
             query = query.format("d.condition=%s")
             params.append(condition)
