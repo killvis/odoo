@@ -254,7 +254,7 @@ const actions = {
             dispatch('openThread', threadLocalId);
         }
     },
-        /**
+    /**
      * @param {Object} param0
      * @param {function} param0.dispatch
      * @param {Object} param0.getters
@@ -267,6 +267,10 @@ const actions = {
     async createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
         const chatterLocalId = _.uniqueId('o_Chatter');
         const chatter = {
+            isAttachmentBoxVisible: false,
+            isComposerLog: true,
+            isComposerVisible: false,
+            isDisabled: !initialThreadId,
             localId: chatterLocalId,
             threadId: initialThreadId,
             threadLocalId: undefined,
@@ -462,6 +466,30 @@ const actions = {
         }
         // update docked chat windows
         dispatch('_computeChatWindows');
+    },
+    /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {string} chatterLocalId
+     */
+    hideChatterAttachments({ state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        chatter.isAttachmentBoxVisible = false;
+    },
+    /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {string} chatterLocalId
+     */
+    hideChatterComposer({ state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        chatter.isComposerVisible = false;
     },
     /**
      * Fetch messaging data initially to populate the store specifically for
@@ -1137,6 +1165,42 @@ const actions = {
         dispatch('focusChatWindow', chatWindowLocalId);
     },
     /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {string} chatterLocalId
+     */
+    showChatterAttachments({ state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        chatter.isAttachmentBoxVisible = true;
+    },
+    /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {string} chatterLocalId
+     */
+    showChatterLogNote({ state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        Object.assign(chatter, { isComposerVisible: true, isComposerLog: true });
+    },
+    /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {string} chatterLocalId
+     */
+    showChatterSendMessage({ state }, chatterLocalId) {
+        const chatter = state.chatters[chatterLocalId];
+        if (!chatter) {
+            return;
+        }
+        Object.assign(chatter, { isComposerVisible: true, isComposerLog: false });
+    },
+    /**
      * Toggle the fold state of the given thread.
      *
      * @param {Object} param0
@@ -1287,7 +1351,7 @@ const actions = {
         const thread = state.threads[chatter.threadLocalId];
         const prevThreadId = chatter.threadId;
         const prevThreadModel = chatter.threadModel;
-        Object.assign(chatter, { threadId, threadModel });
+        Object.assign(chatter, { isDisabled: !threadId, threadId, threadModel });
         if (prevThreadId === threadId && prevThreadModel === threadModel) {
             // "Nothing to do" but we check if no new message has to be fetched
             if (!thread.isTemporary) {

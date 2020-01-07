@@ -6,29 +6,29 @@
             <div class="o_ChatterTopbar_leftSection">
                 <button class="btn btn-link o_ChatterTopbar_buttonSendMessage"
                         t-att-class="{
-                            'o-active': props.isComposerVisible and props.isComposerLog === false,
+                            'o-active': storeProps.chatter.isComposerVisible and !storeProps.chatter.isComposerLog,
                         }"
-                        t-att-disabled="props.isDisabled"
+                        t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickSendMessage">
                     Send message
                 </button>
                 <button class="btn btn-link o_ChatterTopbar_buttonLogNote"
                         t-att-class="{
-                            'o-active': props.isComposerVisible and props.isComposerLog === true,
+                            'o-active': storeProps.chatter.isComposerVisible and storeProps.chatter.isComposerLog,
                         }"
-                        t-att-disabled="props.isDisabled"
+                        t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickLogNote">
                     Log note
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonScheduleActivity" t-att-disabled="props.isDisabled"
+                <button class="btn btn-link o_ChatterTopbar_buttonScheduleActivity" t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickSchedule">
                     <i class="fa fa-clock-o"/>
                     Schedule activity
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonAttachments" t-att-disabled="props.isDisabled"
+                <button class="btn btn-link o_ChatterTopbar_buttonAttachments" t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickAttachments">
                     <i class="fa fa-paperclip"/>
-                    <t t-if="props.isDisabled or storeProps.areAttachmentsLoaded">
+                    <t t-if="storeProps.chatter.isDisabled or storeProps.areAttachmentsLoaded">
                         <span class="o_ChatterTopbar_buttonCount o_ChatterTopbar_buttonAttachmentsCount"
                               t-esc="storeProps.attachmentsAmount"/>
                     </t>
@@ -38,11 +38,11 @@
                 </button>
             </div>
             <div class="o_ChatterTopbar_rightSection">
-                <button class="btn btn-link o_ChatterTopbar_buttonFollow" t-att-disabled="props.isDisabled"
+                <button class="btn btn-link o_ChatterTopbar_buttonFollow" t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickFollow">
                     Follow
                 </button>
-                <button class="btn btn-link o_ChatterTopbar_buttonFollowers" t-att-disabled="props.isDisabled"
+                <button class="btn btn-link o_ChatterTopbar_buttonFollowers" t-att-disabled="storeProps.chatter.isDisabled"
                         t-on-click.prevent.stop="_onClickFollowers">
                     <i class="fa fa-user"/>
                     <span class="o_ChatterTopbar_buttonCount o_ChatterTopbar_buttonFollowersCount pl-1" t-esc="storeProps.followersAmount"/>

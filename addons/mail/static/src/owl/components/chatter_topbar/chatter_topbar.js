@@ -3,6 +3,8 @@ odoo.define('mail.component.ChatterTopbar', function (require) {
 
 const { Component } = owl;
 const useStore = require('mail.hooks.useStore');
+const { useDispatch } = owl.hooks;
+
 
 class ChatterTopbar extends Component {
     /**
@@ -11,6 +13,7 @@ class ChatterTopbar extends Component {
      */
     constructor(...args) {
         super(...args);
+        this.storeDispatch = useDispatch();
         this.storeProps = useStore((state, props) => {
             const chatter = state.chatters[props.chatterLocalId];
             const thread = state.threads[chatter.threadLocalId];
@@ -19,6 +22,7 @@ class ChatterTopbar extends Component {
                 attachmentsAmount: thread && thread.attachmentLocalIds
                     ? thread.attachmentLocalIds.length
                     : 0,
+                chatter: chatter,
                 // TODO SEB this is currently always 0 (yes I know - XDU)
                 followersAmount: 0,
             };
@@ -34,7 +38,12 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickAttachments(ev) {
-        this.trigger('o-chatter-topbar-select-attachment');
+        if (this.storeProps.chatter.isAttachmentBoxVisible) {
+            this.storeDispatch('hideChatterAttachments', this.props.chatterLocalId);
+        }
+        else {
+            this.storeDispatch('showChatterAttachments', this.props.chatterLocalId);
+        }
     }
 
     /**
@@ -42,6 +51,7 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickFollow(ev) {
+        // TODO
         this.trigger('o-chatter-topbar-follow');
     }
 
@@ -50,6 +60,7 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickFollowers(ev) {
+        // TODO
         this.trigger('o-chatter-topbar-show-followers');
     }
 
@@ -58,7 +69,12 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickLogNote(ev) {
-        this.trigger('o-chatter-topbar-log-note');
+        if (this.storeProps.chatter.isComposerVisible && this.storeProps.chatter.isComposerLog) {
+            this.storeDispatch('hideChatterComposer', this.props.chatterLocalId);
+        }
+        else {
+            this.storeDispatch('showChatterLogNote', this.props.chatterLocalId);
+        }
     }
 
     /**
@@ -66,6 +82,7 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickScheduleActivity(ev) {
+        // TODO
         this.trigger('o-chatter-topbar-schedule-activity');
     }
 
@@ -74,7 +91,12 @@ class ChatterTopbar extends Component {
      * @param {MouseEvent} ev
      */
     _onClickSendMessage(ev) {
-        this.trigger('o-chatter-topbar-send-message');
+        if (this.storeProps.chatter.isComposerVisible && !this.storeProps.chatter.isComposerLog) {
+            this.storeDispatch('hideChatterComposer', this.props.chatterLocalId);
+        }
+        else {
+            this.storeDispatch('showChatterSendMessage', this.props.chatterLocalId);
+        }
     }
 }
 

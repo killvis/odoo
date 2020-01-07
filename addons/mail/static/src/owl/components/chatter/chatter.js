@@ -7,7 +7,7 @@ const Composer = require('mail.component.Composer');
 const Thread = require('mail.component.Thread');
 const useStore = require('mail.hooks.useStore');
 
-const { Component, useState } = owl;
+const { Component } = owl;
 const { useDispatch, useGetters, useRef } = owl.hooks;
 
 class Chatter extends Component {
@@ -16,11 +16,6 @@ class Chatter extends Component {
      */
     constructor(...args) {
         super(...args);
-        this.state = useState({
-            isAttachmentBoxVisible: false,
-            isComposerLog: false,
-            isComposerVisible: false,
-        });
         this.storeDispatch = useDispatch();
         this.storeGetters = useGetters();
         this.storeProps = useStore((state, { chatterLocalId }) => {
@@ -36,35 +31,7 @@ class Chatter extends Component {
     //--------------------------------------------------------------------------
 
     _onComposerMessagePosted() {
-        this.state.isComposerVisible = false;
-    }
-
-    /**
-     * @private
-     * @param {Event} ev
-     */
-    _onTopbarSelectAttachment(ev) {
-        this.state.isAttachmentBoxVisible = !this.state.isAttachmentBoxVisible;
-    }
-
-    /**
-     * @private
-     * @param {Event} ev
-     */
-    _onTopbarLogNote(ev) {
-        const wasComposerLog = this.state.isComposerLog;
-        this.state.isComposerLog = true;
-        this.state.isComposerVisible = !wasComposerLog || !this.state.isComposerVisible;
-    }
-
-    /**
-     * @private
-     * @param {Event} ev
-     */
-    _onTopbarSendMessage(ev) {
-        const wasComposerLog = this.state.isComposerLog;
-        this.state.isComposerLog = false;
-        this.state.isComposerVisible = wasComposerLog || !this.state.isComposerVisible;
+        this.storeDispatch('hideChatterComposer', this.props.chatterLocalId);
     }
 }
 
