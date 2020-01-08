@@ -12,7 +12,7 @@ odoo.define('web.PivotController', function (require) {
      * view.
      */
 
-    const ControllerAdapter = require('web.ControllerAdapter');
+    const { AbstractControllerAdapter } = require('web.ControllerAdapterMixin');
     const core = require('web.core');
     const framework = require('web.framework');
     const session = require('web.session');
@@ -20,8 +20,8 @@ odoo.define('web.PivotController', function (require) {
     const _t = core._t;
     const QWeb = core.qweb;
 
-    const PivotController = ControllerAdapter.extend({
-        events: Object.assign({}, ControllerAdapter.prototype.events, {
+    const PivotController = AbstractControllerAdapter.extend({
+        events: Object.assign({}, AbstractControllerAdapter.prototype.events, {
             closed_header_click: '_onClosedHeaderClicked',
             open_view: '_onOpenView',
             opened_header_click: '_onOpenedHeaderClicked',
