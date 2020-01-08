@@ -66,7 +66,13 @@ FormRenderer.include({
         });
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
-        await this._chatterComponent.mount(this.el); // options {position: 'self'} to replace {xdu}
+        if (this._chatterEl) {
+            /* FIXME {xdu}
+               could be better to mount in "replace" mode but the mount is failing with that mode
+               await this._chatterComponent.mount(this._chatterEl, { position: 'self' });
+            */
+            await this._chatterComponent.mount(this._chatterEl);
+        }
     },
     /**
      * Delete the chatter component
@@ -94,21 +100,29 @@ FormRenderer.include({
      */
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;
-        await this._chatterComponent.mount(this.el);
+        /*  FIXME {xdu}
+            could be better to mount in "replace" mode but the mount is failing with that mode
+            await this._chatterComponent.mount(this._chatterEl, { position: 'self' });
+         */
+        if (this._chatterEl) {
+            await this._chatterComponent.mount(this._chatterEl);
+        }
     },
    /**
      * @override
      * @private
      */
-    _renderNode(node) {
-        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-            // TODO {xdu} "store" the place where the oe_chatter is
-            this._hasChatter = true;
-            return null;
-        } else {
-            return this._super(...arguments);
-        }
-    },
+   _renderNode(node) {
+       if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
+           this._hasChatter = true;
+           const $el = $('<div class="o_Chatter_container"/>');
+           this._chatterEl = $el[0];
+           return $el;
+       }
+       else {
+           return this._super(...arguments);
+       }
+   },
     /**
      * Overrides the function to render the chatter once the form view is rendered.
      *
