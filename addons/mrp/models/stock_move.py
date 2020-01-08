@@ -174,7 +174,7 @@ class StockMove(models.Model):
                             origin, move.company_id, values
                         ))
                     else:
-                        move._decrease_initial_demand(old_quantities[move] - move.product_uom_qty)
+                        move.move_orig_ids._decrease_initial_demand(old_quantities[move] - move.product_uom_qty)
             self.env['procurement.group'].run(procurement_requests)
         return res
 
