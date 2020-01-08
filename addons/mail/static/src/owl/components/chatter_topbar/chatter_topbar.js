@@ -100,14 +100,7 @@ class ChatterTopbar extends Component {
     }
 }
 
-ChatterTopbar.defaultProps = {
-    isDisabled: false,
-};
-
 ChatterTopbar.props = {
-    isComposerLog: Boolean,
-    isComposerVisible: Boolean,
-    isDisabled: Boolean,
     chatterLocalId: String,
 };
 
