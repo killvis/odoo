@@ -655,6 +655,8 @@ class MrpProduction(models.Model):
         for production in self:
             if not production.move_raw_ids:
                 raise UserError(_("Add some materials to consume before marking this MO as to do."))
+            if any(move_raw.product_uom_qty <= 0 for move_raw in production.move_raw_ids):
+               raise UserError(_("The quantity to produce must be positive!"))
             for move_raw in production.move_raw_ids:
                 move_raw.write({
                     'group_id': production.procurement_group_id.id,
