@@ -358,20 +358,6 @@ const actions = {
         });
     },
     /**
-     * @param content
-     * @return {string}
-     */
-    getHtmlContent({}, content) {
-        //Removing unwanted extra spaces from message
-        let value = _.escape(content).trim();
-        value = value.replace(/(\r|\n){2,}/g, '<br/><br/>');
-        value = value.replace(/(\r|\n)/g, '<br/>');
-
-        // prevent html space collapsing
-        value = value.replace(/ /g, '&nbsp;').replace(/([^>])&nbsp;([^<])/g, '$1 $2');
-        return "<p>" + value + "</p>";
-    },
-    /**
      * @param {Object} param0
      * @param {function} param0.dispatch
      * @param {Object} param0.state
@@ -481,19 +467,6 @@ const actions = {
         state.isMessagingReady = true;
         env.call('bus_service', 'startPolling');
         dispatch('_startLoopFetchPartnerImStatus');
-    },
-    /**
-     * Insert some text content in an other.
-     *
-     * @param {string} initialContent
-     * @param {string} addedContent
-     * @param {integer} selectionStart
-     * @param {integer} selectionEnd
-     */
-    insertTextContent({}, initialContent, addedContent, selectionStart, selectionEnd) {
-        let partA = initialContent.slice(0, selectionStart);
-        let partB = initialContent.slice(selectionEnd, initialContent.length);
-        return partA + addedContent + partB;
     },
     /**
      * Update existing thread or create a new thread.
@@ -828,12 +801,13 @@ const actions = {
             canned_response_ids,
             channel_ids=[],
             context,
-            htmlContent,
+            content,
             isLog=false,
             subject,
             // subtype='mail.mt_comment',
             subtype_id,
         } = data;
+        const htmlContent = mailUtils.getHtmlContent(content);
         let body = htmlContent.replace(/&nbsp;/g, ' ').trim();
         // This message will be received from the mail composer as html content
         // subtype but the urls will not be linkified. If the mail composer
@@ -1015,10 +989,9 @@ const actions = {
      */
     resetComposer({ dispatch, state }, composerLocalId) {
         Object.assign(state.composers[composerLocalId], {
-            textInputContent : '',
-            textInputCursorStart : 0,
-            textInputCursorEnd : 0,
-            textInputHeight : "39px",
+            textInputContent: '',
+            textInputCursorStart: 0,
+            textInputCursorEnd: 0,
         });
     },
     /**
@@ -1042,7 +1015,6 @@ const actions = {
      * @param {string} textInputContent
      * @param {integer} textInputCursorStart
      * @param {integer} textInputCursorEnd
-     * @param {integer} textInputHeight
      */
     saveComposerContent(
         { state },

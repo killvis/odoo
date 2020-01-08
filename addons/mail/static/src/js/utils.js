@@ -84,6 +84,24 @@ function parseEmail(text) {
     }
 }
 
+function getHtmlContent(content) {
+    //Removing unwanted extra spaces from message
+    let value = _.escape(content).trim();
+    value = value.replace(/(\r|\n){2,}/g, '<br/><br/>');
+    value = value.replace(/(\r|\n)/g, '<br/>');
+
+    // prevent html space collapsing
+    value = value.replace(/ /g, '&nbsp;').replace(/([^>])&nbsp;([^<])/g, '$1 $2');
+    return value;
+}
+
+
+function insertTextContent(initialContent, addedContent, selectionStart, selectionEnd) {
+    let partA = initialContent.slice(0, selectionStart);
+    let partB = initialContent.slice(selectionEnd, initialContent.length);
+    return partA + addedContent + partB;
+}
+
 // Replaces textarea text into html text (add <p>, <a>)
 // TDE note : should be done server-side, in Python -> use mail.compose.message ?
 function getTextToHTML(text) {
@@ -91,6 +109,7 @@ function getTextToHTML(text) {
         .replace(/((?:https?|ftp):\/\/[\S]+)/g,'<a href="$1">$1</a> ')
         .replace(/[\n\r]/g,'<br/>');
 }
+
 
 function timeFromNow(date) {
     if (moment().diff(date, 'seconds') < 45) {
@@ -118,6 +137,8 @@ return {
     timeFromNow: timeFromNow,
     clearTimeout: o_clearTimeout,
     setTimeout: o_setTimeout,
+    getHtmlContent: getHtmlContent,
+    insertTextContent: insertTextContent,
 };
 
 });

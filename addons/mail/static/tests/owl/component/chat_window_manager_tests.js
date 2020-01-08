@@ -661,7 +661,6 @@ QUnit.test('open 2 different chat windows: enough screen width', async function 
                 id: 10,
             }],
         },
-        debug: true,
     });
     await this.start({
         async mockRPC(route, args) {

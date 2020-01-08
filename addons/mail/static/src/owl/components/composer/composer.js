@@ -7,6 +7,7 @@ const EmojisButton = require('mail.component.EmojisButton');
 const FileUploader = require('mail.component.FileUploader');
 const TextInput = require('mail.component.ComposerTextInput');
 const useDragVisibleDropZone = require('mail.hooks.useDragVisibleDropZone');
+const mailUtils = require('mail.utils');
 
 const { Component } = owl;
 const { useDispatch, useGetters, useRef, useState, useStore } = owl.hooks;
@@ -19,14 +20,6 @@ class Composer extends Component {
      */
     constructor(...args) {
         super(...args);
-        this.state = useState({
-            /**
-             * Determine whether there are some text content. Useful to prevent
-             * user to post something when there are no text content and no
-             * attachments.
-             */
-            hasTextInputContent: false,
-        });
         this.isDropZoneVisible = useDragVisibleDropZone();
         this.storeDispatch = useDispatch();
         this.storeGetters = useGetters();
@@ -163,7 +156,7 @@ class Composer extends Component {
         // TODO: take suggested recipients into account
         try {
             await this.storeDispatch('postMessage', this.props.composerLocalId, {
-                htmlContent: this.storeDispatch('getHtmlContent', this._textInputRef.comp.getContent()),
+                content: this._textInputRef.comp.getContent(),
                 isLog: this.props.isLog,
             });
             this.storeDispatch('unlinkAttachmentsFromComposer', this.props.composerLocalId);
@@ -223,7 +216,7 @@ class Composer extends Component {
 
         const context = {
             // default_parent_id: this.id,
-            default_body: this._textInputRef.comp.getHtmlContent(),
+            default_body: mailUtils.getHtmlContent(this._textInputRef.comp.getContent()),
             default_attachment_ids: attachmentIds,
             // default_partner_ids: partnerIds,
             default_is_log: this.props.isLog,
@@ -305,8 +298,7 @@ class Composer extends Component {
      * @param {string} ev.detail.unicode
      */
     _onEmojiSelection(ev) {
-        this._textInputRef.comp.setContent(this.storeDispatch(
-            'insertTextContent',
+        this._textInputRef.comp.setContent(mailUtils.insertTextContent(
             this._textInputRef.comp.getContent(),
             ev.detail.unicode,
             this._textInputRef.comp.getSelectionStart(),

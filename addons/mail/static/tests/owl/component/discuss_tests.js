@@ -3059,7 +3059,7 @@ QUnit.test('post a simple message', async function (assert) {
                 );
                 assert.strictEqual(
                     args.kwargs.body,
-                    "<p>Test</p>",
+                    "Test",
                     "should post with provided content in composer input"
                 );
                 assert.strictEqual(
@@ -3551,7 +3551,7 @@ QUnit.test('reply to message from inbox (message linked to document)', async fun
                 );
                 assert.strictEqual(
                     args.kwargs.body,
-                    "<p>Test</p>",
+                    "Test",
                     "should post with provided content in composer input"
                 );
                 assert.strictEqual(

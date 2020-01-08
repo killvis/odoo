@@ -15,36 +15,20 @@ class ComposerTextInput extends Component {
      */
     constructor(...args) {
         super(...args);
-
-        /**
-         * Max frequency for searching for mention suggestions. Useful to
-         * limit amount of RPC while user types something that starts a mention.
-         */
         this.storeDispatch = useDispatch();
         this.storeGetters = useGetters();
         this.storeProps = useStore((state, props) => {
-            const composer = state.composers[props.composerLocalId];
             return {
                 isMobile: state.isMobile,
-                composer,
+                composer: state.composers[props.composerLocalId],
             };
         });
-        /**
-         * Reference of the textarea. Only useful to compute the jQuery node
-         * reference of it...
-         */
         this._textareaRef = useRef('textarea');
     }
 
     /**
-     * Update the composer text input content when the component is mounted to its defaults values
-     */
-    mounted() {
-
-    }
-
-    /**
-     * Update the composer text input content when composer has changed
+     * Updates the composer text input content when composer has changed
+     * as textarea content can't be changed from the DOM.
      */
     patched() {
         this._textareaRef.el.value = this.storeProps.composer.textInputContent;
@@ -65,16 +49,16 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Return textarea current content
+     * Returns textarea current content.
      *
-     * @return {string}
+     * @returns {string}
      */
     getContent() {
         return this._textareaRef.el.value;
     }
 
     /**
-     * Return selection start position
+     * Returns selection start position.
      *
      * @returns {integer}
      */
@@ -83,7 +67,7 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Return selection end position
+     * Returns selection end position.
      *
      * @returns {integer}
      */
@@ -92,7 +76,7 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Determine whether the editable is empty or not.
+     * Determines whether the textarea is empty or not.
      *
      * @return {boolean}
      */
@@ -100,14 +84,19 @@ class ComposerTextInput extends Component {
         return this._textareaRef.el.value === "";
     }
 
-    setContent(content){
+    /**
+     * Sets the textarea content
+     *
+     * @param content
+     */
+    setContent(content) {
         this._textareaRef.el.value = content;
     }
 
     /**
      * @private
      */
-    _onInputEditable() {
+    _onInputTextarea() {
         this._updateHeight();
         this.trigger('o-input-composer-text-input');
     }
@@ -116,13 +105,13 @@ class ComposerTextInput extends Component {
      * @private
      * @param {KeyboardEvent} ev
      */
-    _onKeydownEditable(ev) {
+    _onKeydownTextarea(ev) {
         switch (ev.key) {
             case 'Enter':
-                this._onKeydownEditableEnter(ev);
+                this._onKeydownTextareaEnter(ev);
                 break;
             case 'Escape':
-                this._onKeydownEditableEscape(ev);
+                this._onKeydownTextareaEscape(ev);
                 break;
             default:
                 break;
@@ -133,7 +122,7 @@ class ComposerTextInput extends Component {
      * @private
      * @param {KeyboardEvent} ev
      */
-    _onKeydownEditableEnter(ev) {
+    _onKeydownTextareaEnter(ev) {
         if (ev.shiftKey) {
             return;
         }
@@ -148,7 +137,7 @@ class ComposerTextInput extends Component {
      * @private
      * @param {KeyboardEvent} ev
      */
-    _onKeydownEditableEscape(ev) {
+    _onKeydownTextareaEscape(ev) {
         if (!this.isEmpty()) {
             return;
         }
@@ -157,7 +146,7 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Update the textarea selection range based on store values
+     * Updates the textarea selection range based on store values.
      *
      * @private
      */
@@ -169,18 +158,15 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Update the textarea height
+     * Updates the textarea height.
+     *
      * @private
      */
     _updateHeight() {
         this._textareaRef.el.style.height = "0px";
-        this._textareaRef.el.style.height = (this._textareaRef.el.scrollHeight)+"px";
+        this._textareaRef.el.style.height = (this._textareaRef.el.scrollHeight) + "px";
     }
 }
-
-ComposerTextInput.defaultProps = {
-    composerLocalId: 'undefined',
-};
 
 ComposerTextInput.props = {
     composerLocalId: {
