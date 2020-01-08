@@ -1622,4 +1622,5 @@ class StockMove(models.Model):
                 continue
             move.product_uom_qty -= qty
             done_move_to_return |= move.move_orig_ids._decrease_initial_demand(qty)
+            break
         return done_move_to_return
