@@ -82,10 +82,19 @@ class SaleOrder(models.Model):
         res = super(SaleOrder, self).write(values)
         if values.get('order_line') and self.state == 'sale':
             for order in self:
-                # to_log = {}
+                to_log = self.env['stock.move']
                 for order_line in order.order_line:
                     if float_compare(order_line.product_uom_qty, pre_order_line_qty.get(order_line, 0.0), order_line.product_uom.rounding) < 0:
-                        order_line.move_ids._decrease_initial_demand(order_line.product_uom_qty - pre_order_line_qty.get(order_line, 0.0))
+                        to_log |= order_line.move_ids._decrease_initial_demand(pre_order_line_qty.get(order_line, 0.0) - order_line.product_uom_qty)
+                # if to_log:
+                #     documents = defaultdict(dict)
+                #     for move in to_log:
+                #         # todo change order_line
+                #         rendering_context = {move: order_line}
+                #         parent = move._delay_alert_get_documents()[0]
+                #         responsible = parent.user_id
+                #         documents[(parent, responsible)] = rendering_context, move
+                #     order._log_decrease_ordered_quantity(documents)
                 #         to_log[order_line] = (order_line.product_uom_qty, pre_order_line_qty.get(order_line, 0.0))
                 # if to_log:
                 #     documents = self.env['stock.picking']._log_activity_get_documents(to_log, 'move_ids', 'UP')

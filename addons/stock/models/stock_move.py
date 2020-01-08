@@ -1615,8 +1615,11 @@ class StockMove(models.Model):
                 move.procure_method = 'make_to_stock'
 
     def _decrease_initial_demand(self, qty):
+        done_move_to_return = self.env['stock.move']
         for move in self:
             if move.state in ('done', 'cancel'):
+                done_move_to_return |= move
                 continue
             move.product_uom_qty -= qty
-            move.move_orig_ids._decrease_initial_demand(qty)
+            done_move_to_return |= move.move_orig_ids._decrease_initial_demand(qty)
+        return done_move_to_return
