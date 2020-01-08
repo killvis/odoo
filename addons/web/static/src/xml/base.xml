@@ -1351,11 +1351,6 @@
     <div t-else="">Select a model to add a filter.</div>
 </t>
 
-<t t-name="DomainSelectorDialog" t-inherit="OwlDialog" t-inherit-mode="primary" owl="1">
-    <xpath>
-    </xpath>
-</t>
-
 <t t-name="DomainNode.ControlPanel">
     <div t-if="!widget.readonly &amp;&amp; !widget.noControlPanel" class="o_domain_node_control_panel" role="toolbar" aria-label="Domain node">
         <button class="btn o_domain_delete_node_button" title="Delete node" aria-label="Delete node"><i class="fa fa-times"/></button>
