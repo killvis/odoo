@@ -294,15 +294,27 @@ class TestMessageAccess(common.BaseFunctionalTest, common.MockEmails):
         self.env['mail.message'].sudo(self.user_employee).create({'model': 'mail.channel', 'res_id': self.group_private.id, 'body': 'Test', 'parent_id': self.message.id})
 
     def test_mail_message_portal_user_access_parent_message(self):
-        message = self.test_record.message_post(
+        Message = self.test_record.message_post(
             body='<p>This is First Message</p>', subject='Subject',
             message_type='comment', subtype='mail.mt_note')
+        # portal user have no rights to read the message
+        with self.assertRaises(except_orm):
+            Message.sudo(self.user_portal).read()
+
         with patch.object(MailTestSimple, 'check_access_rights', return_value=True):
-            # parent message is accessible to references notification mail values
-            # for _notify method
-            self.test_record.sudo(self.user_portal).message_post(
-                body='<p>This is Second Message</p>', subject='Subject', parent_id=message.id,
-                partner_ids=[self.user_admin.partner_id.id], message_type='comment', subtype='mail.mt_comment')
+        # parent message is accessible to references notification mail values
+        # for _notify method and portal user have no rights to send the message for this model
+            new_msg = self.test_record.sudo(self.user_portal).message_post(
+                body='<p>This is Second Message</p>', subject='Subject', parent_id=Message.id,
+                partner_ids=[self.user_admin.partner_id.id], message_type='comment', subtype='mail.mt_comment', mail_auto_delete=False)
+
+        new_mail = self.env['mail.mail'].search([
+            ('mail_message_id', '=', new_msg.id),
+            ('references', '=', Message.message_id),
+        ])
+
+        self.assertTrue(new_mail)
+        self.assertEqual(new_msg.parent_id, Message)
 
     # --------------------------------------------------
     # WRITE
