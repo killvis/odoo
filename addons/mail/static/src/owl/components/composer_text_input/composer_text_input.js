@@ -23,6 +23,9 @@ class ComposerTextInput extends Component {
                 composer: state.composers[props.composerLocalId],
             };
         });
+        /**
+         * Reference of the textarea. Useful to set height, selection and content.
+         */
         this._textareaRef = useRef('textarea');
     }
 
@@ -85,7 +88,7 @@ class ComposerTextInput extends Component {
     }
 
     /**
-     * Sets the textarea content
+     * Sets the textarea content.
      *
      * @param content
      */

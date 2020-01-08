@@ -17,6 +17,7 @@ function parseAndTransform(htmlString, transformFunction) {
     return _parseAndTransform(children, transformFunction)
                 .replace(new RegExp(openToken, "g"), "&lt;");
 }
+
 function _parseAndTransform(nodes, transformFunction) {
     return _.map(nodes, function (node) {
         return transformFunction(node, function () {
@@ -84,6 +85,12 @@ function parseEmail(text) {
     }
 }
 
+/**
+ * Returns an HTML conversion of a content.
+ *
+ * @param {string} content
+ * @returns {string}
+ */
 function getHtmlContent(content) {
     //Removing unwanted extra spaces from message
     let value = _.escape(content).trim();
@@ -95,7 +102,15 @@ function getHtmlContent(content) {
     return value;
 }
 
-
+/**
+ * Replaces the content between selectionStart and selectionEnd positions by an other content.
+ *
+ * @param {string} initialContent
+ * @param {string} addedContent
+ * @param {integer} selectionStart
+ * @param {integer} selectionEnd
+ * @returns {string}
+ */
 function insertTextContent(initialContent, addedContent, selectionStart, selectionEnd) {
     let partA = initialContent.slice(0, selectionStart);
     let partB = initialContent.slice(selectionEnd, initialContent.length);
@@ -109,7 +124,6 @@ function getTextToHTML(text) {
         .replace(/((?:https?|ftp):\/\/[\S]+)/g,'<a href="$1">$1</a> ')
         .replace(/[\n\r]/g,'<br/>');
 }
-
 
 function timeFromNow(date) {
     if (moment().diff(date, 'seconds') < 45) {
