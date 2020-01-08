@@ -370,8 +370,13 @@ class SurveyUserInputLine(models.Model):
                 field_name = 'value_%s' % line.answer_type
             else:
                 field_name = False
-            if field_name and not line[field_name]:
-                raise ValidationError(_('The answer must be in the right type'))
+            if line.answer_type == 'numerical_box':
+                # exceptionally allow 0 as a valid number
+                if line[field_name] is False:
+                  raise ValidationError(_('The answer must be in the right type'))
+            else:
+                if field_name and not line[field_name]:
+                    raise ValidationError(_('The answer must be in the right type'))
 
     @api.model_create_multi
     def create(self, vals_list):
