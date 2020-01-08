@@ -790,7 +790,7 @@
         t-on-mouseleave="state.displayTooltip = false"
         >
         <span t-if="props.group.type === 'field'" class="o_searchview_facet_label">
-            <t t-esc="props.filters[0].attrs.string"/>
+            <t t-esc="props.filters[0].description"/>
         </span>
         <span t-else="" t-attf-class="fa {{ icon }} o_searchview_facet_label"/>
         <div class="o_facet_values">

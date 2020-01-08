@@ -29,7 +29,6 @@ odoo.define('web.SearchBar', function (require) {
             this.filters = useStore(state => state.filters, { store: this.env.controlPanelStore });
             this.getters = useGetters(this.env.controlPanelStore);
             this.searchInputRef = useRef('search-input');
-            this.groups = useStore(state => state.groups, { store: this.env.controlPanelStore });
             this.query = useStore(state => state.query, { store: this.env.controlPanelStore });
             this.state = useState({
                 sources: [],
@@ -49,7 +48,7 @@ odoo.define('web.SearchBar', function (require) {
             const promises = [];
             this.getters.getFiltersOfType('field').forEach(filter => {
                 // Generate an auto-completion source from a filter and a field.
-                const field = this.props.fields[filter.attrs.name];
+                const field = this.props.fields[filter.fieldName];
                 const source = this._createSource(filter, field);
                 this.autoCompleteSources.push(source);
                 // If the field is a many2one with a default value, the label of
@@ -82,13 +81,7 @@ odoo.define('web.SearchBar', function (require) {
          * @returns {Object[]}
          */
         get facets() {
-            return this.query.map(groupId => {
-                const group = this.groups[groupId];
-                return {
-                    group: group,
-                    filters: group.activeFilterIds.map(({ filterId }) => this.filters[filterId])
-                };
-            });
+            return this.getters.getFacets();
         }
 
         //--------------------------------------------------------------------------
@@ -117,9 +110,9 @@ odoo.define('web.SearchBar', function (require) {
                 filterId: filter.id,
                 id: sourceId ++,
                 parent: false,
-                fieldName: filter.attrs.string,
+                fieldName: filter.fieldName,
             };
-            switch (field.type) {
+            switch (filter.fieldType) {
                 case 'selection':
                     source.active = false;
                     source.selection = field.selection;
@@ -134,8 +127,8 @@ odoo.define('web.SearchBar', function (require) {
                 case 'many2one':
                     source.expand = true;
                     source.expanded = false;
-                    if (filter.attrs.domain) {
-                        source.domain = filter.attrs.domain;
+                    if (filter.domain) {
+                        source.domain = filter.domain;
                     }
             }
             return source;
@@ -252,12 +245,12 @@ odoo.define('web.SearchBar', function (require) {
             // - Selection sources
             // - "no result" items
             if (source.active) {
-                this.dispatch('toggleAutoCompletionFilter', {
-                    filterId: source.filterId,
-                    label: source.label || this.state.inputValue,
-                    type: source.field.type,
-                    value: source.value,
-                });
+                const label = source.label || this.state.inputValue;
+                this.dispatch('addAutoCompletionValues',
+                    source.filterId,
+                    source.value || label,
+                    label,
+                );
                 this.state.inputValue = "";
                 this.searchInputRef.el.value = "";
                 this._closeAutoComplete();
@@ -387,7 +380,8 @@ odoo.define('web.SearchBar', function (require) {
                     break;
                 case 'Backspace':
                     if (!this.state.inputValue.length && this.query.length) {
-                        this.dispatch('deactivateGroup', this.query[this.query.length -1]);
+                        const lastActiveGroupId = this.query.reduce((_, { groupId }) =>  groupId, false);
+                        this.dispatch('deactivateGroup', lastActiveGroupId);
                     }
                     break;
                 case 'Enter':

@@ -24,7 +24,8 @@ class SearchFacet extends Component {
         switch (this.props.group.type) {
             case 'filter':
             case 'favorite':
-                return this.props.filters.map(f => f.domain);
+                // todo avoid duplicates
+                return this.props.filters.map(filter => filter.domain);
         }
     }
 
@@ -85,45 +86,49 @@ class SearchFacet extends Component {
             }
             return description;
         }
-        const description = [];
+
+        let description = filter.description;
         if (filter.hasOptions) {
-            const getOption = id => filter.options.find(o => o.optionId === id);
+
+            const currentOptions = filter.options.filter(o => o.isActive);
+            const descriptions = [];
+
             if (filter.type === 'filter') {
                 const optionDescription = [];
                 const unsortedYearIds = [];
                 const unsortedOtherOptionIds = [];
-                filter.currentOptionIds.forEach(optionId => {
-                    if (getOption(optionId).groupNumber === 2) {
-                        unsortedYearIds.push(optionId);
+                currentOptions.forEach(o => {
+                    if (o.groupNumber === 2) {
+                        unsortedYearIds.push(o.optionId);
                     } else {
-                        unsortedOtherOptionIds.push(optionId);
+                        unsortedOtherOptionIds.push(o.optionId);
                     }
                 });
-                const sortOptions = (a, b) =>
+                const sortOptionIds = (a, b) =>
                     filter.options.findIndex(({ optionId }) => optionId === a) -
                     filter.options.findIndex(({ optionId }) => optionId === b);
-                const yearIds = unsortedYearIds.sort(sortOptions);
-                const otherOptionIds = unsortedOtherOptionIds.sort(sortOptions);
+
+                const yearIds = unsortedYearIds.sort(sortOptionIds);
+                const otherOptionIds = unsortedOtherOptionIds.sort(sortOptionIds);
 
                 if (otherOptionIds.length) {
                     otherOptionIds.forEach(optionId => {
                         yearIds.forEach(yearId => {
-                            optionDescription.push(filter.basicDomains[`${yearId}__${optionId}`].description);
+                            descriptions.push(filter.basicDomains[`${yearId}__${optionId}`].description);
                         });
                     });
                 } else {
                     yearIds.forEach(yearId => {
-                        optionDescription.push(filter.basicDomains[yearId].description);
+                        descriptions.push(filter.basicDomains[yearId].description);
                     });
                 }
-                description.push(optionDescription);
             } else {
-                description.push(...filter.currentOptionIds.map(optionId => getOption(optionId).description));
+                descriptions.push(...currentOptions.map(o => o.description));
             }
+            description += `: ${descriptions.join(" / ")}`;
         }
-        return description.length ?
-            `${filter.description}: ${description.join(" / ")}` :
-            filter.description;
+        return description;
+
     }
 
     //--------------------------------------------------------------------------
@@ -146,7 +151,7 @@ class SearchFacet extends Component {
                 this.trigger('navigation_move', { direction: 'right' });
                 break;
             case 'Backspace':
-                this.dispatch('deactivateGroup', this.props.group.id);
+                this.dispatch('deactivateGroup', this.id);
                 break;
         }
     }
@@ -154,8 +159,9 @@ class SearchFacet extends Component {
 
 SearchFacet.components = { Tooltip };
 SearchFacet.props = {
-    filters: Object,
+    // todo specify formats
     group: Object,
+    filters: Object,
 };
 SearchFacet.template = 'SearchFacet';
 
