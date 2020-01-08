@@ -32,7 +32,7 @@ odoo.define('web.datepicker_owl', function (require) {
         mounted() {
             $(this.el).on('show.datetimepicker', this._onDateTimePickerShow.bind(this));
             $(this.el).on('hide.datetimepicker', this._onDateTimePickerHide.bind(this));
-            $(this.el).on('error.datetimepicker', this.errorDatetime.bind(this));
+            $(this.el).on('error.datetimepicker', this._onDateTimePickerError.bind(this));
 
             this._datetimepicker(this.props);
 
@@ -112,7 +112,7 @@ odoo.define('web.datepicker_owl', function (require) {
         /**
          * Library clears the wrong date format so just ignore error
          */
-        errorDatetime(e) {
+        _onDateTimePickerError() {
             return false;
         }
 
@@ -122,9 +122,9 @@ odoo.define('web.datepicker_owl', function (require) {
          * unwanted effects (like triggering 'field_changed' events)
          */
         focus() {
-            this.__libInput++;
+            this.__libInput ++;
             this.inputRef.el.focus();
-            this.__libInput--;
+            this.__libInput --;
         }
 
         /**
@@ -138,7 +138,7 @@ odoo.define('web.datepicker_owl', function (require) {
                 try {
                     this._parseClient(value);
                     return true;
-                } catch (e) {
+                } catch (err) {
                     return false;
                 }
             }
@@ -164,7 +164,7 @@ odoo.define('web.datepicker_owl', function (require) {
 
         /**
          * Handles bootstrap datetimepicker calls.
-         * @param {*} arguments anything that will be passed to the datetimepicker function.
+         * @param {any} arguments anything that will be passed to the datetimepicker function.
          */
         _datetimepicker() {
             this.__libInput++;
@@ -281,6 +281,7 @@ odoo.define('web.datepicker_owl', function (require) {
             showToday: false,
         },
         calendarWeeks: true,
+        defaultValue: [],
         format: time.getLangDateFormat(),
         icons: {
             clear: 'fa fa-delete',

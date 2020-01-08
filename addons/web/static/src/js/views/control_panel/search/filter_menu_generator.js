@@ -4,11 +4,12 @@ odoo.define('web.FilterMenuGenerator', function (require) {
     const { DatePicker, DateTimePicker } = require('web.datepicker_owl');
     const Domain = require('web.Domain');
     const DropdownMenuItem = require('web.DropdownMenuItem');
+    const { FIELD_OPERATORS } = require('web.controlPanelParameters');
     const { parse } = require('web.field_utils');
 
     const { useDispatch, useState } = owl.hooks;
 
-    const FIELDTYPES = {
+    const FIELD_TYPES = {
         boolean: 'boolean',
         char: 'char',
         date: 'date',
@@ -29,113 +30,79 @@ odoo.define('web.FilterMenuGenerator', function (require) {
             super(...arguments);
 
             this.dispatch = useDispatch(this.env.controlPanelStore);
-            this.fields = Object.keys(this.props.fields)
-                .map(k => Object.assign({}, this.props.fields[k], { name: k }))
-                .filter(f => !f.deprecated && f.searchable)
-                .sort((a, b) => a.string > b.string ? 1 : a.string < b.string ? -1 : 0);
-            this.interactive = true;
+            this.fields = Object.keys(this.props.fields).reduce(
+                (fields, fieldName) => {
+                    const field = Object.assign({}, this.props.fields[fieldName], {
+                        name: fieldName,
+                    });
+                    if (!field.deprecated && field.searchable) {
+                        fields.push(field);
+                    }
+                    return fields;
+                },
+                []
+            ).sort(({ string: a }, { string: b }) => a > b ? 1 : a < b ? -1 : 0);
             this.state = useState({
                 conditions: [],
                 open: false,
             });
+            // Add default empty condition
+            this._addDefaultCondition();
 
-            this.OPERATORS = {
-                boolean: [
-                    { symbol: "=", text: this.env._lt("is true"), value: [true] },
-                    { symbol: "!=", text: this.env._lt("is false"), value: [true] },
-                ],
-                char: [
-                    { symbol: "ilike", text: this.env._lt("contains"), value: 1 },
-                    { symbol: "not ilike", text: this.env._lt("doesn't contain"), value: 1 },
-                    { symbol: "=", text: this.env._lt("is equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is not equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is set"), value: [false] },
-                    { symbol: "=", text: this.env._lt("is not set"), value: [false] },
-                ],
-                date: [
-                    { symbol: "=", text: this.env._lt("is equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is not equal to"), value: 1 },
-                    { symbol: ">", text: this.env._lt("is after"), value: 1 },
-                    { symbol: "<", text: this.env._lt("is before"), value: 1 },
-                    { symbol: ">=", text: this.env._lt("is after or equal to"), value: 1 },
-                    { symbol: "<=", text: this.env._lt("is before or equal to"), value: 1 },
-                    { symbol: "between", text: this.env._lt("is between"), value: 2 },
-                    { symbol: "!=", text: this.env._lt("is set"), value: [false] },
-                    { symbol: "=", text: this.env._lt("is not set"), value: [false] },
-                ],
-                datetime: [
-                    { symbol: "between", text: this.env._lt("is between"), value: 2 },
-                    { symbol: "=", text: this.env._lt("is equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is not equal to"), value: 1 },
-                    { symbol: ">", text: this.env._lt("is after"), value: 1 },
-                    { symbol: "<", text: this.env._lt("is before"), value: 1 },
-                    { symbol: ">=", text: this.env._lt("is after or equal to"), value: 1 },
-                    { symbol: "<=", text: this.env._lt("is before or equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is set"), value: [false] },
-                    { symbol: "=", text: this.env._lt("is not set"), value: [false] },
-                ],
-                number: [
-                    { symbol: "=", text: this.env._lt("is equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is not equal to"), value: 1 },
-                    { symbol: ">", text: this.env._lt("greater than"), value: 1 },
-                    { symbol: "<", text: this.env._lt("less than"), value: 1 },
-                    { symbol: ">=", text: this.env._lt("greater than or equal to"), value: 1 },
-                    { symbol: "<=", text: this.env._lt("less than or equal to"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is set"), value: [false] },
-                    { symbol: "=", text: this.env._lt("is not set"), value: [false] },
-                ],
-                id: [
-                    { symbol: "=", text: this.env._lt("is"), value: 1 },
-                ],
-                selection: [
-                    { symbol: "=", text: this.env._lt("is"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is not"), value: 1 },
-                    { symbol: "!=", text: this.env._lt("is set"), value: [false] },
-                    { symbol: "=", text: this.env._lt("is not set"), value: [false] },
-                ],
-            };
-
-            // Initiate base conditions.
-            this.props.items.forEach(item => this._addCondition(item));
+            // Give access to constants variables to the template.
+            this.DECIMAL_POINT = this.env._t.database.parameters.decimal_point;
+            this.OPERATORS = FIELD_OPERATORS;
+            this.FIELD_TYPES = FIELD_TYPES;
         }
 
         //--------------------------------------------------------------------------
-        // Properties
+        // Getters
         //--------------------------------------------------------------------------
 
-        get decimalPoint() {
-            return this.env._t.database.parameters.decimal_point;
-        }
-
-        get FIELDTYPES() {
-            return FIELDTYPES;
+        /**
+         * @override
+         */
+        get canBeOpened() {
+            return true;
         }
 
         //--------------------------------------------------------------------------
         // Private
         //--------------------------------------------------------------------------
 
-        _addCondition(item) {
+        /**
+         * Populates the conditions list with a default condition having as properties:
+         * - the first available field
+         * - the first available operator
+         * - an empty value
+         * @private
+         */
+        _addDefaultCondition() {
             const condition = {
-                value: [],
+                field: 0,
+                operator: 0,
+                value: null,
             };
-            if (item) {
-                const [fieldName, operatorValue, rawValue] = item;
-                const field = this.props.fields[fieldName];
-                condition.field = this.fields.indexOf(field);
-                condition.operator = this.OPERATORS[FIELDTYPES[field.type]].findIndex(
-                    o => o.symbol === operatorValue
-                );
-                condition.value.push(rawValue);
-            } else {
-                condition.field = 0;
-                condition.operator = 0;
-            }
             this.state.conditions.push(condition);
         }
 
+        /**
+         * @private
+         * @param {Object} operator
+         * @returns {boolean}
+         */
+        _hasValue(operator) {
+            return 'value' in operator;
+        }
+
+        /**
+         * Returns a sequence of numbers which length is equal to the given size.
+         * @private
+         * @param {number} size
+         * @returns {number[]}
+         */
         _range(size) {
-            return parseInt(size, 10) === size ? new Array(size).fill().map((_, i) => i) : [];
+            return new Array(size).fill().map((_, i) => i);
         }
 
         //--------------------------------------------------------------------------
@@ -144,18 +111,19 @@ odoo.define('web.FilterMenuGenerator', function (require) {
 
         /**
          * Convert all conditions to prefilters.
+         * @private
          */
         _onApply() {
             const preFilters = this.state.conditions.map(condition => {
                 const field = this.fields[condition.field];
-                const type = this.FIELDTYPES[field.type];
+                const type = this.FIELD_TYPES[field.type];
                 const operator = this.OPERATORS[type][condition.operator];
                 const preDescription = [];
                 const preDomain = [];
                 let values;
                 // Field type specifics
-                if (Array.isArray(operator.value)) {
-                    values = operator.value;
+                if (this._hasValue(operator)) {
+                    values = [operator.value];
                 } else if (['date', 'datetime'].includes(field.type)) {
                     values = condition.value.map(val =>
                         val._isAMomentObject ? val.locale('en').format(
@@ -165,7 +133,7 @@ odoo.define('web.FilterMenuGenerator', function (require) {
                         ) : val
                     );
                 } else {
-                    values = condition.value;
+                    values = [condition.value];
                 }
                 // Operator specifics
                 if (operator.symbol === 'between') {
@@ -177,9 +145,9 @@ odoo.define('web.FilterMenuGenerator', function (require) {
                     preDomain.push([field.name, operator.symbol, values[0]]);
                 }
                 preDescription.push(field.string, operator.text);
-                if (!Array.isArray(operator.value)) {
-                    let value = values.join(` ${this.env._lt("and")} `);
-                    if (this.FIELDTYPES[field.type] === 'char') {
+                if (!this._hasValue(operator)) {
+                    let value = values.join(` ${this.env._t("and")} `);
+                    if (this.FIELD_TYPES[field.type] === 'char') {
                         value = `"${value}"`;
                     }
                     preDescription.push(value);
@@ -197,13 +165,24 @@ odoo.define('web.FilterMenuGenerator', function (require) {
             // Reset state
             this.state.open = false;
             this.state.conditions = [];
-            this.props.items.forEach(item => this._addCondition(item));
+            this._addDefaultCondition();
         }
 
+        /**
+         * @private
+         * @param {Object} condition
+         * @param {number} valueIndex
+         * @param {OwlEvent} ev
+         */
         _onDateChanged(condition, valueIndex, ev) {
             condition.value[valueIndex] = ev.detail;
         }
 
+        /**
+         * @private
+         * @param {Object} condition
+         * @param {Event} ev
+         */
         _onFieldSelected(condition, ev) {
             Object.assign(condition, {
                 field: ev.target.selectedIndex,
@@ -212,36 +191,50 @@ odoo.define('web.FilterMenuGenerator', function (require) {
             });
         }
 
+        /**
+         * @private
+         * @param {Object} condition
+         * @param {Event} ev
+         */
         _onOperatorSelected(condition, ev) {
             condition.operator = ev.target.selectedIndex;
         }
 
+        /**
+         * @private
+         * @param {Object} condition
+         */
         _onRemoveCondition(conditionIndex) {
             this.state.conditions.splice(conditionIndex, 1);
         }
 
-        _onValueInput(condition, valueIndex, ev) {
+        /**
+         * @private
+         * @param {Object} condition
+         * @param {Event} ev
+         */
+        _onValueInput(condition, ev) {
             const type = this.fields[condition.field].type;
             if (['float', 'integer'].includes(type)) {
-                const previousValue = condition.value[valueIndex];
+                const previousValue = condition.value;
                 const defaultValue = type === 'float' ? '0.0' : '0';
                 try {
                     const parsed = parse[type](ev.target.value || defaultValue);
                     // Force parsed value in the input.
-                    ev.target.value = condition.value[valueIndex] = (parsed || defaultValue);
+                    ev.target.value = condition.value = (parsed || defaultValue);
                 } catch (err) {
                     // Force previous value if non-parseable.
                     ev.target.value = previousValue || defaultValue;
                 }
             } else {
-                condition.value[valueIndex] = ev.target.value || "";
+                condition.value = ev.target.value || "";
             }
         }
     }
 
     FilterMenuGenerator.components = { DatePicker, DateTimePicker };
-    FilterMenuGenerator.defaultProps = {
-        items: [[]],
+    FilterMenuGenerator.props = {
+        fields: Object,
     };
     FilterMenuGenerator.template = 'FilterMenuGenerator';
 

@@ -11,26 +11,62 @@ odoo.define('web.GroupByMenuGenerator', function (require) {
             super(...arguments);
 
             this.fieldIndex = 0;
-            this.fields = Object.keys(this.props.fields)
-                .map(k => Object.assign({}, this.props.fields[k], { name: k }))
-                .filter(f => f.sortable && f.name !== "id" && GROUPABLE_TYPES.includes(f.type))
-                .sort((a, b) => a.string > b.string ? 1 : a.string < b.string ? -1 : 0);
-            this.interactive = true;
+
+            this.fields = Object.keys(this.props.fields).reduce(
+                (fields, fieldName) => {
+                    const field = Object.assign({}, this.props.fields[fieldName], {
+                        name: fieldName,
+                    });
+                    if (
+                        field.sortable &&
+                        field.name !== "id" &&
+                        GROUPABLE_TYPES.includes(field.type)
+                    ) {
+                        fields.push(field);
+                    }
+                    return fields;
+                },
+                []
+            ).sort(({ string: a }, { string: b }) => a > b ? 1 : a < b ? -1 : 0);
             this.state = useState({ open: false });
         }
 
+        //--------------------------------------------------------------------------
+        // Getters
+        //--------------------------------------------------------------------------
+
+        /**
+         * @override
+         */
+        get canBeOpened() {
+            return true;
+        }
+
+        //--------------------------------------------------------------------------
+        // Handlers
+        //--------------------------------------------------------------------------
+
+        /**
+         * @private
+         */
         _onApply() {
-            const field = this.fields[this.fieldIndex];
-            this.trigger('create_new_groupby', field);
+            this.trigger('create_new_groupby', this.fields[this.fieldIndex]);
             this.state.open = false;
         }
 
+        /**
+         * @private
+         * @param {Event} ev
+         */
         _onFieldSelected(ev) {
             this.fieldIndex = ev.target.selectedIndex;
         }
     }
 
     GroupByMenuGenerator.template = 'GroupByMenuGenerator';
+    GroupByMenuGenerator.props = {
+        fields: Object,
+    };
 
     return GroupByMenuGenerator;
 });

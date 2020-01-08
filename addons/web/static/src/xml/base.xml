@@ -325,7 +325,7 @@
 </t>
 
 <t t-name="DropdownMenuItem" owl="1">
-    <li t-if="interactive" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
+    <li t-if="canBeOpened" class="o_menu_item" role="menuitem" t-on-keydown="_onKeydown">
         <a class="o_menu_item_parent dropdown-item"
             t-att-class="{ selected: props.isActive }"
             role="menuitem"
@@ -402,12 +402,7 @@
             </div>
             <div class="o_favorite_domain">
                 <label>Domains</label>
-                <FilterMenuGenerator class="o_menu_generator"
-                    fields="props.fields"
-                    items="state.editDialog.domains"
-                    standAlone="'true'"
-                    t-on-create_new_filters.stop="_onCreateNewFilters"
-                />
+                TODO
             </div>
             <t t-set="buttons">
                 <button type="button"
@@ -591,7 +586,7 @@
                 t-att-class="{ 'dropdown-item-text': !props.standAlone }"
                 >
                 <t t-set="fieldType" t-value="fields[condition.field].type"/>
-                <t t-set="selectedOperator" t-value="OPERATORS[FIELDTYPES[fieldType]][condition.operator]"/>
+                <t t-set="selectedOperator" t-value="OPERATORS[FIELD_TYPES[fieldType]][condition.operator]"/>
                 <span t-if="!condition_first" class="o_or_filter">or</span>
                 <select class="o_input o_menu_generator_field"
                     t-on-change="_onFieldSelected(condition)"
@@ -605,45 +600,57 @@
                 <select class="o_input o_menu_generator_operator"
                     t-on-change="_onOperatorSelected(condition)"
                     >
-                    <option t-foreach="OPERATORS[FIELDTYPES[fieldType]]" t-as="operator" t-key="operator_index"
+                    <option t-foreach="OPERATORS[FIELD_TYPES[fieldType]]" t-as="operator" t-key="operator_index"
                         t-att-value="operator.symbol"
                         t-att-selected="operator_index === condition.operator"
                         t-esc="operator.text"
                     />
                 </select>
-                <span t-if="!Array.isArray(selectedOperator.value)" class="o_menu_generator_value">
-                    <t t-foreach="_range(selectedOperator.value)" t-as="input_index" t-key="input_index">
-                        <DatePicker t-if="fieldType === 'date'"
-                            value="condition.value[input_index]"
-                            defaultValue="[input_index === 0 ? '00:00:00' : '23:59:59', 'hh:mm:ss']"
-                            t-on-datetime_changed="_onDateChanged(condition, input_index)"/>
-                        <DateTimePicker t-elif="fieldType === 'datetime'"
-                            value="condition.value[input_index]"
-                            defaultValue="[input_index === 0 ? '00:00:00' : '23:59:59', 'hh:mm:ss']"
-                            t-on-datetime_changed="_onDateChanged(condition, input_index)"/>
-                        <select t-elif="fieldType === 'selection'" class="o_input"
-                            t-on-change="_onValueInput(condition, input_index)"
-                            >
-                            <option t-foreach="fields[condition.field].selection" t-as="option" t-key="option_index"
-                                t-att-value="option[0]"
-                                t-esc="option[1]"/>
-                        </select>
-                        <input t-elif="fieldType === 'float'"
-                            class="o_input"
-                            step="0.01"
-                            t-att-type="decimalPoint === '.' ? 'number' : 'text'"
-                            t-attf-title="Number using {{ decimalPoint }} as decimal separator."
-                            t-attf-pattern="[0-9]+([\\{{ decimalPoint }}][0-9]+)?"
-                            t-att-value="condition.value[input_index] or (0 + decimalPoint + 0)"
-                            t-on-input="_onValueInput(condition, input_index)"
+                <span t-if="!_hasValue(selectedOperator)" class="o_menu_generator_value">
+                    <t t-if="fieldType === 'date'">
+                        <DatePicker
+                            value="condition.value[0]"
+                            t-on-datetime_changed="_onDateChanged(condition, 0)"
                         />
-                        <input t-else=""
-                            type="text"
-                            class="o_input"
-                            t-att-value="condition.value[input_index] or ''"
-                            t-on-input="_onValueInput(condition, input_index)"
+                        <DatePicker t-if="selectedOperator.symbol === 'between'"
+                            value="condition.value[1]"
+                            t-on-datetime_changed="_onDateChanged(condition, 1)"
                         />
                     </t>
+                    <t t-elif="fieldType === 'datetime'">
+                        <DateTimePicker
+                            value="condition.value[0]"
+                            defaultValue="['00:00:00', 'hh:mm:ss']"
+                            t-on-datetime_changed="_onDateChanged(condition, 0)"
+                        />
+                        <DateTimePicker t-if="selectedOperator.symbol === 'between'"
+                            value="condition.value[1]"
+                            defaultValue="['23:59:59', 'hh:mm:ss']"
+                            t-on-datetime_changed="_onDateChanged(condition, 1)"
+                        />
+                    </t>
+                    <select t-elif="fieldType === 'selection'" class="o_input"
+                        t-on-change="_onValueInput(condition)"
+                        >
+                        <option t-foreach="fields[condition.field].selection" t-as="option" t-key="option_index"
+                            t-att-value="option[0]"
+                            t-esc="option[1]"/>
+                    </select>
+                    <input t-elif="fieldType === 'float'"
+                        class="o_input"
+                        step="0.01"
+                        t-att-type="DECIMAL_POINT === '.' ? 'number' : 'text'"
+                        t-attf-title="Number using {{ DECIMAL_POINT }} as decimal separator."
+                        t-attf-pattern="[0-9]+([\\{{ DECIMAL_POINT }}][0-9]+)?"
+                        t-att-value="condition.value or (0 + DECIMAL_POINT + 0)"
+                        t-on-input="_onValueInput(condition)"
+                    />
+                    <input t-else=""
+                        type="text"
+                        class="o_input"
+                        t-att-value="condition.value or ''"
+                        t-on-input="_onValueInput(condition)"
+                    />
                 </span>
                 <i t-if="state.conditions.length &gt; 1"
                     class="fa fa-trash-o o_menu_generator_delete"
@@ -657,7 +664,7 @@
                 <button type="button" class="btn btn-primary o_apply_filter" t-on-click="_onApply">Apply</button>
                 <button type="button"
                     class="btn btn-secondary o_add_condition"
-                    t-on-click="_addCondition"
+                    t-on-click="_addDefaultCondition"
                     >
                     <i class="fa fa-plus-circle"/>
                     Add a condition

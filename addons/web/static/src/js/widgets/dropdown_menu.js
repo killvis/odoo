@@ -41,7 +41,7 @@ odoo.define('web.DropdownMenu', function (require) {
 
         /**
          * Overriden in case we want to keep the caret style on the button in mobile.
-         * @returns {Boolean}
+         * @returns {boolean}
          */
         get displayCaret() {
             return !this.env.device.isMobile;
@@ -51,6 +51,10 @@ odoo.define('web.DropdownMenu', function (require) {
         // Handlers
         //--------------------------------------------------------------------------
 
+        /**
+         * @private
+         * @param {KeyboardEvent} ev
+         */
         _onButtonKeydown(ev) {
             switch (ev.key) {
                 case 'ArrowLeft':
@@ -65,6 +69,10 @@ odoo.define('web.DropdownMenu', function (require) {
             }
         }
 
+        /**
+         * @private
+         * @param {MouseEvent} ev
+         */
         _onItemClick(ev) {
             const { itemId, optionId } = ev.detail;
             if (optionId) {
@@ -101,8 +109,8 @@ odoo.define('web.DropdownMenu', function (require) {
         fields: {},
     };
     DropdownMenu.props = {
-        action: { type: Object, optional: 1 },
-        fields: { type: Object, optional: 1 },
+        action: Object,
+        fields: Object,
     };
     DropdownMenu.template = 'DropdownMenu';
 

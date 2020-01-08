@@ -36,7 +36,9 @@ odoo.define('web.FilterMenu', function (require) {
         }
     }
 
-    FilterMenu.components = Object.assign({ FilterMenuGenerator }, DropdownMenu.components);
+    FilterMenu.components = Object.assign({}, DropdownMenu.components, {
+        FilterMenuGenerator,
+    });
     FilterMenu.template = 'FilterMenu';
 
     return FilterMenu;
