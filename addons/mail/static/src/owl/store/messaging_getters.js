@@ -291,6 +291,7 @@ const getters = {
      * @return {mail.store.model.Thread[]} filtered threads that are mail.channels
      */
     mailChannelList({ getters }) {
+        // TODO SEB do we here also include the failures?? @see _getMailFailurePreviews
         const mailChannels = getters.mailChannels();
         return Object
             .values(mailChannels)
@@ -326,7 +327,7 @@ const getters = {
      */
     mailChannels({ state }) {
         return filterObject(state.threads, thread =>
-            thread._model === 'mail.channel'
+            thread._model === 'mail.channel' || thread._model === 'mail.failure'
         );
     },
     /**

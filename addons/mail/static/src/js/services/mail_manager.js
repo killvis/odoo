@@ -835,6 +835,7 @@ var MailManager =  AbstractService.extend({
      * @param {string|undefined} [filter]
      */
     _getSystrayMailFailurePreviews: function (filter) {
+        // TODO SEB remove this after having adapted it in owl
         // mail failure previews
         if (filter === 'mailbox_inbox' || !filter) {
             return this._getMailFailurePreviews();
@@ -1321,6 +1322,7 @@ var MailManager =  AbstractService.extend({
      */
     _updateMailFailuresFromServer: function (data) {
         var self = this;
+        // TODO SEB this is init messaging, it is already done in owl, so it can be removed here
         this._mailFailures = _.map(data.mail_failures, function (mailFailureData) {
             return new MailFailure(self, mailFailureData);
         });
