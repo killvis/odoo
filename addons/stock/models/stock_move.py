@@ -1613,3 +1613,10 @@ class StockMove(models.Model):
                 move.procure_method = rules.procure_method
             else:
                 move.procure_method = 'make_to_stock'
+
+    def _decrease_initial_demand(self, qty):
+        for move in self:
+            if move.state in ('done', 'cancel'):
+                continue
+            move.product_uom_qty -= qty
+            move.move_orig_ids._decrease_initial_demand(qty)
