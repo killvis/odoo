@@ -10,14 +10,20 @@ odoo.define('web.test_utils_create', function (require) {
  * testUtils file.
  */
 
+const AbstractStorageService = require('web.AbstractStorageService');
 var ActionManager = require('web.ActionManager');
 var config = require('web.config');
 var ControlPanelView = require('web.ControlPanelView');
 var concurrency = require('web.concurrency');
 var DebugManager = require('web.DebugManager.Backend');
 var dom = require('web.dom');
+const makeTestEnvironment = require('web.test_env');
+const MockServer = require('web.MockServer');
+const RamStorage = require('web.RamStorage');
 var testUtilsMock = require('web.test_utils_mock');
 var Widget = require('web.Widget');
+
+const { Component } = owl;
 
 /**
  * create and return an instance of ActionManager with all rpcs going through a
@@ -57,6 +63,64 @@ async function createActionManager(params) {
     if (config.device.isMobile) {
         widget.$el.addClass('o_touch_device');
     }
+
+    // build env and mockServer
+    let Server = MockServer;
+    if (params.mockRPC) {
+        Server = MockServer.extend({ _performRpc: params.mockRPC });
+    }
+    const server = new Server(params.data, {
+        actions: params.actions,
+        archs: params.archs,
+        debug: params.debug,
+    });
+    // patch Component environment for views having renderers already converted in owl.
+    const RamStorageService = AbstractStorageService.extend({
+        storage: new RamStorage(),
+    });
+    const env = {
+        dataManager: {
+            load_action: (actionID, context) => {
+                return server.performRpc('/web/action/load', {
+                    kwargs: {
+                        action_id: actionID,
+                        additional_context: context,
+                    },
+                });
+            },
+            load_views: (params, options) => {
+                return server.performRpc('/web/dataset/call_kw/' + params.model, {
+                    args: [],
+                    kwargs: {
+                        context: params.context,
+                        options: options,
+                        views: params.views_descr,
+                    },
+                    method: 'load_views',
+                    model: params.model,
+                }).then(function (views) {
+                    return _.mapObject(views, viewParams => {
+                        return testUtilsMock.fieldsViewGet(server, viewParams);
+                    });
+                });
+            },
+            load_filters: params => {
+                if (params.debug) {
+                    console.log('[mock] load_filters', params);
+                }
+                return Promise.resolve([]);
+            },
+        },
+        services: {
+            ajax: {
+                rpc: server.performRpc.bind(server), // for legacy sub widgets
+            },
+            local_storage: new RamStorageService(),
+            session_storage: new RamStorageService(),
+        },
+    };
+
+    Component.env = makeTestEnvironment(env, server.performRpc.bind(server));
 
     var userContext = params.context && params.context.user_context || {};
     var actionManager = new ActionManager(widget, userContext);
@@ -114,6 +178,54 @@ async function createView(params) {
     // add mock environment: mock server, session, fieldviewget, ...
     var mockServer = testUtilsMock.addMockEnvironment(widget, params);
     var viewInfo = testUtilsMock.fieldsViewGet(mockServer, params);
+
+    // patch Component environment for views having renderers already converted in owl.
+    const RamStorageService = AbstractStorageService.extend({
+        storage: new RamStorage(),
+    });
+    const env = {
+        dataManager: {
+            load_action: (actionID, context) => {
+                return mockServer.performRpc('/web/action/load', {
+                    kwargs: {
+                        action_id: actionID,
+                        additional_context: context,
+                    },
+                });
+            },
+            load_views: (params, options) => {
+                return mockServer.performRpc('/web/dataset/call_kw/' + params.model, {
+                    args: [],
+                    kwargs: {
+                        context: params.context,
+                        options: options,
+                        views: params.views_descr,
+                    },
+                    method: 'load_views',
+                    model: params.model,
+                }).then(function (views) {
+                    return _.mapObject(views, viewParams => {
+                        return testUtilsMock.fieldsViewGet(mockServer, viewParams);
+                    });
+                });
+            },
+            load_filters: params => {
+                if (params.debug) {
+                    console.log('[mock] load_filters', params);
+                }
+                return Promise.resolve([]);
+            },
+        },
+        services: {
+            ajax: {
+                rpc: mockServer.performRpc.bind(mockServer), // for legacy sub widgets
+            },
+            local_storage: new RamStorageService(),
+            session_storage: new RamStorageService(),
+        },
+    };
+
+    Component.env = makeTestEnvironment(env, mockServer.performRpc.bind(mockServer));
 
     // create the view
     var View = params.View;
