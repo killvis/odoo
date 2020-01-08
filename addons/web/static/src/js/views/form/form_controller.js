@@ -100,7 +100,7 @@ var FormController = BasicController.extend({
             viewType: 'form',
         });
         this.handle = handle;
-        await this.updateControlPanel({
+        this._updateActionProps({
             pager: this._getPagerProps(),
             sidebar: this._getSidebarProps(),
         });
@@ -190,56 +190,48 @@ var FormController = BasicController.extend({
         }));
     },
     /**
-     * Instantiate and render the sidebar if a sidebar is requested
-     * Sets this.sidebar.
-     *
-     * @return {Promise}
+     * @override
+     * @private
      **/
     _getSidebarProps: function () {
         if (!this.hasSidebar) {
-            return {};
+            return null;
         }
         const props = this._super(...arguments);
         const activeField = this.model.getActiveField(this.initialState);
-        let otherItems = [];
+        const otherItems = [];
         if (this.archiveEnabled && activeField) {
             if (this.initialState.data[activeField]) {
                 otherItems.push({
                     label: _t("Archive"),
                     callback: function () {
-                        Dialog.confirm(self, _t("Are you sure that you want to archive this record?"), {
-                            confirm_callback: self._toggleArchiveState.bind(self, true),
+                        Dialog.confirm(this, _t("Are you sure that you want to archive this record?"), {
+                            confirm_callback: () => this._toggleArchiveState(true),
                         });
                     },
-                    classname: 'o_sidebar_item_archive',
                 });
             } else {
                 otherItems.push({
                     label: _t("Unarchive"),
-                    callback: this._toggleArchiveState.bind(this, false),
-                    classname: 'o_sidebar_item_unarchive',
+                    callback: () => this._toggleArchiveState(false),
                 });
             }
         }
-        if (this.is_action_enabled('create') && this.is_action_enabled('duplicate')) {
+        if (this.activeActions.create && this.activeActions.duplicate) {
             otherItems.push({
                 label: _t('Duplicate'),
-                callback: this._onDuplicateRecord.bind(this),
+                callback: () => this._onDuplicateRecord(this),
             });
         }
-        if (this.is_action_enabled('delete')) {
+        if (this.activeActions.delete) {
             otherItems.push({
                 label: _t('Delete'),
-                callback: this._onDeleteRecord.bind(this),
+                callback: () => this._onDeleteRecord(this),
             });
         }
         return Object.assign(props, {
             actions: Object.assign(this.toolbarActions, { other: otherItems }),
-            activeIds: this.getSelectedIds(),
-            context: this.model.get(this.handle).getContext(),
-            editable: this.is_action_enabled('edit'),
-            model: this.modelName,
-            viewType: 'form',
+            editable: this.activeActions.edit,
         });
     },
     /**
@@ -251,9 +243,9 @@ var FormController = BasicController.extend({
     saveRecord: async function () {
         const changedFields = await this._super(...arguments);
         // the title could have been changed
-        this._setTitle(this.getTitle());
-        await this.updateControlPanel({
+        this._updateActionProps({
             sidebar: this._getSidebarProps(),
+            title: this.getTitle(),
         });
 
         if (_t.database.multi_lang && changedFields.length) {
@@ -462,10 +454,10 @@ var FormController = BasicController.extend({
     _update: async function () {
         await this._super(...arguments);
         const title = this.getTitle();
-        this._setTitle(title);
         this._updateButtons();
-        this.updateControlPanel({
+        this._updateActionProps({
             sidebar: this._getSidebarProps(),
+            title: title,
         });
         this.autofocus();
     },
@@ -585,7 +577,7 @@ var FormController = BasicController.extend({
     _onDuplicateRecord: async function () {
         const handle = await this.model.duplicateRecord(this.handle);
         this.handle = handle;
-        this.updateControlPanel({
+        this._updateActionProps({
             sidebar: this._getSidebarProps(),
         });
         this._setMode('edit');

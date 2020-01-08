@@ -8,9 +8,23 @@ odoo.define('web.ControlPanelX2Many', function (require) {
         // Private
         //--------------------------------------------------------------------------
 
-        _loadStore() { }
+        /**
+         * No store here.
+         * @override
+         */
+        _connectToStore() {
+            this.actionProps = {};
+            this.dispatch = () => { };
+            this.getters = {};
+            this.query = {};
+        }
     }
 
+    ControlPanelX2Many.defaultProps = {};
+    ControlPanelX2Many.props = {
+        buttons: Function,
+        pager: Object,
+    };
     ControlPanelX2Many.template = 'ControlPanelX2Many';
 
     return ControlPanelX2Many;

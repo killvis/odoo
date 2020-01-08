@@ -49,7 +49,7 @@ var ActionMixin = {
      * String containing the title of the client action (which may be needed to
      * display in the breadcrumbs zone of the control panel).
      *
-     * @see _setTitle
+     * @see _updateActionProps
      */
     _title: '',
 
@@ -159,21 +159,6 @@ var ActionMixin = {
      */
     renderButtons: function ($node) {
     },
-    /**
-     * This is the main method to customize the controlpanel content.
-     *
-     * @see updateContents method in ControlPanelRenderer for more info
-     *
-     * @param {Object} [status]
-     * @param {string} [status.title]
-     * @param {Object} [options]
-     * @param {boolean} [options.clear]
-     */
-    updateControlPanel: async function (newProps) {
-        if (this._controlPanel) {
-            return this._controlPanel.updateProps(newProps);
-        }
-    },
     // TODO: add hooks methods:
     // - onRestoreHook (on_reverse_breadcrumbs)
 
@@ -196,11 +181,15 @@ var ActionMixin = {
     },
     /**
      * @private
-     * @param {string} title
+     * @param {Object} newProps
      */
-    _setTitle: function (title) {
-        this._title = title;
-        return this.updateControlPanel({ title });
+    _updateActionProps: function (newProps) {
+        if ('title' in newProps) {
+            this._title = newProps.title;
+        }
+        if (this.dispatch) {
+            return this.dispatch('updateActionProps', newProps);
+        }
     },
 };
 

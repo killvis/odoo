@@ -88,8 +88,7 @@ var AbstractAction = Widget.extend(ActionMixin, {
 
             actionId: action.id,
             context: action.context,
-            breadcrumbs: (options && options.breadcrumbs) || [],
-            title: this.getTitle(),
+            breadcrumbs: options && options.breadcrumbs,
             viewId: action.search_view_id && action.search_view_id[0],
             withSearchBar: this.withSearchBar,
             searchMenuTypes: this.searchMenuTypes,
@@ -120,6 +119,7 @@ var AbstractAction = Widget.extend(ActionMixin, {
             await Promise.all(proms);
             this.controlPanelStoreConfig.viewInfo = params.viewInfo;
             this._controlPanelStore = new ControlPanelStore(this.controlPanelStoreConfig);
+            this.dispatch = owl.hooks.useDispatch(this._controlPanelStore);
             params.controlPanelStore = this._controlPanelStore;
             this._controlPanel = new this.config.ControlPanel(null, params);
             await this._controlPanel.mount(document.createDocumentFragment());

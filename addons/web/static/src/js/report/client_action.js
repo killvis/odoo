@@ -70,7 +70,7 @@ var ReportAction = AbstractAction.extend({
     },
 
     _update_control_panel: function () {
-        return this.updateControlPanel({
+        return this._updateActionProps({
             cp_content: {
                 buttons: this.$buttons,
             },

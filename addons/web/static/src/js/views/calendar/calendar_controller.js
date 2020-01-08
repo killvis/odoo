@@ -77,13 +77,6 @@ var CalendarController = AbstractController.extend({
     //--------------------------------------------------------------------------
 
     /**
-     * @override
-     * @returns {string}
-     */
-    getTitle: function () {
-        return this._title;
-    },
-    /**
      * Render the buttons according to the CalendarView.buttons template and
      * add listeners on it. Set this.$buttons with the produced jQuery element
      *
@@ -434,7 +427,9 @@ var CalendarController = AbstractController.extend({
             this.$buttons.find('.active').removeClass('active');
             this.$buttons.find('.o_calendar_button_' + this.mode).addClass('active');
         }
-        this._setTitle(this.displayName + ' (' + event.data.title + ')');
+        this._updateActionProps({
+            title: `${this.displayName} (${event.data.title})`,
+        });
     },
 });
 

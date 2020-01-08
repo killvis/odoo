@@ -1295,7 +1295,6 @@ var FieldX2Many = AbstractField.extend({
         this._controlPanel = new ControlPanelX2Many(null, {
             buttons: () => this.$buttons ? [...this.$buttons] : [],
             pager: this._getPagerProps(),
-            withSearchBar: false,
         });
         return this._controlPanel.mount(document.createDocumentFragment());
     },

@@ -171,7 +171,7 @@ var GeneratePriceList = AbstractAction.extend(StandaloneFieldManagerMixin, {
      * @override
      */
     update_cp: function () {
-        this.updateControlPanel({
+        this._updateActionProps({
             cp_content: {
                 buttons: this.$buttonPrint,
                 searchViewButtons: this.$searchView,

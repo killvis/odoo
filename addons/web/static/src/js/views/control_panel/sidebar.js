@@ -39,13 +39,15 @@ odoo.define('web.Sidebar', function (require) {
     }
 
     SidebarDropdownMenu.components = Object.assign({}, DropdownMenu.components, { CustomFileInput });
-    SidebarDropdownMenu.props = Object.assign({}, DropdownMenu.props, {
+    SidebarDropdownMenu.defaultProps = {
+    };
+    SidebarDropdownMenu.props = {
         activeIds: Array,
         editable: Boolean,
-        items: Object,
+        items: Array,
         model: String,
         section: Object,
-    });
+    };
     SidebarDropdownMenu.template = 'Sidebar.DropdownMenu';
 
     class Sidebar extends Component {
@@ -157,7 +159,28 @@ odoo.define('web.Sidebar', function (require) {
             { name: 'other', label: "Action" },
         ],
     };
-    Sidebar.props = null;
+    Sidebar.props = Object.assign({}, DropdownMenu.props, {
+        actions: Object,
+        activeIds: {
+            type: Array,
+            element: Number,
+        },
+        context: Object,
+        domain: { type: Array, optional: 1 },
+        editable: Boolean,
+        items: Object,
+        model: String,
+        sections: {
+            type: Array,
+            element: {
+                type: Object,
+                shape: {
+                    label: String,
+                    name: String,
+                },
+            },
+        },
+    });
     Sidebar.template = 'Sidebar';
 
     return Sidebar;

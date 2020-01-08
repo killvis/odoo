@@ -93,6 +93,9 @@ odoo.define('web.TimeRangeMenu', function (require) {
         }
     }
 
+    TimeRangeMenu.props = {
+        fields: Object,
+    };
     TimeRangeMenu.template = 'TimeRangeMenu';
 
     return TimeRangeMenu;

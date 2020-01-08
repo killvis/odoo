@@ -104,7 +104,7 @@ var MrpBomReport = stock_report_generic.extend({
                 searchViewButtons: this.$searchView,
             },
         };
-        return this.updateControlPanel(status);
+        return this._updateActionProps(status);
     },
     renderSearch: function () {
         this.$buttonPrint = $(QWeb.render('mrp.button'));

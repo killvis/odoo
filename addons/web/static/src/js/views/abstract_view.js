@@ -146,7 +146,6 @@ var AbstractView = Factory.extend({
             controllerID: params.controllerID,
             displayName: params.displayName,
             isEmbedded: isEmbedded,
-            isMultiRecord: this.multi_record,
             modelName: params.modelName,
             viewType: this.viewType,
         };
@@ -177,16 +176,15 @@ var AbstractView = Factory.extend({
             this._updateMVCParams(params.searchQuery);
         }
 
-        this.env = Object.assign(Object.create(Component.env), {
+        const controlPanelStoreEnv = Object.assign(Object.create(Component.env), {
             action: action || {},
             context: this.loadParams.context || {},
             domain: this.loadParams.domain || [],
             modelName: params.modelName,
         });
-
         // TODO: Check useless params
         this.controlPanelStoreConfig = {
-            env: Component.env,
+            env: controlPanelStoreEnv,
 
             actionId: action.id,
             actionContext: Object.assign({}, this.loadParams.context || {}),
@@ -203,12 +201,14 @@ var AbstractView = Factory.extend({
             importedState: controllerState.cpState,
         };
         this.controlPanelProps = {
-            action: action,
+            // TODO: remove action from props and access it from somewhere else...
+            action: action, // needed by favorite menu subcomponents
             breadcrumbs: params.breadcrumbs,
             fields: this.fields,
+            modelName: params.modelName,
             searchMenuTypes: params.searchMenuTypes,
             withBreadcrumbs: params.withBreadcrumbs,
-            views: action.views && action.views.filter(v => v.multiRecord === this.isMultiRecord),
+            views: action.views && action.views.filter(v => v.multiRecord === this.multi_record),
             withSearchBar: params.withSearchBar,
             viewType: this.viewType,
         };

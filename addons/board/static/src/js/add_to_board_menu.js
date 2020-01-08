@@ -159,6 +159,10 @@ odoo.define('board.AddToBoardMenu', function (require) {
         }
     }
 
+    AddToBoardMenu.props = {
+        action: Object,
+        viewType: String,
+    };
     AddToBoardMenu.template = 'AddToBoardMenu';
 
     // Add to the FavoriteMenu components object.

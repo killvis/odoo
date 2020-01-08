@@ -474,16 +474,15 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
         };
     },
     /**
-     * Returns the new sidebar env
+     * Return the new sidebar props.
      *
+     * @override
      * @private
-     * @return {Object} the new sidebar env
      */
     _getSidebarProps: function () {
         return {
             activeIds: this.getSelectedIds(),
             context: this.model.get(this.handle).getContext(),
-            model: this.modelName,
         };
     },
     /**
@@ -603,7 +602,7 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
      */
     _updateControlPanel: function () {
         this.model.get(this.handle, { env: true });
-        return this.updateControlPanel({
+        return this._updateActionProps({
             sidebar: this._getSidebarProps(),
             pager: this._getPagerProps(),
         });
@@ -656,7 +655,7 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
     _onPagerChanged: async function (ev) {
         const { currentMinimum, limit } = ev.detail;
         const pagerProps = this._getPagerProps();
-        await this.updateControlPanel({
+        this._updateActionProps({
             pager: Object.assign(pagerProps, { disabled: true }),
         });
         const data = this.model.get(this.handle, { raw: true });
@@ -668,7 +667,7 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
         if (data.limit !== limit) {
             this.trigger_up('scrollTo', { top: 0 });
         }
-        return this.updateControlPanel({
+        return this._updateActionProps({
             pager: Object.assign(pagerProps, { disabled: false, limit, currentMinimum }),
         });
     },

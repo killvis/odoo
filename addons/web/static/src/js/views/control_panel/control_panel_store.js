@@ -98,14 +98,22 @@ odoo.define('web.ControlPanelStore', function (require) {
                 actions: {},
                 env: config.env,
                 getters: {},
-                state: {}
+                state: {
+                    actionProps: {
+                        cp_content: {},
+                        pager: null,
+                        sidebar: null,
+                        title: "",
+                    },
+                },
             });
 
             this.withSearchBar = 'withSearchBar' in config ? config.withSearchBar : true;
 
+            this._defineActions();
+
             if (this.withSearchBar) {
 
-                this._defineActions();
                 this._defineGetters();
 
                 this._setProperties(config);
@@ -391,7 +399,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                     }
                 }
             } else if (filter.type === 'groupBy') {
-                const isCombination = (o) => o.filterId === filterId && o.optionId === optionId;
+                const isCombination = o => o.filterId === filterId && o.optionId === optionId;
                 const initiaLength = group.activeFilterIds.length;
                 const index = group.activeFilterIds.findIndex(o => isCombination(o));
                 if (index === -1) {
@@ -440,6 +448,19 @@ odoo.define('web.ControlPanelStore', function (require) {
             return newFilterIDS;
         }
 
+        updateActionProps({ state }, newProps) {
+            if ('cp_content' in newProps) {
+                // We need to wrap the htmls elements in a function since the actionProps
+                // object is a Proxy.
+                for (const key in newProps.cp_content) {
+                    const content = newProps.cp_content[key];
+                    state.actionProps.cp_content[key] = () => content;
+                }
+                delete newProps.cp_content;
+            }
+            Object.assign(state.actionProps, newProps);
+        }
+
         //-----------------------------------------------------------------------------------------------
         // Getters
         //-----------------------------------------------------------------------------------------------
@@ -484,6 +505,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          */
         exportState() {
             return {
+                actionProps: this.state.actionProps,
                 filters: this.state.filters,
                 groups: this.state.groups,
                 query: this.state.query,
@@ -744,16 +766,20 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          */
         _defineActions() {
-            [
-                'createNewFavorite', 'createNewFilters', 'createNewGroupBy',
-                'activateTimeRange',
-                'clearQuery', 'deactivateGroup',
-                'deleteFavorite',
-                'toggleAutoCompletionFilter', 'toggleFilter', 'toggleFilterWithOptions',
-                'updateFilters'
-            ].forEach(a => {
-                this.actions[a] = this[a].bind(this);
-            });
+            // default actions
+            const actions = ['updateActionProps'];
+            if (this.withSearchBar) {
+                // search related actions
+                actions.push(
+                    'createNewFavorite', 'createNewFilters', 'createNewGroupBy',
+                    'activateTimeRange',
+                    'clearQuery', 'deactivateGroup',
+                    'deleteFavorite',
+                    'toggleAutoCompletionFilter', 'toggleFilter', 'toggleFilterWithOptions',
+                    'updateFilters'
+                );
+            }
+            actions.forEach(action => this.actions[action] = this[action].bind(this));
         }
 
         /**
@@ -761,12 +787,12 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          */
         _defineGetters() {
-            Object.assign(this.getters, {
-                getFiltersOfType: this.getFiltersOfType.bind(this, {
-                    getters: this.getters,
-                    state: this.state,
-                }),
-            });
+            const getters = ['getFiltersOfType'];
+            const getterProps = {
+                getters: this.getters,
+                state: this.state,
+            };
+            getters.forEach(getter => this.getters[getter] = this[getter].bind(this, getterProps));
         }
 
         /**

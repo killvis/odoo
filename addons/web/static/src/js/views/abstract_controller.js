@@ -43,7 +43,6 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
      *   with upstream components
      * @param {ControlPanelController} [params.controlPanel]
      * @param {any} [params.handle] a handle that will be given to the model (some id)
-     * @param {boolean} params.isMultiRecord
      * @param {Object[]} params.actionViews
      * @param {string} params.viewType
      */
@@ -57,11 +56,14 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
         this.controllerID = params.controllerID;
         this.initialState = params.initialState;
         this.bannerRoute = params.bannerRoute;
-        this.isMultiRecord = params.isMultiRecord;
         this.actionViews = params.actionViews;
         this.viewType = params.viewType;
         // use a DropPrevious to correctly handle concurrent updates
         this.dp = new concurrency.DropPrevious();
+
+        if (this._controlPanelStore) {
+            this.dispatch = owl.hooks.useDispatch(this._controlPanelStore);
+        }
 
         // the following attributes are used when there is a searchPanel
         this._searchPanel = params.searchPanel;
@@ -289,17 +291,12 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
 
 
     /**
-     * For views that require a pager, this method will be called to allow the
-     * controller to instantiate and render a pager. Note that in theory, the
-     * controller can actually render whatever he wants in the pager zone.  If
-     * your view does not want a pager, just let this method empty.
-     *
+     * Meant to be overriden to return a proper object.
      * @private
-     * @param {Object} [options]
-     * @return {Object}
+     * @return {(Object|null)}
      */
-    _getPagerProps(options={}) {
-        return options;
+    _getPagerProps: function () {
+        return null;
     },
     /**
      * Return the current search domain. This is the searchDomain used to update
@@ -314,15 +311,12 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
         return this.controlPanelDomain;
     },
     /**
-     * Same as renderPager, but for the 'sidebar' zone (the zone with the menu
-     * dropdown in the control panel next to the buttons)
-     *
+     * Meant to be overriden to return a proper object.
      * @private
-     * @param {Object} [options]
-     * @return {Object}
+     * @return {(Object|null)}
      */
-    _getSidebarProps(options={}) {
-        return options;
+    _getSidebarProps: function () {
+        return null;
     },
     /**
      * This method is the way a view can notifies the outside world that
@@ -389,44 +383,6 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
         return Promise.resolve();
     },
     /**
-     * Renders the switch buttons and binds listeners on them.
-     *
-     * @private
-     * @returns {jQuery}
-     */
-    _renderSwitchButtons: function () {
-        var self = this;
-        var views = _.filter(this.actionViews, {multiRecord: this.isMultiRecord});
-
-        if (views.length <= 1) {
-            return $();
-        }
-
-        var template = config.device.isMobile ? 'ControlPanel.SwitchButtons.Mobile' : 'ControlPanel.SwitchButtons';
-        var $switchButtons = $(QWeb.render(template, {
-            viewType: this.viewType,
-            views: views,
-        }));
-        // create bootstrap tooltips
-        _.each(views, function (view) {
-            $switchButtons.filter('.o_cp_switch_' + view.type).tooltip();
-        });
-        // add onclick event listener
-        var $switchButtonsFiltered = config.device.isMobile ? $switchButtons.find('button') : $switchButtons.filter('button');
-        $switchButtonsFiltered.click(_.debounce(function (event) {
-            var viewType = $(event.target).data('view-type');
-            self.trigger_up('switch_view', {view_type: viewType});
-        }, 200, true));
-
-        // set active view's icon as view switcher button's icon in mobile
-        if (config.device.isMobile) {
-            var activeView = _.findWhere(views, {type: this.viewType});
-            $switchButtons.find('.o_switch_view_button_icon').addClass('fa fa-lg ' + activeView.icon);
-        }
-
-        return $switchButtons;
-    },
-    /**
      * @override
      * @private
      */
@@ -445,7 +401,6 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
      * @private
      * @param {Object} state the state given by the model
      * @param {Object} [params={}]
-     * @param {Object[]} [params.breadcrumbs]
      * @returns {Promise}
      */
     _update: async function (state, params={}) {
@@ -460,13 +415,8 @@ var AbstractController = mvc.Controller.extend(ActionMixin, {
             pager: this._getPagerProps(),
             sidebar: this._getSidebarProps(),
             title: this.getTitle(),
-            views: this.actionViews.filter(v => v.multiRecord === this.isMultiRecord),
-            viewType: this.viewType,
         };
-        if (params.breadcrumbs) {
-            newProps.breadcrumbs = params.breadcrumbs;
-        }
-        await this.updateControlPanel(newProps);
+        this._updateActionProps(newProps);
         this._pushState();
         return this._renderBanner();
     },

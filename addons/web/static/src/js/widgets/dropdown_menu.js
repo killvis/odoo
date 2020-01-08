@@ -104,14 +104,6 @@ odoo.define('web.DropdownMenu', function (require) {
     }
 
     DropdownMenu.components = { DropdownMenuItem };
-    DropdownMenu.defaultProps = {
-        action: {},
-        fields: {},
-    };
-    DropdownMenu.props = {
-        action: Object,
-        fields: Object,
-    };
     DropdownMenu.template = 'DropdownMenu';
 
     return DropdownMenu;

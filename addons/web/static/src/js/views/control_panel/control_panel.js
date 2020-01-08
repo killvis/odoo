@@ -1,13 +1,14 @@
 odoo.define('web.ControlPanel', function (require) {
     "use strict";
 
+    const ControlPanelStore = require('web.ControlPanelStore');
+    const FavoriteMenu = require('web.FavoriteMenu');
+    const FilterMenu = require('web.FilterMenu');
+    const GroupByMenu = require('web.GroupByMenu');
     const Pager = require('web.Pager');
     const SearchBar = require('web.SearchBar');
     const Sidebar = require('web.Sidebar');
-    const FilterMenu = require('web.FilterMenu');
     const TimeRangeMenu = require('web.TimeRangeMenu');
-    const GroupByMenu = require('web.GroupByMenu');
-    const FavoriteMenu = require('web.FavoriteMenu');
 
     const { Component, hooks } = owl;
     const { useDispatch, useRef, useState, useSubEnv, useStore, useGetters } = hooks;
@@ -16,22 +17,20 @@ odoo.define('web.ControlPanel', function (require) {
         constructor() {
             super(...arguments);
 
-            if (this.props.controlPanelStore) {
-                useSubEnv({
-                    controlPanelStore: this.props.controlPanelStore,
-                });
-                this.dispatch = useDispatch(this.props.controlPanelStore);
-            }
+            useSubEnv({
+                controlPanelStore: this.props.controlPanelStore,
+            });
+
+            this._connectToStore(this.env.controlPanelStore);
             this.state = useState(this.initialState);
 
-            this._loadStore();
-
-            this.cp_content = {
+            // Reference hooks
+            this.contentRefs = {
                 buttons: useRef('buttons'),
                 searchView: useRef('searchView'),
                 searchViewButtons: useRef('searchViewButtons'),
             };
-            window.top.cp = this;
+            if (this.constructor.name === 'ControlPanel') window.top.cp = this; // TODO: REMOVE
         }
 
         mounted() {
@@ -50,6 +49,9 @@ odoo.define('web.ControlPanel', function (require) {
         // Getters
         //--------------------------------------------------------------------------
 
+        /**
+         * @returns {Object}
+         */
         get initialState() {
             return {
                 displayDropdowns: true,
@@ -76,21 +78,34 @@ odoo.define('web.ControlPanel', function (require) {
         // Private
         //--------------------------------------------------------------------------
 
+        /**
+         * @todo this is a compatibility adapter and it must be removed as soon
+         * as renderers no longer instantiate manually their buttons, their searchView
+         * and their searchViewButtons.
+         * @private
+         */
         _appendCPContent() {
-            for (const key in this.props.cp_content) {
-                if (this.cp_content[key].el && this.props.cp_content[key]) {
-                    this.cp_content[key].el.innerHTML = "";
-                    this.cp_content[key].el.append(...this.props.cp_content[key]);
+            for (const key in this.actionProps.cp_content) {
+                const content = this.actionProps.cp_content[key]();
+                if (this.contentRefs[key].el && content && content.length) {
+                    this.contentRefs[key].el.innerHTML = "";
+                    this.contentRefs[key].el.append(...content);
                 }
             }
         }
 
-        _loadStore() {
-            this.getters = useGetters(this.env.controlPanelStore);
-            useStore(state => state, {
-                store: this.env.controlPanelStore,
-                onUpdate: () => this.trigger('search', this.env.controlPanelStore.getQuery()),
+        /**
+         * Overriden when no store is used (@see ControlPanelX2Many for example).
+         * @private
+         * @param {ControlPanelStore} store
+         */
+        _connectToStore(store) {
+            this.actionProps = useStore(state => state.actionProps, { store });
+            this.query = useStore(state => state.query, { store,
+                onUpdate: () => this.trigger('search', store.getQuery()),
             });
+            this.dispatch = useDispatch(store);
+            this.getters = useGetters(store);
         }
 
         //--------------------------------------------------------------------------
@@ -105,12 +120,23 @@ odoo.define('web.ControlPanel', function (require) {
     ControlPanel.components = { Pager, SearchBar, Sidebar, FilterMenu, TimeRangeMenu, GroupByMenu, FavoriteMenu };
     ControlPanel.defaultProps = {
         breadcrumbs: [],
-        cp_content: {},
         views: [],
         withBreadcrumbs: true,
         withSearchBar: true,
     };
-    // ControlPanel.props = {};
+    ControlPanel.props = {
+        action: Object,
+        breadcrumbs: Array,
+        controlPanelStore: ControlPanelStore,
+        fields: Object,
+        modelName: String,
+        searchMenuTypes: Array,
+        title: { type: String, optional: 1 },
+        viewType: String,
+        views: Array,
+        withBreadcrumbs: Boolean,
+        withSearchBar: Boolean,
+    };
     ControlPanel.template = 'ControlPanel';
 
     return ControlPanel;

@@ -325,45 +325,38 @@ var ListController = BasicController.extend({
      */
     _getSidebarProps: function () {
         if (!this.hasSidebar || !this.selectedRecords.length) {
-            return {};
+            return null;
         }
         const props = this._super(...arguments);
         const record = this.model.get(this.handle);
-        const other = [
-            {
-                label: _t("Export"),
-                callback: () => this._onExportData(),
-            },
-        ];
+        const otherItems = [{
+            label: _t("Export"),
+            callback: () => this._onExportData(),
+        }];
         if (this.archiveEnabled) {
-            other.push(
-                {
-                    label: _t("Archive"),
-                    callback: () => {
-                        Dialog.confirm(this, _t("Are you sure that you want to archive all the selected records?"), {
-                            confirm_callback: () => this._toggleArchiveState(true),
-                        });
-                    }
-                },
-                {
-                    label: _t("Unarchive"),
-                    callback: () => this._toggleArchiveState(false)
-                },
-            );
+            otherItems.push({
+                label: _t("Archive"),
+                callback: () => {
+                    Dialog.confirm(this, _t("Are you sure that you want to archive all the selected records?"), {
+                        confirm_callback: () => this._toggleArchiveState(true),
+                    });
+                }
+            }, {
+                label: _t("Unarchive"),
+                callback: () => this._toggleArchiveState(false)
+            });
         }
-        if (this.is_action_enabled('delete')) {
-            other.push({
+        if (this.activeActions.delete) {
+            otherItems.push({
                 label: _t('Delete'),
                 callback: () => this._onDeleteSelectedRecords()
             });
         }
         return Object.assign(props, {
-            actions: Object.assign({}, this.toolbarActions, { other }),
-            activeIds: this.getSelectedIds(),
+            actions: Object.assign({}, this.toolbarActions, { other: otherItems }),
             context: this.model.get(this.handle, { raw: true }).getContext(),
             domain: record.getDomain(),
-            editable: this.is_action_enabled('edit'),
-            model: this.modelName,
+            editable: this.activeActions.edit,
         });
     },
     /**
@@ -503,7 +496,7 @@ var ListController = BasicController.extend({
      */
     _update: async function () {
         await this._super(...arguments);
-        await this.updateControlPanel({
+        this._updateActionProps({
             pager: this._getPagerProps(),
             sidebar: this._getSidebarProps(),
         });
@@ -727,7 +720,7 @@ var ListController = BasicController.extend({
      */
     _onSelectionChanged: function (ev) {
         this.selectedRecords = ev.data.selection;
-        this.updateControlPanel({
+        this._updateActionProps({
             sidebar: this._getSidebarProps(),
         });
     },

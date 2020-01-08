@@ -123,9 +123,10 @@ odoo.define('web.FavoriteMenu', function (require) {
         Dialog,
         FilterMenuGenerator,
     });
-    FavoriteMenu.props = Object.assign({}, DropdownMenu.props, {
+    FavoriteMenu.props = {
+        action: Object,
         viewType: String,
-    });
+    };
     FavoriteMenu.template = 'FavoriteMenu';
 
     return FavoriteMenu;

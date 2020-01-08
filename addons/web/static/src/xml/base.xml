@@ -17,7 +17,7 @@
                 <input type="text"
                     class="o_input"
                     autofocus=""
-                    t-att-value="props.action.name"
+                    t-att-value="props.actionName"
                     t-on-input="_onInput"
                     t-ref="description"
                     t-on-keydown="_onInputKeydown"
@@ -64,9 +64,9 @@
                     <a t-if="bc.title" href="#" t-esc="bc.title"/>
                     <em t-else="" class="text-warning">Unnamed</em>
                 </li>
-                <li class="breadcrumb-item active" t-esc="props.title"/>
+                <li class="breadcrumb-item active" t-esc="actionProps.title"/>
             </ol>
-            <div t-if="props.cp_content.searchView or props.withSearchBar"
+            <div t-if="actionProps.cp_content.searchView or props.withSearchBar"
                 class="o_cp_searchview"
                 role="search"
                 t-ref="searchView"
@@ -87,38 +87,37 @@
                 <div class="o_cp_buttons" role="toolbar" aria-label="Control panel toolbar" t-ref="buttons">
                     <t t-slot="buttons"/>
                 </div>
-                <Sidebar t-if="props.sidebar" t-props="props.sidebar"/>
+                <Sidebar t-if="actionProps.sidebar"
+                    model="props.modelName"
+                    t-props="actionProps.sidebar"
+                />
             </div>
             <div class="o_cp_right">
-                <div t-if="props.cp_content.searchViewButtons or (props.withSearchBar and state.displayDropdowns)"
+                <div t-if="actionProps.cp_content.searchViewButtons or (props.withSearchBar and state.displayDropdowns)"
                     class="btn-group o_search_options position-static"
                     role="search"
                     t-ref="searchViewButtons"
                     t-on-update_query.stop="_onUpdateQuery"
                     >
                     <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
-                        action="props.action"
                         class="o_filter_menu"
                         fields="props.fields"
                     />
                     <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
-                        action="props.action"
                         class="o_group_by_menu"
                         fields="props.fields"
                     />
                     <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
-                        action="props.action"
                         class="o_time_range_menu"
                         fields="props.fields"
                     />
                     <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
-                        action="props.action"
                         class="o_favorite_menu"
+                        action="props.action"
                         viewType="props.viewType"
-                        fields="props.fields"
                     />
                 </div>
-                <Pager class="o_cp_pager" role="'search'" t-props="props.pager"/>
+                <Pager class="o_cp_pager" role="'search'" t-props="actionProps.pager"/>
                 <nav t-if="props.views.length &gt; 1" class="btn-group o_cp_switch_buttons" role="toolbar" aria-label="View switcher">
                     <t t-foreach="props.views" t-as="view" t-key="view.type">
                         <t t-call="ViewSwitcherButton"/>
@@ -162,20 +161,20 @@
             t-on-update_query.stop="_onUpdateQuery"
             >
             <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
-                action="props.action"
+                class="o_filter_menu"
                 fields="props.fields"
             />
             <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
-                action="props.action"
+                class="o_group_by_menu"
                 fields="props.fields"
             />
             <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
-                action="props.action"
+                class="o_time_range_menu"
                 fields="props.fields"
             />
             <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
+                class="o_favorite_menu"
                 action="props.action"
-                fields="props.fields"
                 viewType="props.viewType"
             />
         </div>
@@ -380,7 +379,7 @@
 
 <t t-name="FavoriteMenu" t-inherit="DropdownMenu" t-inherit-mode="primary" owl="1">
     <xpath expr="//ul[@role='menu']" position="inside">
-        <AddNewFavoriteMenu action="props.action" favorites="items"/>
+        <AddNewFavoriteMenu actionName="props.action.name" favorites="items"/>
     </xpath>
     <xpath expr="//DropdownMenuItem" position="attributes">
         <attribute name="t-on-drag">_onDrag</attribute>
@@ -570,9 +569,8 @@
 
 <t t-name="FilterMenuGenerator" owl="1">
     <div>
-        <button t-if="!props.standAlone" type="button"
-            class="o_add_custom_filter"
-            t-att-class="{ 'dropdown-item': !props.standAlone }"
+        <button type="button"
+            class="o_add_custom_filter dropdown-item"
             aria-expanded="false"
             t-ref="fallback-focus"
             t-on-click="state.open = !state.open"
@@ -580,10 +578,9 @@
             >
             Add Custom Filter
         </button>
-        <t t-if="props.standAlone or state.open">
+        <t t-if="state.open">
             <div t-foreach="state.conditions" t-as="condition" t-key="condition_index"
-                class=" o_filter_condition"
-                t-att-class="{ 'dropdown-item-text': !props.standAlone }"
+                class=" o_filter_condition dropdown-item-text"
                 >
                 <t t-set="fieldType" t-value="fields[condition.field].type"/>
                 <t t-set="selectedOperator" t-value="OPERATORS[FIELD_TYPES[fieldType]][condition.operator]"/>
@@ -660,7 +657,7 @@
                     t-on-click="_onRemoveCondition(condition_index)"
                 />
             </div>
-            <div class="o_add_filter_menu" t-att-class="{ 'dropdown-item-text': !props.standAlone }">
+            <div class="o_add_filter_menu dropdown-item-text">
                 <button type="button" class="btn btn-primary o_apply_filter" t-on-click="_onApply">Apply</button>
                 <button type="button"
                     class="btn btn-secondary o_add_condition"

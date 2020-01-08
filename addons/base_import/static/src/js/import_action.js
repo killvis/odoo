@@ -180,7 +180,7 @@ var DataImport = AbstractAction.extend({
                 this.$('input[name=import_id]').val(id);
 
                 this.renderButtons();
-                this.updateControlPanel({
+                this._updateActionProps({
                     cp_content: {
                         buttons: this.$buttons,
                     },
