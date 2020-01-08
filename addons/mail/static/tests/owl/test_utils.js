@@ -540,36 +540,7 @@ async function start(param0) {
         partner_display_name: "Your Company, Admin",
         uid: 2,
     });
-    const _t = s => s;
-    _t.database = {
-        parameters: { direction: 'ltr' },
-    };
-    patch(services.messaging, {
-        registry: {
-            initialEnv: makeTestEnvironment({
-                _t,
-                session: Object.assign({
-                    is_bound: Promise.resolve(),
-                    name: 'Admin',
-                    partner_display_name: 'Mitchell Admin',
-                    partner_id: 3,
-                    url: s => s,
-                    userId: 2,
-                }, session),
-            }),
-            onMessagingEnvCreated: messagingEnv => {
-                Object.assign(messagingEnv.store.state, {
-                    globalWindow: {
-                        innerHeight: 1080,
-                        innerWidth: 1920,
-                    },
-                    isMobile: false,
-                });
-                messagingEnv.store.actions._fetchPartnerImStatus = () => {};
-                messagingEnv.store.actions._loopFetchPartnerImStatus = () => {};
-            },
-        },
-    });
+    patchMessagingService(services.messaging, session);
 
     let widget;
     const selector = debug ? 'body' : '#qunit-fixture';
@@ -683,6 +654,39 @@ function pasteFiles(el, files) {
     el.dispatchEvent(ev);
 }
 
+function patchMessagingService(messaging_service, session = {}) {
+    const _t = s => s;
+    _t.database = {
+        parameters: { direction: 'ltr' },
+    };
+    patch(messaging_service, {
+        registry: {
+            initialEnv: makeTestEnvironment({
+                _t,
+                session: Object.assign({
+                    is_bound: Promise.resolve(),
+                    name: 'Admin',
+                    partner_display_name: 'Mitchell Admin',
+                    partner_id: 3,
+                    url: s => s,
+                    userId: 2,
+                }, session),
+            }),
+            onMessagingEnvCreated: messagingEnv => {
+                Object.assign(messagingEnv.store.state, {
+                    globalWindow: {
+                        innerHeight: 1080,
+                        innerWidth: 1920,
+                    },
+                    isMobile: false,
+                });
+                messagingEnv.store.actions._fetchPartnerImStatus = () => {};
+                messagingEnv.store.actions._loopFetchPartnerImStatus = () => {};
+            },
+        },
+    });
+}
+
 //------------------------------------------------------------------------------
 // Export
 //------------------------------------------------------------------------------
@@ -697,6 +701,7 @@ return {
     inputFiles,
     nextAnimationFrame,
     pasteFiles,
+    patchMessagingService,
     pause,
     start,
 };
