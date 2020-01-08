@@ -143,24 +143,40 @@ class MailTemplate(models.Model):
     def _compute_email_from(self):
         for r in self:
             if r.author_id:
-                email_from = r.author_id
-                pattern = r'(company_id[^\.])|(organizer_id)|(create_uid)|(user_id(\.id)?)|(partner_id(\(\))?)|([^\.]user\.)?(?(8)(id)?(email)?(( )?\|( )?safe)?|[^\.]user( ){0})'
-                matches = re.finditer(pattern, email_from)
-                done = []
-                for match in matches:
-                    if match.group() in done:
-                        continue                   
-                    email_from = re.sub(match.group(), match.group() + '.email_formatted', email_from)
-                    done.append(match.group())
-                r.email_from = email_from
+                if 'ctx' in r.author_id:
+                    pattern = re.compile(r'author_id')
+                    r.email_from = re.sub(pattern, 'email_from', r.author_id)
+                else:
+                    email_from = r.author_id
+                    pattern = r'(company_id\.id)?(?(1)|company_id[^.])|(organizer_id\.id)?(?(2)|organizer_id[^.])|(create_uid)|(user_id\.id)?(?(4)|user_id[^.])|(partner_id(\(\))?)|(user\.id)?(?(7)|user[^._])'
+                    matches = re.finditer(pattern, email_from)
+                    done = []
+                    for match in matches:
+                        m = match.group()
+                        if m in done:
+                            continue
+                        end = ''
+                        if m[-1:] == ' ' or m[-1:] == '}' or m[-1:] == ')':
+                            end = m[-1:]
+                            m = m[:-1]
+                        if m[-3:] == '.id':
+                            m = m[:-3]
+                        res = m + '.email_formatted' + end
+                        email_from = re.sub(re.escape(match.group()), res, email_from)
+                        done.append(match.group())
+                    r.email_from = email_from
             else:
                 r.email_from = False
 
     def _inverse_email_from(self):
         for r in self:
             if r.email_from:
-                pattern = re.compile(r'\.email_formatted(( )?\|( )?safe)?')
-                r.author_id = re.sub(pattern, '', r.email_from)
+                if 'ctx' in r.email_from:
+                    pattern = re.compile(r'email_from')
+                    r.author_id = re.sub(pattern, 'author_id', r.email_from)
+                else:
+                    pattern = re.compile(r'((\.email)|(\.catchall))(_formatted)?(( )?\|( )?safe)?')
+                    r.author_id = re.sub(pattern, '', r.email_from)
             else:
                 r.author_id = False
 
@@ -386,7 +402,14 @@ class MailTemplate(models.Model):
             for res_id in template_res_ids:
                 values = results[res_id]
                 if 'author_id' in fields and values.get('author_id'):
-                    values['author_id'] = self.env['res.users'].browse([int(s) for s in re.findall(r'\d+', values['author_id'])]).partner_id.id
+                    if 'res.company' in values['author_id']:
+                        values['author_id'] = self.env['res.company'].browse([int(s) for s in re.findall(r'\d+', values['author_id'])]).partner_id.id
+                    elif 'res.users' in values['author_id']:
+                        values['author_id'] = self.env['res.users'].browse([int(s) for s in re.findall(r'\d+', values['author_id'])]).partner_id.id
+                    elif 'res.partner' in values['author_id']:
+                        values['author_id'] = self.env['res.partner'].browse([int(s) for s in re.findall(r'\d+', values['author_id'])]).id
+                    else:
+                        values['author_id'] = False
                 # body: add user signature, sanitize
                 if 'body_html' in fields and template.user_signature:
                     signature = self.env.user.signature
