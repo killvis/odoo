@@ -11,16 +11,18 @@ const FormRenderer = require('web.FormRenderer');
 FormRenderer.include({
     async on_attach_callback() {
         this._super(...arguments);
-        // When the view is re-attached (_isInDom is true) and the chatter component already exists
-        // the chatter component needs to be retargeted in the DOM by force mounting.
+        // When the view is re-attached (_isInDom is true) and the chatter
+        // component already exists, the chatter component needs to be
+        // retargeted in the DOM by force mounting.
         if (this._chatterComponent && this._isInDom) {
             await this._forceMountChatterComponent();
         }
     },
     on_detach_callback() {
         this._super(...arguments);
-        // When the view is detached, we totally delete chatter state from store and chatter
-        // component to avoid any problem when view will be reattached
+        // When the view is detached, we totally delete chatter state from store
+        // and chatter component to avoid any problem when view will be
+        // reattached
         if (this._chatterComponent) {
             this._deleteChatter();
         }
@@ -67,9 +69,11 @@ FormRenderer.include({
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
         if (this._chatterEl) {
-            /* FIXME {xdu}
-               could be better to mount in "replace" mode but the mount is failing with that mode
-               await this._chatterComponent.mount(this._chatterEl, { position: 'self' });
+            /*
+                FIXME {xdu}
+                could be better to mount in "replace" mode but the mount is
+                failing with that mode
+                (just use { position: 'self' } as second parameter of mount)
             */
             await this._chatterComponent.mount(this._chatterEl);
         }
@@ -100,12 +104,14 @@ FormRenderer.include({
      */
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;
-        /*  FIXME {xdu}
-            could be better to mount in "replace" mode but the mount is failing with that mode
-            await this._chatterComponent.mount(this._chatterEl, { position: 'self' });
-         */
+        /*
+            FIXME {xdu}
+            could be better to mount in "replace" mode but the mount is
+            failing with that mode
+            (just use { position: 'self' } as second parameter of mount)
+        */
         if (this._chatterEl) {
-            await this._chatterComponent.mount(this._chatterEl);
+            await this._chatterComponent.mount(this._chatteoprEl);
         }
     },
    /**
@@ -124,7 +130,8 @@ FormRenderer.include({
        }
    },
     /**
-     * Overrides the function to render the chatter once the form view is rendered.
+     * Overrides the function to render the chatter once the form view is
+     * rendered.
      *
      * @override
      * @private
