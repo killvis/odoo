@@ -264,7 +264,7 @@ const actions = {
      * @param {string} param1.initialThreadModel
      * @return {string}
      */
-    async createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
+    createChatter({ dispatch, getters, state }, { initialThreadId, initialThreadModel }) {
         const chatterLocalId = _.uniqueId('o_Chatter');
         const chatter = {
             isAttachmentBoxVisible: false,
@@ -277,7 +277,7 @@ const actions = {
             threadModel: initialThreadModel,
         };
         state.chatters[chatterLocalId] = chatter;
-        await dispatch('_computeChatter', chatterLocalId, {
+        dispatch('_computeChatter', chatterLocalId, {
             threadId: initialThreadId,
             threadModel: initialThreadModel,
         });
@@ -1343,7 +1343,7 @@ const actions = {
      * @param {string} param1.threadId
      * @param {string} param1.threadModel
      */
-    async updateChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel}) {
+    updateChatter({ dispatch, getters, state }, chatterLocalId, { threadId, threadModel}) {
         const chatter = state.chatters[chatterLocalId];
         if (!chatter) {
             return;
@@ -1365,7 +1365,7 @@ const actions = {
         if (thread.isTemporary) {
             dispatch('_deleteThread', chatter.threadLocalId);
         }
-        await dispatch('_computeChatter', chatterLocalId, { threadId, threadModel });
+        dispatch('_computeChatter', chatterLocalId, { threadId, threadModel });
     },
     /**
      * Update the data given to given dialog with given data changes.

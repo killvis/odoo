@@ -59,7 +59,7 @@ FormRenderer.include({
      * @private
      */
     async _createChatter() {
-        const chatterLocalId = await this.env.store.dispatch('createChatter', {
+        const chatterLocalId = this.env.store.dispatch('createChatter', {
             initialThreadId: this.state.res_id,
             initialThreadModel: this.state.model,
         });
@@ -140,7 +140,7 @@ FormRenderer.include({
                 if (this._isInDom) {
                     await this._forceMountChatterComponent();
                 }
-                await this.env.store.dispatch('updateChatter', this._chatterLocalId, {
+                this.env.store.dispatch('updateChatter', this._chatterLocalId, {
                     threadId: this.state.res_id,
                     threadModel: this.state.model
                 });

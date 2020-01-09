@@ -59,7 +59,7 @@ QUnit.test('base rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const chatterLocalId = await this.env.store.dispatch('createChatter', {
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
         initialThreadId: 100,
         initialThreadModel: 'res.partner',
     });
@@ -127,7 +127,7 @@ QUnit.test('base disabled rendering', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const chatterLocalId = await this.env.store.dispatch('createChatter', {
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
         initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: true });
@@ -193,7 +193,7 @@ QUnit.test('attachment count without attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const chatterLocalId = await this.env.store.dispatch('createChatter', {
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
         initialThreadId: 100,
         initialThreadModel: 'res.partner',
     });
@@ -242,7 +242,7 @@ QUnit.test('attachment count with attachments', async function (assert) {
             return this._super(...arguments);
         }
     });
-    const chatterLocalId = await this.env.store.dispatch('createChatter', {
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
         initialThreadId:100,
         initialThreadModel: 'res.partner',
     });
