@@ -145,7 +145,8 @@ class Slide(models.Model):
                                    string='Subscribers', groups='website_slides.group_website_slides_officer', copy=False)
     slide_partner_ids = fields.One2many('slide.slide.partner', 'slide_id', string='Subscribers information', groups='website_slides.group_website_slides_officer', copy=False)
     user_membership_id = fields.Many2one(
-        'slide.slide.partner', string="Subscriber information", compute='_compute_user_membership_id', compute_sudo=False,
+        'slide.slide.partner', string="Subscriber information",
+        compute='_compute_user_membership_id', compute_sudo=False, pre_compute=False,
         help="Subscriber information for the current logged in user")
     # Quiz related fields
     question_ids = fields.One2many("slide.question", "slide_id", string="Questions")
