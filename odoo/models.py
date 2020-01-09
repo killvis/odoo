@@ -3684,7 +3684,7 @@ Record ids: %(records)s
 
         stored_computed_fields = [
             fname for fname,field in self._fields.items()
-            if field.store and field.compute and field.column_type
+            if field.store and field.compute and field.column_type and field.pre_compute
         ]
 
         for vals in vals_list:
