@@ -761,6 +761,9 @@ class MrpProduction(models.Model):
         start_date = self._get_start_date()
         if replan:
             workorder_ids = self.workorder_ids.filtered(lambda wo: wo.state in ['ready', 'pending'])
+            # If the first workorder_ids is also replan, then don't take in account date_planned_start
+            if workorder_ids and workorder_ids[0].id == self.workorder_ids[0].id:
+                start_date = datetime.datetime.now()
             workorder_ids.leave_id.unlink()
         else:
             workorder_ids = self.workorder_ids
