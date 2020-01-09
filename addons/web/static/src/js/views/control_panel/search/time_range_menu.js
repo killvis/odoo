@@ -4,17 +4,11 @@ odoo.define('web.TimeRangeMenu', function (require) {
     const { COMPARISON_TIME_RANGE_OPTIONS, DEFAULT_TIMERANGE, DEFAULT_COMPARISON_TIME_RANGE, TIME_RANGE_OPTIONS } = require('web.controlPanelParameters');
     const DropdownMenu = require('web.DropdownMenu');
 
-    const { useDispatch, useState } = owl.hooks;
-    let timeRangeMenuId = 0;
+    const { useState } = owl;
 
     class TimeRangeMenu extends DropdownMenu {
         constructor() {
             super(...arguments);
-
-            this.icon = 'fa fa-calendar';
-            this.title = this.env._t("Time Ranges");
-
-            this.dispatch = useDispatch(this.env.controlPanelStore);
 
             this.fields = Object.keys(this.props.fields).reduce((acc, fieldName) => {
                 const field = this.props.fields[fieldName];
@@ -93,9 +87,13 @@ odoo.define('web.TimeRangeMenu', function (require) {
         }
     }
 
-    TimeRangeMenu.props = {
+    TimeRangeMenu.defaultProps = Object.assign({}, DropdownMenu.defaultProps, {
+        icon: 'fa fa-calendar',
+        title: "Time Ranges",
+    });
+    TimeRangeMenu.props = Object.assign({}, DropdownMenu.props, {
         fields: Object,
-    };
+    });
     TimeRangeMenu.template = 'TimeRangeMenu';
 
     return TimeRangeMenu;

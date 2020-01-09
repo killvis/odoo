@@ -5,12 +5,6 @@ odoo.define('web.FilterMenu', function (require) {
     const FilterMenuGenerator = require('web.FilterMenuGenerator');
 
     class FilterMenu extends DropdownMenu {
-        constructor() {
-            super(...arguments);
-
-            this.icon = 'fa fa-filter';
-            this.title = this.env._t("Filters");
-        }
 
         //--------------------------------------------------------------------------
         // Getters
@@ -34,14 +28,31 @@ odoo.define('web.FilterMenu', function (require) {
         _onCreateNewFilters(ev) {
             this.dispatch('createNewFilters', ev.detail);
         }
+
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onItemSelected(ev) {
+            const { item, option } = ev.detail;
+            if (option) {
+                this.dispatch('toggleFilterWithOptions', item.id, option.optionId);
+            } else {
+                this.dispatch('toggleFilter', item.id);
+            }
+        }
     }
 
     FilterMenu.components = Object.assign({}, DropdownMenu.components, {
         FilterMenuGenerator,
     });
-    FilterMenu.props = {
+    FilterMenu.defaultProps = Object.assign({}, DropdownMenu.defaultProps, {
+        icon: 'fa fa-filter',
+        title: "Filters",
+    });
+    FilterMenu.props = Object.assign({}, DropdownMenu.props, {
         fields: Object,
-    };
+    });
     FilterMenu.template = 'FilterMenu';
 
     return FilterMenu;

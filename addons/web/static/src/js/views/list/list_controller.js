@@ -329,34 +329,33 @@ var ListController = BasicController.extend({
         }
         const props = this._super(...arguments);
         const record = this.model.get(this.handle);
-        const otherItems = [{
-            label: _t("Export"),
+        const otherActionItems = [{
+            description: _t("Export"),
             callback: () => this._onExportData(),
         }];
         if (this.archiveEnabled) {
-            otherItems.push({
-                label: _t("Archive"),
+            otherActionItems.push({
+                description: _t("Archive"),
                 callback: () => {
                     Dialog.confirm(this, _t("Are you sure that you want to archive all the selected records?"), {
                         confirm_callback: () => this._toggleArchiveState(true),
                     });
                 }
             }, {
-                label: _t("Unarchive"),
+                description: _t("Unarchive"),
                 callback: () => this._toggleArchiveState(false)
             });
         }
         if (this.activeActions.delete) {
-            otherItems.push({
-                label: _t('Delete'),
+            otherActionItems.push({
+                description: _t("Delete"),
                 callback: () => this._onDeleteSelectedRecords()
             });
         }
         return Object.assign(props, {
-            actions: Object.assign({}, this.toolbarActions, { other: otherItems }),
+            items: Object.assign({}, this.toolbarActions, { other: otherActionItems }),
             context: this.model.get(this.handle, { raw: true }).getContext(),
             domain: record.getDomain(),
-            editable: this.activeActions.edit,
         });
     },
     /**

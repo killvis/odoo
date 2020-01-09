@@ -5,7 +5,6 @@ odoo.define('web.FavoriteMenu', function (require) {
     const Dialog = require('web.OwlDialog');
     const Domain = require('web.Domain');
     const DropdownMenu = require('web.DropdownMenu');
-    const FilterMenuGenerator = require('web.FilterMenuGenerator');
     const { sprintf } = require('web.utils');
 
     const { useState } = owl;
@@ -13,9 +12,6 @@ odoo.define('web.FavoriteMenu', function (require) {
     class FavoriteMenu extends DropdownMenu {
         constructor() {
             super(...arguments);
-
-            this.title = this.env._t("Favorites");
-            this.icon = 'fa fa-star';
 
             this.state = useState({
                 deleteDialog: false,
@@ -102,8 +98,12 @@ odoo.define('web.FavoriteMenu', function (require) {
             window.addEventListener('dragend', onDragEnd, true);
         }
 
-        _onEditFavorite({ detail: favoriteId }) {
-            const favorite = this.items.find(fav => fav.id === favoriteId);
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onItemEdited(ev) {
+            const favorite = this.items.find(fav => fav.id === ev.detail.item.id);
             const title = sprintf(this.env._t("Edit filter"), favorite.description);
             const context = this.env.session.user_context;
             const domains = Domain.prototype.stringToArray(favorite.domain, context)
@@ -112,21 +112,41 @@ odoo.define('web.FavoriteMenu', function (require) {
             this.state.editDialog = { domains, favorite, title };
         }
 
-        _onRemoveFavorite({ detail: favoriteId }) {
-            const favorite = this.items.find(fav => fav.id === favoriteId);
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onItemRemoved(ev) {
+            const favorite = this.items.find(fav => fav.id === ev.detail.item.id);
             this.state.deleteDialog = { favorite };
+        }
+
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onItemSelected(ev) {
+            const { item, option } = ev.detail;
+            if (option) {
+                this.dispatch('toggleFilterWithOptions', item.id, option.optionId);
+            } else {
+                this.dispatch('toggleFilter', item.id);
+            }
         }
     }
 
     FavoriteMenu.components = Object.assign({}, DropdownMenu.components, {
         AddNewFavoriteMenu,
         Dialog,
-        FilterMenuGenerator,
     });
-    FavoriteMenu.props = {
+    FavoriteMenu.defaultProps = Object.assign({}, DropdownMenu.defaultProps, {
+        icon: 'fa fa-star',
+        title: "Favorites",
+    });
+    FavoriteMenu.props = Object.assign({}, DropdownMenu.props, {
         action: Object,
         viewType: String,
-    };
+    });
     FavoriteMenu.template = 'FavoriteMenu';
 
     return FavoriteMenu;

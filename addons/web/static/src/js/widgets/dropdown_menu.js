@@ -36,7 +36,7 @@ odoo.define('web.DropdownMenu', function (require) {
          * @returns {Object[]}
          */
         get items() {
-            return [];
+            return this.props.items;
         }
 
         /**
@@ -73,13 +73,8 @@ odoo.define('web.DropdownMenu', function (require) {
          * @private
          * @param {MouseEvent} ev
          */
-        _onItemClick(ev) {
-            const { itemId, optionId } = ev.detail;
-            if (optionId) {
-                this.dispatch('toggleFilterWithOptions', itemId, optionId);
-            } else {
-                this.dispatch('toggleFilter', itemId);
-            }
+        _onItemSelected(ev) {
+            this.trigger('item_selected', ev.detail);
         }
 
         /**
@@ -104,6 +99,18 @@ odoo.define('web.DropdownMenu', function (require) {
     }
 
     DropdownMenu.components = { DropdownMenuItem };
+    DropdownMenu.defaultProps = {
+        items: [],
+    };
+    DropdownMenu.props = {
+        icon: { type: String, optional: 1 },
+        items: {
+            type: Array,
+            element: Object,
+            optional: 1,
+        },
+        title: String,
+    };
     DropdownMenu.template = 'DropdownMenu';
 
     return DropdownMenu;

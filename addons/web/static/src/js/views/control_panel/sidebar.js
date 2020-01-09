@@ -2,55 +2,20 @@ odoo.define('web.Sidebar', function (require) {
     "use strict";
 
     const Context = require('web.Context');
-    const CustomFileInput = require('web.CustomFileInput');
     const DropdownMenu = require('web.DropdownMenu');
     const pyUtils = require('web.py_utils');
 
-    const { Component } = owl;
-
-    class SidebarDropdownMenu extends DropdownMenu {
-
-        /**
-         * Method triggered when the user clicks on a toolbar dropdown
-         * @private
-         * @param {Object} item
-         * @param {MouseEvent} ev
-         */
-        _onItemClick(item, ev) {
-            if (item.callback) {
-                item.callback([item]);
-            } else if (item.action) {
-                this.trigger('execute_action', item.action);
-            } else if (item.url) {
-                return;
-            }
-            ev.preventDefault();
-        }
-
-        /**
-         * @private
-         * @param {KeyboardEvent} ev
-         */
-        _onKeydown(ev) {
-            if (ev.key === 'Escape') {
-                ev.target.blur();
-            }
-        }
-    }
-
-    SidebarDropdownMenu.components = Object.assign({}, DropdownMenu.components, { CustomFileInput });
-    SidebarDropdownMenu.defaultProps = {
-    };
-    SidebarDropdownMenu.props = {
-        activeIds: Array,
-        editable: Boolean,
-        items: Array,
-        model: String,
-        section: Object,
-    };
-    SidebarDropdownMenu.template = 'Sidebar.DropdownMenu';
+    const { Component, hooks } = owl;
+    const { useStore } = hooks;
 
     class Sidebar extends Component {
+        constructor() {
+            super(...arguments);
+
+            this.actionProps = useStore(state => state.actionProps.sidebar, {
+                store: this.env.controlPanelStore,
+            });
+        }
 
         mounted() {
             this._addTooltips();
@@ -64,35 +29,39 @@ odoo.define('web.Sidebar', function (require) {
         // Getters
         //--------------------------------------------------------------------------
 
-        get items() {
-            const items = { print: [], other: [] };
-            for (const section in this.props.items) {
-                items[section] = Object.assign([], this.props.items[section]);
-            }
-            for (const type in this.props.actions) {
-                switch (type) {
-                    case 'action':
-                    case 'print':
-                    case 'relate':
-                        const section = type === 'print' ? 'print' : 'other';
-                        const newItems = this.props.actions[type].map(action => {
-                            return { action, label: action.name };
-                        });
-                        items[section].unshift(...newItems);
-                        break;
-                    case 'other':
-                        items.other.unshift(...this.props.actions.other);
-                        break;
-                }
-            }
-            return items;
+        /**
+         * @returns {Object[]}
+         */
+        get actionItems() {
+            const actionActions = this.actionProps.items.action || [];
+            const relateActions = this.actionProps.items.relate || [];
+            const callbackActions = this.actionProps.items.other || [];
+
+            const formattedActions = [...actionActions, ...relateActions].map(action => {
+                return {
+                    action: action,
+                    description: action.name,
+                };
+            });
+            const actionItems = callbackActions.concat(formattedActions);
+            console.log({ actionItems });
+            return actionItems;
         }
 
-        get sections() {
-            const items = this.items;
-            return this.props.sections.filter(
-                s => items[s.name].length || (s.name === 'files' && this.props.editable)
-            );
+        /**
+         * @returns {Object[]}
+         */
+        get printItems() {
+            const printActions = this.actionProps.items.print || [];
+
+            const printItems = printActions.map(action => {
+                return {
+                    action: action,
+                    description: action.name,
+                };
+            });
+            console.log({ printItems });
+            return printItems;
         }
 
         //--------------------------------------------------------------------------
@@ -119,18 +88,17 @@ odoo.define('web.Sidebar', function (require) {
          * @private
          * @param {OwlEvent} ev
          */
-        async _onExecuteAction(ev) {
-            const action = ev.detail;
+        async _executeAction(action) {
             const activeIdsContext = {
-                active_id: this.props.activeIds[0],
-                active_ids: this.props.activeIds,
-                active_model: this.props.model,
+                active_id: this.actionProps.activeIds[0],
+                active_ids: this.actionProps.activeIds,
+                active_model: this.props.modelName,
             };
-            if (this.props.domain) {
-                activeIdsContext.active_domain = this.props.domain;
+            if (this.actionProps.domain) {
+                activeIdsContext.active_domain = this.actionProps.domain;
             }
 
-            const context = pyUtils.eval('context', new Context(this.props.context, activeIdsContext));
+            const context = pyUtils.eval('context', new Context(this.actionProps.context, activeIdsContext));
             const result = await this.rpc({
                 route: '/web/action/load',
                 params: {
@@ -144,43 +112,28 @@ odoo.define('web.Sidebar', function (require) {
             result.flags.new_window = true;
             this.trigger('do_action', { action: result });
         }
+
+        /**
+         * @private
+         * @param {OwlEvent} ev
+         */
+        _onItemSelected(ev) {
+            const { item } = ev.detail;
+            if (item.callback) {
+                item.callback([item]);
+            } else if (item.action) {
+                this._executeAction(item.action);
+            } else if (item.url) {
+                // Event has been prevented at its source: we need to redirect manually.
+                window.location = item.url;
+            }
+        }
     }
 
-    Sidebar.components = { SidebarDropdownMenu };
-    Sidebar.defaultProps = {
-        actions: {},
-        editable: true,
-        items: {
-            print: [],
-            other: [],
-        },
-        sections: [
-            { name: 'print', label: "Print" },
-            { name: 'other', label: "Action" },
-        ],
+    Sidebar.components = { DropdownMenu };
+    Sidebar.props = {
+        modelName: String,
     };
-    Sidebar.props = Object.assign({}, DropdownMenu.props, {
-        actions: Object,
-        activeIds: {
-            type: Array,
-            element: Number,
-        },
-        context: Object,
-        domain: { type: Array, optional: 1 },
-        editable: Boolean,
-        items: Object,
-        model: String,
-        sections: {
-            type: Array,
-            element: {
-                type: Object,
-                shape: {
-                    label: String,
-                    name: String,
-                },
-            },
-        },
-    });
     Sidebar.template = 'Sidebar';
 
     return Sidebar;
