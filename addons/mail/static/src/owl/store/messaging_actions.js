@@ -3456,98 +3456,10 @@ const actions = {
                     _model: 'mail.failure',
                     localId: mailFailureLocalId,
                 });
-
-                // TODO SEB handle regrouping
-
-                state.threads[mailFailureLocalId] = Object.assign({
-                    messageLocalIds: [],
-                    message_unread_counter: 1,
-                    // TODO SEB message_unread_counter
-                    // TODO SEB image defined depending on if mail, sms, etc.
-                    // body: _t("An error occurred when sending an email"),
-                    // date: data.last_message_date,
-                    // documentID: data.res_id,
-                    // documentModel: data.model_name,
-                    // title: data.model_name + ': ' + data.record_name, // TODO SEB here added the record_name
-                    _model: 'mail.failure',
-                    localId: mailFailureLocalId,
-                });
             }
             // TODO SEB update inverse relation: message customer email status related to this failure
             // @see bottom of _handlePartnerMailFailureNotification
         });
-
-        // TODO SEB do we also create fake threads for the previews? @see _getMailFailurePreviews
-
-        // getPreview () {
-        //     const preview = {
-        //         body: _t("An error occured when sending an email"),
-        //         date: this._lastMessageDate,
-        //         documentId: this.documentId,
-        //         documentModel: this.documentModel,
-        //         id: 'mail_failure',
-        //         imageSRC: this._moduleIcon,
-        //         title: this._modelName,
-        //     };
-        //     return preview;
-        // },
-
-        // var preview = {
-        //     body: _t("An error occurred when sending an email"),
-        //     date: this._lastMessageDate,
-        //     documentID: this._documentID,
-        //     documentModel: this._documentModel,
-        //     id: 'mail_failure',
-        //     imageSRC: this._moduleIcon,
-        //     title: this._modelName,
-        // };
-
-        // var items = [];
-        // _.each(state.mailFailures, function (failure) {
-        //     var unreadCounter = 1;
-        //     var isSameDocument = true;
-        //     var sameModelAndTypeItem = _.find(items, function (item) {
-        //         if (
-        //             item.failure.isLinkedToDocument() &&
-        //             (item.failure.getDocumentModel() === failure.getDocumentModel()) &&
-        //             (item.failure.getFailureType() === failure.getFailureType())
-        //         ) {
-        //             isSameDocument = item.failure.getDocumentID() === failure.getDocumentID();
-        //             return true;
-        //         }
-        //         return false;
-        //     });
-
-        //     if (failure.isLinkedToDocument() && sameModelAndTypeItem) {
-        //         unreadCounter = sameModelAndTypeItem.unreadCounter + 1;
-        //         isSameDocument = sameModelAndTypeItem.isSameDocument && isSameDocument;
-        //         var index = _.findIndex(items, sameModelAndTypeItem);
-        //         items[index] = {
-        //             unreadCounter: unreadCounter,
-        //             failure: failure,
-        //             isSameDocument: isSameDocument,
-        //         };
-        //     } else {
-        //         items.push({
-        //             unreadCounter: unreadCounter,
-        //             failure: failure,
-        //             isSameDocument: true,
-        //         });
-        //     }
-        // });
-        // const threads = _.map(items, function (item) {
-        //     // return preview with correct unread counter
-        //     // also unset documentID if the grouped mail failures are from
-        //     // same model but different document
-        //     var preview = {};
-        //     _.extend(preview, item.failure.getPreview(), {
-        //         unreadCounter: item.unreadCounter,
-        //     });
-        //     if (!item.isSameDocument) {
-        //         preview.documentID = undefined;
-        //     }
-        //     return preview;
-        // });
     },
     /**
      * @private

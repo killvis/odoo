@@ -193,7 +193,8 @@ const getters = {
                 return acc;
             }, 0);
         const mailboxInboxCounter = state.threads['mail.box_inbox'].counter;
-        return unreadMailChannelCounter + mailboxInboxCounter;
+        const mailFailureCounter = Object.values(state.mailFailures).length;
+        return unreadMailChannelCounter + mailboxInboxCounter + mailFailureCounter;
     },
     /**
      * @return {boolean}
@@ -291,7 +292,6 @@ const getters = {
      * @return {mail.store.model.Thread[]} filtered threads that are mail.channels
      */
     mailChannelList({ getters }) {
-        // TODO SEB do we here also include the failures?? @see _getMailFailurePreviews
         const mailChannels = getters.mailChannels();
         return Object
             .values(mailChannels)
@@ -327,7 +327,7 @@ const getters = {
      */
     mailChannels({ state }) {
         return filterObject(state.threads, thread =>
-            thread._model === 'mail.channel' || thread._model === 'mail.failure'
+            thread._model === 'mail.channel'
         );
     },
     /**
@@ -374,6 +374,111 @@ const getters = {
         return getters
             .attachments({ resId, resModel })
             .filter(attachment => getters.attachmentMediaType(attachment.localId) !== 'image');
+    },
+    /**
+     * @param {Object} param0
+     * @param {Object} param0.state
+     * @param {Object} param0.getters
+     * @param {Object} param1
+     * @param {string} filter
+     * @return {Object[]}
+     */
+    notifications({ state, getters }, { filter }) {
+        let threads;
+        if (filter === 'mailbox') {
+            threads = getters.mailboxList().map(mailbox => mailbox.localId);
+        } else if (filter === 'channel') {
+            threads = getters.channelList().map(channel => channel.localId);
+        } else if (filter === 'chat') {
+            threads = getters.chatList().map(chat => chat.localId);
+        } else {
+            // "All" filter is for channels and chats
+            threads = getters.mailChannelList().map(mailChannel => mailChannel.localId);
+        }
+        let notifications = Object.values(state.mailFailures).map(mailFailure => {
+            return { mailFailureLocalId: mailFailure.localId };
+        });
+        // TODO SEB order them (by date probably)
+        return notifications.concat(threads.map(thread => {
+            return { threadLocalId: thread };
+        }));
+
+
+                // TODO SEB handle regrouping
+
+                // state.threads[mailFailureLocalId] = Object.assign({
+                //     messageLocalIds: [],
+                //     message_unread_counter: 1,
+                //     // TODO SEB message_unread_counter
+                //     // TODO SEB image defined depending on if mail, sms, etc.
+                //     // body: _t("An error occurred when sending an email"),
+                //     // date: data.last_message_date,
+                //     // documentID: data.res_id,
+                //     // documentModel: data.model_name,
+                //     // title: data.model_name + ': ' + data.record_name, // TODO SEB here added the record_name
+                //     _model: 'mail.failure',
+                //     localId: mailFailureLocalId,
+                // });
+
+        // TODO SEB do we also create fake threads for the previews? @see _getMailFailurePreviews
+
+
+        // var preview = {
+        //     body: _t("An error occurred when sending an email"),
+        //     date: this._lastMessageDate,
+        //     documentID: this._documentID,
+        //     documentModel: this._documentModel,
+        //     id: 'mail_failure',
+        //     imageSRC: this._moduleIcon,
+        //     title: this._modelName,
+        // };
+
+        // var items = [];
+        // _.each(state.mailFailures, function (failure) {
+        //     var unreadCounter = 1;
+        //     var isSameDocument = true;
+        //     var sameModelAndTypeItem = _.find(items, function (item) {
+        //         if (
+        //             item.failure.isLinkedToDocument() &&
+        //             (item.failure.getDocumentModel() === failure.getDocumentModel()) &&
+        //             (item.failure.getFailureType() === failure.getFailureType())
+        //         ) {
+        //             isSameDocument = item.failure.getDocumentID() === failure.getDocumentID();
+        //             return true;
+        //         }
+        //         return false;
+        //     });
+
+        //     if (failure.isLinkedToDocument() && sameModelAndTypeItem) {
+        //         unreadCounter = sameModelAndTypeItem.unreadCounter + 1;
+        //         isSameDocument = sameModelAndTypeItem.isSameDocument && isSameDocument;
+        //         var index = _.findIndex(items, sameModelAndTypeItem);
+        //         items[index] = {
+        //             unreadCounter: unreadCounter,
+        //             failure: failure,
+        //             isSameDocument: isSameDocument,
+        //         };
+        //     } else {
+        //         items.push({
+        //             unreadCounter: unreadCounter,
+        //             failure: failure,
+        //             isSameDocument: true,
+        //         });
+        //     }
+        // });
+        // const threads = _.map(items, function (item) {
+        //     // return preview with correct unread counter
+        //     // also unset documentID if the grouped mail failures are from
+        //     // same model but different document
+        //     var preview = {};
+        //     _.extend(preview, item.failure.getPreview(), {
+        //         unreadCounter: item.unreadCounter,
+        //     });
+        //     if (!item.isSameDocument) {
+        //         preview.documentID = undefined;
+        //     }
+        //     return preview;
+        // });
     },
     /**
      * @param {Object} param0

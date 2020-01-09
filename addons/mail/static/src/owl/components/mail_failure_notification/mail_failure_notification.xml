@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.component.MailFailureNotification" owl="1">
+
+        <!--
+            The template is used by the discuss in mobile, and by the systray
+            menu in order to show notification of mail failures.
+        -->
+        <div class="o_MailFailureNotification" t-att-class="o-unread" t-on-click="_onClick">
+            this is a mail failure TODO SEB
+        </div>
+    </t>
+
+</templates>
