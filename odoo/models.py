@@ -5083,6 +5083,7 @@ Record ids: %(records)s
             accessing the company(ies) on the environment may trigger
             an AccessError if not done in a sudoed environment.
         """
+        # VFE TODO cleanup default_company_id keys in context when used?
         if not company:
             # With company = None/False/0/[]/empty recordset: keep current environment
             return self
