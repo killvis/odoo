@@ -3151,7 +3151,7 @@ Fields:
                     if not (company <= record[name].company_ids):
                         inconsistent_fields.add(name)
                         inconsistent_recs |= record
-                elif not (record[name].company_id <= company):
+                elif not (record.sudo()[name].company_id <= company):
                     inconsistent_fields.add(name)
                     inconsistent_recs |= record
             # The second part of the check (for property / company-dependent fields) verifies that the records
@@ -3168,7 +3168,7 @@ Fields:
                     if not (company <= record[name].company_ids):
                         inconsistent_fields.add(name)
                         inconsistent_recs |= record
-                elif not (record[name].company_id <= company):
+                elif not (record.sudo()[name].company_id <= company):
                     inconsistent_fields.add(name)
                     inconsistent_recs |= record
 

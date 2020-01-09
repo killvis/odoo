@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.exceptions import UserError, AccessError
-
+from odoo.tests.common import Form
 from odoo.addons.hr_expense.tests.common import TestExpenseCommon
 
 
@@ -346,3 +346,41 @@ class TestExpenseRights(TestExpenseCommon):
         with self.assertRaises(AccessError):
             sheet_3.with_user(self.user_officer).refuse_sheet('')
         sheet_3.with_user(self.user_manager).refuse_sheet('')
+
+
+class TestExpenseMultiCompany(TestExpenseCommon):
+
+    def test_expense_company_check(self):
+        """
+            Check that an employee without any access to private addresses
+            can still create an expense report for himself, as the field
+            address_id is supposed to be validated by the check_company
+            attribute.
+        """
+        user = self.env['res.users'].create({
+            'name': 'My Classic User',
+            'login': 'My Classic User',
+            'groups_id': [(6, 0, self.env.ref('base.group_user').ids)],
+        })
+
+        employee = self.env['hr.employee'].create({
+            'name': 'My Classic Employee',
+            'address_home_id': self.env['res.partner'].create({'name': 'Private', 'type': 'private'}).id,
+            'user_id': user.id,
+        })
+
+        product = self.product_1
+
+        expense = self.env['hr.expense'].with_user(user).create({
+            'name': 'Car Travel Expenses',
+            'employee_id': employee.id,
+            'product_id': product.id,
+            'unit_amount': 700.00,
+        })
+
+        # Even if the employee's home address is private, the
+        # report creation shouldn't crash.
+        with Form(self.env['hr.expense.sheet'].with_user(user)) as sheet_form:
+            sheet_form.expense_line_ids.add(expense)
+            sheet_form.employee_id = employee
+            sheet_form.name = 'My Sheet'
