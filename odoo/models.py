@@ -3682,25 +3682,9 @@ Record ids: %(records)s
         data_list = []
         inversed_fields = set()
 
-        stored_computed_fields = [
-            fname for fname,field in self._fields.items()
-            if field.store and field.compute and field.column_type and field.pre_compute
-        ]
-
         for vals in vals_list:
             # add missing defaults
             vals = self._add_missing_default_values(vals)
-
-            missing_vals = [fname for fname in stored_computed_fields if fname not in vals]
-
-            if missing_vals:
-                new_obj = self.new(vals)
-
-                for fname in missing_vals:
-                    # computed stored fields with a column
-                    # have to be computed before create
-                    # s.t. required and constraints can be applied on those fields.
-                    vals[fname] = self._fields.get(fname).convert_to_write(new_obj[fname], self)
 
             # distribute fields into sets for various purposes
             data = {}
@@ -3726,15 +3710,11 @@ Record ids: %(records)s
                         continue
                 if field.store:
                     stored[key] = val
-                if key not in missing_vals:
-                    # Do not trigger inverse application
-                    # for fields computed through the new() call.
-                    # (compute or related)
-                    if field.inherited:
-                        inherited[field.related_field.model_name][key] = val
-                    elif field.inverse:
-                        inversed[key] = val
-                        inversed_fields.add(field)
+                if field.inherited:
+                    inherited[field.related_field.model_name][key] = val
+                elif field.inverse:
+                    inversed[key] = val
+                    inversed_fields.add(field)
                 # protect non-readonly computed fields against (re)computation
                 if field.compute and not field.readonly:
                     protected.update(self._field_computed.get(field, [field]))
@@ -3758,6 +3738,36 @@ Record ids: %(records)s
                 ])
                 for parent, data in zip(parents, parent_data_list):
                     data['stored'][parent_name] = parent.id
+
+        stored_computed_fields = [
+            field for field in self._fields.values()
+            if field.store and field.compute and field.column_type and field.pre_compute
+        ]
+
+        for data in data_list:
+
+            missing_fields = [
+                field for field in stored_computed_fields
+                if field.name not in data['stored']
+                and field not in data['protected']
+            ]
+
+            # VFE WARNING if a default value is given for field A
+            # which has _compute_info as compute method, computing values
+            # for fields A & B, B won't be computed !
+
+            if missing_fields:
+                new_obj = self.new(dict(data['stored'], **data['inversed']))
+
+                for field in missing_fields:
+                    # computed stored fields with a column
+                    # have to be computed before create
+                    # s.t. required and constraints can be applied on those fields.
+                    field_value = field.convert_to_write(new_obj[field.name], self)
+                    data['stored'][field.name] = field_value
+                    if field.inverse:
+                        data['inversed'][field.name] = field_value
+                    data['protected'].update(self._field_computed.get(field, [field]))
 
         # create records with stored fields
         records = self._create(data_list)
