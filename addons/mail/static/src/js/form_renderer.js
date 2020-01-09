@@ -35,7 +35,7 @@ FormRenderer.include({
         this.env = this.call('messaging', 'getMessagingEnv');
         this.mailFields = params.mailFields;
         // Do not load chatter in form view dialogs
-        this._preventChatterLoad = params.fromFormViewDialog;
+        this._isFromFormViewDialog = params.fromFormViewDialog;
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         /**
@@ -144,8 +144,7 @@ FormRenderer.include({
      */
     async _renderView() {
         await this._super(...arguments);
-
-        if (this._hasChatter && !this._preventChatterLoad) {
+        if (this._hasChatter && !this._isFromFormViewDialog) {
             Chatter.env = this.env;
             if (!this._chatterComponent) {
                 await this._createChatter();
