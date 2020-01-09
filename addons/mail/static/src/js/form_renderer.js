@@ -121,9 +121,7 @@ FormRenderer.include({
            this._chatterContainerTarget = $el[0];
            return $el;
        }
-       else {
-           return this._super(...arguments);
-       }
+       return this._super(...arguments);
    },
     /**
      * Overrides the function to render the chatter once the form view is
