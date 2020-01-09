@@ -43,9 +43,6 @@ FormRenderer.include({
          */
         this._chatterContainerTarget = undefined;
     },
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
     destroy() {
         this._super(...arguments);
         if (this._chatterContainerTarget) {
