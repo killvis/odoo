@@ -39,6 +39,12 @@ FormRenderer.include({
         this._chatterComponent = undefined;
         this._chatterLocalId = undefined;
         /**
+         * Determine where the chatter will be appended in the DOM
+         * @type {Node}
+         * @private
+         */
+        this._chatterContainerTarget = undefined;
+        /**
          * Determine if the form view has a chatter
          * (i.e. if a div .oe-chatter is detected in the arch)
          * @type {boolean}
@@ -68,14 +74,14 @@ FormRenderer.include({
         });
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
-        if (this._chatterEl) {
+        if (this._chatterContainerTarget) {
             /*
                 FIXME {xdu}
                 could be better to mount in "replace" mode but the mount is
                 failing with that mode
                 (just use { position: 'self' } as second parameter of mount)
             */
-            await this._chatterComponent.mount(this._chatterEl);
+            await this._chatterComponent.mount(this._chatterContainerTarget);
         }
     },
     /**
@@ -110,8 +116,8 @@ FormRenderer.include({
             failing with that mode
             (just use { position: 'self' } as second parameter of mount)
         */
-        if (this._chatterEl) {
-            await this._chatterComponent.mount(this._chatteoprEl);
+        if (this._chatterContainerTarget) {
+            await this._chatterComponent.mount(this._chatterContainerTarget);
         }
     },
    /**
@@ -122,7 +128,7 @@ FormRenderer.include({
        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
            this._hasChatter = true;
            const $el = $('<div class="o_Chatter_container"/>');
-           this._chatterEl = $el[0];
+           this._chatterContainerTarget = $el[0];
            return $el;
        }
        else {
