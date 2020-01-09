@@ -184,7 +184,7 @@ class StockMove(models.Model):
             mo = self.env['mrp.production'].browse(values['raw_material_production_id'])
             values.update({
                 'group_id': mo.procurement_group_id.id,
-                'unit_factor': values.get('product_uom_qty', 1) / (mo.product_qty - mo.qty_produced),
+                'unit_factor': values.get('product_uom_qty', 1) / ((mo.product_qty - mo.qty_produced) or 1),
                 'reference': mo.name
             })
         res = super().create(values)
