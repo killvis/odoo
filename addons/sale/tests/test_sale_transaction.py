@@ -51,7 +51,7 @@ class TestSaleTransaction(AccountTestCommon):
         # Assert a posted payment has been generated at this point.
         self.assertTrue(self.transaction.payment_id)
         self.assertEqual(self.transaction.payment_id.state, 'posted')
-        self.assertEquals(self.order, self.transaction.sale_order_ids)
+        self.assertEqual(self.order, self.transaction.sale_order_ids)
 
         invoice = self.order._create_invoices()
         invoice.post()
