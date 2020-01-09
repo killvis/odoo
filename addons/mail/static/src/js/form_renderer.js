@@ -64,15 +64,6 @@ FormRenderer.include({
         });
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
-        if (this._chatterContainerTarget && this._isInDom) {
-            /*
-                FIXME {xdu}
-                could be better to mount in "replace" mode but the mount is
-                failing with that mode
-                (just use { position: 'self' } as second parameter of mount)
-            */
-            await this._chatterComponent.mount(this._chatterContainerTarget);
-        }
     },
     /**
      * Destroy the chatter component
@@ -100,28 +91,33 @@ FormRenderer.include({
      */
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;
-        /*
-            FIXME {xdu}
-            could be better to mount in "replace" mode but the mount is
-            failing with that mode
-            (just use { position: 'self' } as second parameter of mount)
-        */
         if (this._chatterContainerTarget) {
-            await this._chatterComponent.mount(this._chatterContainerTarget);
+            await this._mountChatterComponent();
         }
     },
-   /**
+    /**
+     * Mount the chatter
+     *
+     * FIXME {xdu} could be better to mount in "replace" mode but the mount is
+     * failing with that mode.
+     * (just use { position: 'self' } as second parameter of mount)
+     * @private
+     */
+    async _mountChatterComponent() {
+        await this._chatterComponent.mount(this._chatterContainerTarget);
+    },
+    /**
      * @override
      * @private
      */
-   _renderNode(node) {
-       if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-           const $el = $('<div class="o_FormRenderer_chatterContainer"/>');
-           this._chatterContainerTarget = $el[0];
-           return $el;
-       }
-       return this._super(...arguments);
-   },
+    _renderNode(node) {
+        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
+            const $el = $('<div class="o_FormRenderer_chatterContainer"/>');
+            this._chatterContainerTarget = $el[0];
+            return $el;
+        }
+        return this._super(...arguments);
+    },
     /**
      * Overrides the function to render the chatter once the form view is
      * rendered.
@@ -135,14 +131,17 @@ FormRenderer.include({
             Chatter.env = this.env;
             if (!this._chatterComponent) {
                 await this._createChatter();
-            } else {
-                if (this._isInDom) {
-                    await this._forceMountChatterComponent();
+                if (this._chatterContainerTarget && this._isInDom) {
+                    await this._mountChatterComponent();
                 }
+            } else {
                 this.env.store.dispatch('updateChatter', this._chatterLocalId, {
                     threadId: this.state.res_id,
                     threadModel: this.state.model
                 });
+                if (this._isInDom) {
+                    await this._forceMountChatterComponent();
+                }
             }
         }
     },
