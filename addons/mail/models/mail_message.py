@@ -220,8 +220,13 @@ class Message(models.Model):
         ids uid could not see according to our custom rules. Please refer to
         check_access_rule for more details about those rules.
 
+<<<<<<< HEAD
         Non employees users see only message with subtype (aka do not see
         internal logs).
+=======
+        notification = {'type': 'mark_as_read', 'message_ids': [id[0] for id in ids]}
+        self.env['bus.bus'].sendone((self._cr.dbname, 'res.partner', partner_id), notification)
+>>>>>>> 5b8718afa8f... temp
 
         After having received ids of a classic search, keep only:
         - if author_id == pid, uid is the author, OR
