@@ -138,6 +138,10 @@ QUnit.test('add an emoji after some text', async function (assert) {
         "Blabla😊",
         "emoji should be inserted after the text"
     );
+    // ensure popover is closed
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+    await nextAnimationFrame();
 });
 
 QUnit.test('add emoji replaces (keyboard) text selection', async function (assert) {
