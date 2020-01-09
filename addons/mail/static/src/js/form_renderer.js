@@ -116,7 +116,7 @@ FormRenderer.include({
      */
    _renderNode(node) {
        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-           const $el = $('<div class="o_Chatter_container"/>');
+           const $el = $('<div class="o_FormRenderer_chatterContainer"/>');
            this._chatterContainerTarget = $el[0];
            return $el;
        }
