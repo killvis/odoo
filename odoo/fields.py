@@ -695,6 +695,8 @@ class Field(MetaField('DummyField', (object,), {})):
                     yield tuple(field_seq)
 
                 if field.type in ('one2many', 'many2many'):
+                    # VFE TODO doe we post_compute computed fields
+                    # based on o2m or m2m by default? could be heavy
                     for inv_field in field_model._field_inverses[field]:
                         yield tuple(field_seq) + (inv_field,)
 
