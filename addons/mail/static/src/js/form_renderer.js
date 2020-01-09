@@ -42,18 +42,13 @@ FormRenderer.include({
          * Determine where the chatter will be appended in the DOM
          */
         this._chatterContainerTarget = undefined;
-        /**
-         * Determine if the form view has a chatter
-         * (i.e. if a div .oe-chatter is detected in the arch)
-         */
-        this._hasChatter = false;
     },
     //--------------------------------------------------------------------------
     // Public
     //--------------------------------------------------------------------------
     destroy() {
         this._super(...arguments);
-        if (this._hasChatter) {
+        if (this._chatterContainerTarget) {
             this._destroyChatter();
         }
     },
@@ -122,7 +117,6 @@ FormRenderer.include({
      */
    _renderNode(node) {
        if (node.tag === 'div' && node.attrs.class === 'oe_chatter') {
-           this._hasChatter = true;
            const $el = $('<div class="o_Chatter_container"/>');
            this._chatterContainerTarget = $el[0];
            return $el;
@@ -140,7 +134,7 @@ FormRenderer.include({
      */
     async _renderView() {
         await this._super(...arguments);
-        if (this._hasChatter && !this._isFromFormViewDialog) {
+        if (this._chatterContainerTarget && !this._isFromFormViewDialog) {
             Chatter.env = this.env;
             if (!this._chatterComponent) {
                 await this._createChatter();
