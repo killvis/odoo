@@ -62,7 +62,7 @@ FormRenderer.include({
         });
         this._chatterLocalId = chatterLocalId;
         this._chatterComponent = new Chatter(null, { chatterLocalId });
-        if (this._chatterContainerTarget) {
+        if (this._chatterContainerTarget && this._isInDom) {
             /*
                 FIXME {xdu}
                 could be better to mount in "replace" mode but the mount is
