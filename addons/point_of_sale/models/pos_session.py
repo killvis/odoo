@@ -361,7 +361,7 @@ class PosSession(models.Model):
             if order.is_invoiced:
                 # Combine invoice receivable lines
                 key = order.partner_id.property_account_receivable_id.id
-                invoice_receivables[key] = self._update_amounts(invoice_receivables[key], {'amount': order.amount_paid}, order.date_order)
+                invoice_receivables[key] = self._update_amounts(invoice_receivables[key], {'amount': order._get_amount_receivable()}, order.date_order)
                 # side loop to gather receivable lines by account for reconciliation
                 for move_line in order.account_move.line_ids.filtered(lambda aml: aml.account_id.internal_type == 'receivable'):
                     order_account_move_receivable_lines[move_line.account_id.id] |= move_line
@@ -431,7 +431,6 @@ class PosSession(models.Model):
                 'Please set corresponding tax account in each repartition line of the following taxes: \n%s'
             ) % ', '.join(tax_names_no_account)
             raise UserError(error_message)
-        rounding_vals = []
 
         MoveLine.create(
             tax_vals

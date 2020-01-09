@@ -7,7 +7,7 @@
             <field name="inherit_id" ref='account.rounding_form_view'/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='account_id']" position="after">
-                    <field name="loss_account_id" options="{'no_create': True}" attrs="{'invisible': [('strategy', '!=', 'add_invoice_line')], 'required': [('strategy', '=', 'add_invoice_line')]}"/>
+                    <field name="loss_account_id" options="{'no_create': True}" attrs="{'invisible': [('strategy', '!=', 'add_invoice_line')]}"/>
                 </xpath>
                 <xpath expr="//field[@name='account_id']" position="attributes">
                       <attribute name="string">Profit Account</attribute>

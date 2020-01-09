@@ -9,6 +9,5 @@ class AccountCashRounding(models.Model):
 
     loss_account_id = fields.Many2one('account.account', string='Loss Account')
 
-    def get_loss_account_id(self):
-        super(AccountCashRounding, self).get_loss_account_id()
-        return self.loss_account_id
+    def _get_loss_account_id(self):
+        return self.loss_account_id or super(AccountCashRounding, self)._get_loss_account_id()

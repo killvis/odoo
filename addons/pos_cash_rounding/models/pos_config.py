@@ -9,7 +9,7 @@ class PosConfig(models.Model):
     _inherit = 'pos.config'
 
     rounding_method = fields.Many2one('account.cash.rounding', string="Cash rounding")
-    cash_rounding = fields.Boolean(string="Cash Rounding")
+    cash_rounding = fields.Boolean(string="Cash Rounding", domain=[('strategy', '=', 'add_invoice_line')])
     only_round_cash_method = fields.Boolean(string="Only apply rounding on cash")
 
 

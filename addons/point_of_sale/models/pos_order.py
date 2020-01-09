@@ -353,6 +353,10 @@ class PosOrder(models.Model):
         self.write({'state': 'paid'})
         return self.create_picking()
 
+    def _get_amount_receivable(self):
+        return self.amount_total
+
+
     def _prepare_invoice_vals(self):
         self.ensure_one()
         vals = {
