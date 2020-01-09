@@ -24,7 +24,7 @@ FormRenderer.include({
         // and chatter component to avoid any problem when view will be
         // reattached
         if (this._chatterComponent) {
-            this._deleteChatter();
+            this._destroyChatter();
         }
     },
     /**
@@ -58,7 +58,7 @@ FormRenderer.include({
     destroy() {
         this._super(...arguments);
         if (this._hasChatter) {
-            this._deleteChatter();
+            this._destroyChatter();
         }
     },
     //--------------------------------------------------------------------------
@@ -85,11 +85,11 @@ FormRenderer.include({
         }
     },
     /**
-     * Delete the chatter component
+     * Destroy the chatter component
      *
      * @private
      */
-    _deleteChatter() {
+    _destroyChatter() {
         if (this._chatterComponent) {
             this._chatterComponent.destroy();
             this._chatterComponent = undefined;
