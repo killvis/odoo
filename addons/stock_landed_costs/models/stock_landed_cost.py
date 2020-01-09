@@ -45,6 +45,7 @@ class LandedCost(models.Model):
     picking_ids = fields.Many2many(
         'stock.picking', string='Transfers',
         copy=False, states={'done': [('readonly', True)]})
+    allowed_picking_ids = fields.Many2many('stock.picking', compute='_compute_allowed_picking_ids')
     cost_lines = fields.One2many(
         'stock.landed.cost.lines', 'cost_id', 'Cost Lines',
         copy=True, states={'done': [('readonly', True)]})
@@ -78,6 +79,17 @@ class LandedCost(models.Model):
     def _compute_total_amount(self):
         for cost in self:
             cost.amount_total = sum(line.price_unit for line in cost.cost_lines)
+
+    @api.depends('company_id')
+    def _compute_allowed_picking_ids(self):
+        valued_move_ids = self.env['stock.valuation.layer'].sudo().search_read([('stock_move_id', '!=', False)], ['stock_move_id'])
+        valued_move_ids = [res['stock_move_id'][0] for res in valued_move_ids]
+        valued_picking_ids = self.env['stock.move'].sudo().search_read([('id', 'in', valued_move_ids)], ['picking_id', 'company_id'])
+        valued_picking_ids_per_company = defaultdict(list)
+        for res in valued_picking_ids:
+            valued_picking_ids_per_company[res['company_id'][0]].append(res['picking_id'][0])
+        for cost in self:
+            cost.allowed_picking_ids = valued_picking_ids_per_company[cost.company_id.id]
 
     @api.model
     def create(self, vals):
