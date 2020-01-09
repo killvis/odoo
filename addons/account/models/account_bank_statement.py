@@ -486,6 +486,7 @@ class AccountBankStatementLine(models.Model):
     @api.model
     def create(self, vals):
         line = super(AccountBankStatementLine, self).create(vals)
+        # VFE FIXME wouldn't this be fixed with journal_currency_id stored ?
         # The most awesome fix you will ever see is below.
         # Explanation: during a 'create', the 'convert_to_cache' method is not called. Moreover, at
         # that point 'journal_currency_id' is not yet known since it is a related field. It means
