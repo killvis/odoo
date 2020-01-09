@@ -3,6 +3,8 @@ odoo.define('web.DataManager', function (require) {
 
 var config = require('web.config');
 var core = require('web.core');
+const { parseArch } = require('web.viewUtils');
+const pyUtils = require('web.py_utils');
 var rpc = require('web.rpc');
 var session = require('web.session');
 var utils = require('web.utils');
@@ -99,23 +101,24 @@ return core.Class.extend({
                 },
                 model: model,
                 method: 'load_views',
-            }).then(function (result) {
+            }).then(async result => {
                 // Freeze the fields dict as it will be shared between views and
                 // no one should edit it
                 utils.deepFreeze(result.fields);
 
                 // Insert views into the fields_views cache
-                _.each(views_descr, function (view_descr) {
+                for (const view_descr of views_descr) {
                     var toolbar = options.toolbar && view_descr[1] !== 'search';
                     var fv_key = self._gen_key(model, view_descr[0], view_descr[1], toolbar, context);
                     var fvg = result.fields_views[view_descr[1]];
                     if (view_descr[1] === 'search') {
                         fvg.favoriteFilters = result.filters;
+                        fvg.preFilters = await this._processSearchArchFilters(fvg.arch, context, fvg.fields);
                     }
                     fvg.viewFields = fvg.fields;
                     fvg.fields = result.fields;
                     self._cache.fields_views[fv_key] = Promise.resolve(fvg);
-                });
+                }
 
                 // Insert filters, if any, into the filters cache
                 if (result.filters) {
@@ -126,6 +129,83 @@ return core.Class.extend({
         }
 
         return this._cache.views[key];
+    },
+
+    // TODO: name
+    _processSearchArchFilters: async function (arch, actionContext, fields) {
+        const searchDefaults = {};
+        for (const key in actionContext) {
+            const match = /^search_default_(.*)$/.exec(key);
+            if (match) {
+                searchDefaults[match[1]] = actionContext[key];
+                delete actionContext[key];
+            }
+        }
+
+        const parsedArch = parseArch(arch);
+
+        function _evalArchChild(child) {
+            if (child.attrs.context) {
+                try {
+                    const context = pyUtils.eval('context', child.attrs.context);
+                    child.attrs.context = context;
+                    if (context.group_by) {
+                        // let us extract basic data since we just evaluated context
+                        // and use a correct tag!
+                        child.attrs.fieldName = context.group_by.split(':')[0];
+                        child.attrs.defaultInterval = context.group_by.split(':')[1];
+                        child.tag = 'groupBy';
+                    }
+                } catch (e) { }
+            }
+            if (child.attrs.name in searchDefaults) {
+                child.attrs.isDefault = true;
+                let value = searchDefaults[child.attrs.name];
+                if (value instanceof Array) {
+                    value = value[0];
+                }
+                child.attrs.defaultValue = { value };
+            }
+            return child;
+        }
+
+        const children = parsedArch.children.filter(child => child.tag !== 'searchpanel');
+        const preFilters = children.reduce((acc, child) => {
+            if (child.tag === 'group') {
+                return acc.concat(child.children.map(_evalArchChild));
+            } else {
+                return [...acc, _evalArchChild(child)];
+            }
+        }, []);
+        preFilters.push({ tag: 'separator' });
+
+        const promises = [];
+
+        preFilters.forEach(preFilter => {
+            if (preFilter.tag === 'field' && preFilter.attrs.isDefault) {
+                const { defaultValue } = preFilter.attrs;
+                const field = fields[preFilter.attrs.name];
+                defaultValue.isExactValue = true;
+                if (field.type === 'many2one') {
+                    const promise = rpc.query({
+                        args: [defaultValue.value],
+                        context: field.context,
+                        method: 'name_get',
+                        model: field.relation,
+                    }).then(results => {
+                        defaultValue.label = results[0][1];
+                    }).guardedCatch(() => {
+                        defaultValue.label = defaultValue.value;
+                    });
+                    promises.push(promise);
+                } else {
+                    defaultValue.label = defaultValue.value;
+                }
+            }
+        });
+        await Promise.all(promises);
+
+        return preFilters;
     },
 
     /**

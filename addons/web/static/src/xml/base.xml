@@ -135,54 +135,7 @@
 </t>
 
 <t t-name="ControlPanelMobile" owl="1">
-    <!-- Mobile search view open -->
-    <div t-if="state.isFiltering" class="o_mobile_search">
-        <div class="o_mobile_search_header">
-            <button type="button"
-                class="o_mobile_search_button btn float-left"
-                t-on-click.stop="state.isFiltering = !state.isFiltering"
-                >
-                <i class="fa fa-arrow-left"/>
-                <strong class="ml8">FILTER</strong>
-            </button>
-            <button type="button"
-                class="o_mobile_search_button btn"
-                t-on-click.stop="dispatch('clearQuery')"
-                >
-                CLEAR
-            </button>
-        </div>
-        <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
-        <div class="o_mobile_search_filter o_search_options"
-            t-ref="searchViewButtons"
-            t-on-update_query.stop="_onUpdateQuery"
-            >
-            <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
-                class="o_filter_menu"
-                fields="props.fields"
-            />
-            <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
-                class="o_group_by_menu"
-                fields="props.fields"
-            />
-            <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
-                class="o_time_range_menu"
-                fields="props.fields"
-            />
-            <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
-                class="o_favorite_menu"
-                action="props.action"
-                viewType="props.viewType"
-            />
-        </div>
-        <button type="button"
-            class="btn btn-primary o_mobile_search_show_result fixed-bottom"
-            t-on-click.stop="state.isFiltering = !state.isFiltering"
-            >
-            SEE RESULT
-        </button>
-    </div>
-    <div t-else="" class="o_control_panel">
+    <div class="o_control_panel">
         <div class="o_cp_top">
             <ol t-if="props.withBreadcrumbs and !state.isSearching" class="breadcrumb" role="navigation">
                 <t t-set="breadcrumb" t-value="props.breadcrumbs[props.breadcrumbs.length - 1]"/>
@@ -191,16 +144,63 @@
                     accesskey="b"
                     t-on-click.prevent="trigger('breadcrumb_clicked', { controllerID: breadcrumb.controllerID })"
                 />
-                <li class="breadcrumb-item active" t-esc="props.title"/>
+                <li class="breadcrumb-item active" t-esc="actionProps.title"/>
             </ol>
-            <div t-if="props.cp_content.searchView or props.withSearchBar"
+            <div t-if="actionProps.cp_content.searchView or props.withSearchBar"
                 class="o_cp_searchview"
                 t-att-class="{ o_searchview_quick: state.isSearching }"
                 role="search"
                 t-ref="searchView"
                 >
                 <div class="o_searchview" role="search" aria-autocomplete="list">
-                    <t t-if="!state.isFiltering">
+                    <!-- Mobile search view open -->
+                    <div t-if="state.isFiltering" class="o_mobile_search">
+                        <div class="o_mobile_search_header">
+                            <button type="button"
+                                class="o_mobile_search_button btn float-left"
+                                t-on-click.stop="state.isFiltering = !state.isFiltering"
+                                >
+                                <i class="fa fa-arrow-left"/>
+                                <strong class="ml8">FILTER</strong>
+                            </button>
+                            <button type="button"
+                                class="o_mobile_search_button btn"
+                                t-on-click.stop="dispatch('clearQuery')"
+                                >
+                                CLEAR
+                            </button>
+                        </div>
+                        <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
+                        <div class="o_mobile_search_filter o_search_options"
+                            t-ref="searchViewButtons"
+                            t-on-update_query.stop="_onUpdateQuery"
+                            >
+                            <FilterMenu t-if="props.searchMenuTypes.includes('filter')"
+                                class="o_filter_menu"
+                                fields="props.fields"
+                            />
+                            <GroupByMenu t-if="props.searchMenuTypes.includes('groupBy')"
+                                class="o_group_by_menu"
+                                fields="props.fields"
+                            />
+                            <TimeRangeMenu t-if="props.searchMenuTypes.includes('timeRange')"
+                                class="o_time_range_menu"
+                                fields="props.fields"
+                            />
+                            <FavoriteMenu t-if="props.searchMenuTypes.includes('favorite')"
+                                class="o_favorite_menu"
+                                action="props.action"
+                                viewType="props.viewType"
+                            />
+                        </div>
+                        <button type="button"
+                            class="btn btn-primary o_mobile_search_show_result fixed-bottom"
+                            t-on-click.stop="state.isFiltering = !state.isFiltering"
+                            >
+                            SEE RESULT
+                        </button>
+                    </div>
+                    <t t-else="">
                         <t t-if="state.isSearching">
                             <SearchBar t-if="props.withSearchBar" fields="props.fields"/>
                             <button type="button"
@@ -736,7 +736,7 @@
 
 <t t-name="SearchBar" owl="1">
     <div class="o_searchview_input_container">
-        <SearchFacet t-foreach="facets" t-as="facet" t-key="facet_index"
+        <SearchFacet t-foreach="getters.getFacets()" t-as="facet" t-key="facet_index"
             filters="facet.filters"
             group="facet.group"
             t-on-navigation_move.stop="_onFacetNavigation(facet_index)"
@@ -769,10 +769,10 @@
                 <a href="#" t-on-click.prevent="">
                     <t t-if="src.label" t-esc="src.label"/>
                     <t t-elif="['date', 'datetime'].includes(src.field.type)">
-                        Search <em t-esc="src.fieldName"/> at: <strong t-esc="state.inputValue"/>
+                        Search <em t-esc="src.description"/> at: <strong t-esc="state.inputValue"/>
                     </t>
                     <t t-else="">
-                        Search <em t-esc="src.fieldName"/> for: <strong t-esc="state.inputValue"/>
+                        Search <em t-esc="src.description"/> for: <strong t-esc="state.inputValue"/>
                     </t>
                 </a>
             </li>

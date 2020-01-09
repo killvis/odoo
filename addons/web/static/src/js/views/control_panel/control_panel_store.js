@@ -226,7 +226,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {number} groupId
          */
         deactivateGroup({ state }, groupId) {
-            state.query = state.query.filter(queryElem => queryElem.groupId != groupId);
+            state.query = state.query.filter(queryElem => queryElem.groupId !== groupId);
         }
 
         /**
@@ -249,17 +249,13 @@ odoo.define('web.ControlPanelStore', function (require) {
          * Activate a filter of type 'field' with given 'autocompleteValues' value and label
          * @todo
          */
-        addAutoCompletionValues({ state }, filterId, value, label) {
+        addAutoCompletionValues({ state }, filterId, value, label, isExactValue) {
             let activity = state.query.find(queryElem => {
                 return queryElem.filterId === filterId && queryElem.value === value;
             });
             if (!activity) {
                 const { groupId } = state.filters[filterId];
-                activity = { groupId, filterId, value };
-                if (label) {
-                    activity.label = label;
-                }
-                state.query.push(activity);
+                state.query.push({ filterId, groupId, isExactValue, label, value });
             }
         }
 
@@ -298,7 +294,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                     // of type 'year' to be there before being removed above.
                     // Since other options of type 'month' or 'quarter' do
                     // not make sense without a year we deactivate all options.
-                    state.query = state.query.filter(queryElem => !queryElem.filterId === filterId);
+                    state.query = state.query.filter(queryElem => queryElem.filterId !== filterId);
                 }
             } else {
                 state.query.push({ groupId: filter.groupId, filterId, optionId });
@@ -457,21 +453,13 @@ odoo.define('web.ControlPanelStore', function (require) {
                             this.dispatch('toggleFilterWithOptions', f.id);
                         } else if (f.type === 'field') {
                             const { selection, type } = this.fields[f.fieldName];
-                            let value = f.defaultValue;
-                            let label;
-                            if (type === 'many2one') {
-                                if (value instanceof Array) {
-                                    // M2O search fields do not currently handle multiple default values
-                                    // there are many cases of {search_default_$m2ofield: [id]}, need
-                                    // to handle this as if it were a single value.
-                                    value = value[0];
-                                }
-                            } else if (type === 'selection') {
+                            let { isExactValue, label, value } = f.defaultValue;
+                            if (type === 'selection') {
                                 label = selection.find(([val, _]) => val === value)[1];
                             } else {
-                                label = defaultValue.toString();
+                                label = label.toString();
                             }
-                            this.dispatch('addAutoCompletionValues', f.id, value, label);
+                            this.dispatch('addAutoCompletionValues', f.id, value, label, isExactValue);
                         }
                         else {
                             this.dispatch('toggleFilter', f.id);
@@ -529,7 +517,6 @@ odoo.define('web.ControlPanelStore', function (require) {
          */
         _createGroupOfFavorites() {
             this.favoriteFilters.forEach(favorite => {
-                debugger
                 const userId = favorite.user_id ? favorite.user_id[0] : false;
                 const groupNumber = userId ? 1 : 2;
                 const context = pyUtils.eval('context', favorite.context, this.env.session.user_context);
@@ -611,23 +598,12 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          */
         _createGroupOfFiltersFromArch() {
-            // get prefilters
-            const children = this.parsedArch.children.filter(child => child.tag !== 'searchpanel');
-            const preFilters = children.reduce((acc, child) => {
-                if (child.tag === 'group') {
-                    return acc.concat(child.children.map(this._evalArchChild));
-                } else {
-                    return [...acc, this._evalArchChild(child)];
-                }
-            }, []);
-            preFilters.push({ tag: 'separator' });
-
             // create groups and filters
             let currentTag;
             let currentGroup = [];
             let pregroupOfGroupBys = [];
 
-            preFilters.forEach(preFilter => {
+            this.preFilters.forEach(preFilter => {
                 if (preFilter.tag !== currentTag || ['separator', 'field'].includes(preFilter.tag)) {
                     if (currentGroup.length) {
                         if (currentTag === 'groupBy') {
@@ -742,33 +718,11 @@ odoo.define('web.ControlPanelStore', function (require) {
 
         /**
          * @private
-         * @param {Object} child parsed arch node
-         * @returns {Object}
-         */
-        _evalArchChild(child) {
-            if (child.attrs.context) {
-                try {
-                    const context = pyUtils.eval('context', child.attrs.context);
-                    child.attrs.context = context;
-                    if (context.group_by) {
-                        // let us extract basic data since we just evaluated context
-                        // and use a correct tag!
-                        child.attrs.fieldName = context.group_by.split(':')[0];
-                        child.attrs.defaultInterval = context.group_by.split(':')[1];
-                        child.tag = 'groupBy';
-                    }
-                } catch (e) { }
-            }
-            return child;
-        }
-
-        /**
-         * @private
          * @param {Object} filter
          * @param {Object} attrs
          */
         _extractAttributes(filter, attrs) {
-            filter.isDefault = this.searchDefaults[attrs.name] ? true : false;
+            filter.isDefault = attrs.isDefault;
             filter.description = attrs.string || attrs.help || attrs.name || attrs.domain || 'Ω';
             if (attrs.invisible) {
                 filter.invisible = true;
@@ -821,9 +775,13 @@ odoo.define('web.ControlPanelStore', function (require) {
                     }
                     if (filter.isDefault) {
                         filter.defaultRank = -10;
-                        filter.defaultValue = this.searchDefaults[attrs.name];
+                        filter.defaultValue = attrs.defaultValue;
                     }
                     break;
+            }
+            if (filter.fieldName) {
+                const { string } = this.fields[filter.fieldName];
+                filter.description = string;
             }
         }
 
@@ -860,9 +818,9 @@ odoo.define('web.ControlPanelStore', function (require) {
          */
         _getAutoCompletionFilterDomain(filter, filterActivities) {
             // don't work yet!
-            const domains = filterActivities.map(({ label, value }) => {
+            const domains = filterActivities.map(({ label, value, isExactValue }) => {
                 let domain;
-                if (value) {
+                if (isExactValue) {
                     domain = [[filter.fieldName, '=', value]];
                 } else if (filter.filterDomain) {
                     domain = Domain.prototype.stringToArray(
@@ -1046,13 +1004,7 @@ odoo.define('web.ControlPanelStore', function (require) {
             // we do it for other fields (my guess being that the test should simply
             // be adapted)
             if (filter.type === 'field' && filter.isDefault && filter.fieldType === 'many2one') {
-                let value = filter.defaultValue;
-                // the following if required to make the main_flow_tour pass (see
-                // https://github.com/odoo/odoo/blob/12.0/addons/web/static/src/js/views/search/search_inputs.js#L461)
-                if (filter.defaultValue instanceof Array) {
-                    value = filter.defaultValue[0];
-                }
-                context[`default_${filter.fieldName}`] = value;
+                context[`default_${filter.fieldName}`] = filter.defaultValue.value;
             }
             return context;
         }
@@ -1168,7 +1120,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                         id: groupId,
                         type,
                         activities: []
-                    }
+                    };
                     acc.push(group);
                 }
                 group.activities.push(queryElem);
@@ -1390,21 +1342,11 @@ odoo.define('web.ControlPanelStore', function (require) {
             this.actionContext = config.actionContext;
             this.actionId = config.actionId;
 
-            this.searchDefaults = {};
-            for (const key in this.actionContext) {
-                const match = /^search_default_(.*)$/.exec(key);
-                if (match) {
-                    this.searchDefaults[match[1]] = this.actionContext[key];
-                    delete this.actionContext[key];
-                }
-            }
-            const viewInfo = config.viewInfo || { arch: '<search/>', fields: {} };
+            const viewInfo = config.viewInfo || {};
 
-            const rawArch = parseArch(viewInfo.arch);
-            this.parsedArch = this._cleanArch(rawArch);
-            this.fields = viewInfo.fields;
-
+            this.fields = viewInfo.fields || {};
             this.favoriteFilters = viewInfo.favoriteFilters || [];
+            this.preFilters = viewInfo.preFilters || [];
             this.activateDefaultFavorite = config.activateDefaultFavorite;
 
             this.dynamicFilters = config.dynamicFilters || [];

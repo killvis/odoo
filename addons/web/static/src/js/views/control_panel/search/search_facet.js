@@ -1,7 +1,6 @@
 odoo.define('web.SearchFacet', function (require) {
 "use strict";
 
-const { COMPARISON_TIME_RANGE_OPTIONS, TIME_RANGE_OPTIONS} = require('web.controlPanelParameters');
 const Tooltip = require('web.Tooltip');
 
 const { Component, hooks } = owl;
@@ -94,7 +93,6 @@ class SearchFacet extends Component {
             const descriptions = [];
 
             if (filter.type === 'filter') {
-                const optionDescription = [];
                 const unsortedYearIds = [];
                 const unsortedOtherOptionIds = [];
                 currentOptions.forEach(o => {
@@ -151,7 +149,7 @@ class SearchFacet extends Component {
                 this.trigger('navigation_move', { direction: 'right' });
                 break;
             case 'Backspace':
-                this.dispatch('deactivateGroup', this.id);
+                this.dispatch('deactivateGroup', this.props.group.id);
                 break;
         }
     }

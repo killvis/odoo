@@ -40,48 +40,10 @@ odoo.define('web.SearchBar', function (require) {
             useExternalListener(window, 'keydown', this._onWindowKeydown);
 
             this.allowMouseenter = false;
-            this.autoCompleteSources = [];
+            this.autoCompleteSources = this.getters.getFiltersOfType('field').map(
+                filter => this._createSource(filter)
+            );
             this.noResultItem = [null, this.env._t("(no result)")];
-        }
-
-        async willStart() {
-            const promises = [];
-            this.getters.getFiltersOfType('field').forEach(filter => {
-                // Generate an auto-completion source from a filter and a field.
-                const field = this.props.fields[filter.fieldName];
-                const source = this._createSource(filter, field);
-                this.autoCompleteSources.push(source);
-                // If the field is a many2one with a default value, the label of
-                // that value has not been fetched yet. We do it here to keep the
-                // initialization of the store completely synchronous.
-                if (field.type === 'many2one') {
-                    const defaultValue = filter.autoCompleteValues[0];
-                    if (defaultValue) {
-                        const promise = this.rpc({
-                            args: [defaultValue.value],
-                            context: field.context,
-                            method: 'name_get',
-                            model: field.relation,
-                        }).then(results => {
-                            const [value, label] = results[0];
-                            defaultValue.label = label;
-                        });
-                        promises.push(promise);
-                    }
-                }
-            });
-            return Promise.all(promises);
-        }
-
-        //--------------------------------------------------------------------------
-        // Getters
-        //--------------------------------------------------------------------------
-
-        /**
-         * @returns {Object[]}
-         */
-        get facets() {
-            return this.getters.getFacets();
         }
 
         //--------------------------------------------------------------------------
@@ -103,14 +65,15 @@ odoo.define('web.SearchBar', function (require) {
          * @param {Object} filter
          * @returns {Object}
          */
-        _createSource(filter, field) {
+        _createSource(filter) {
+            const field = this.props.fields[filter.fieldName];
             const source = {
                 active: true,
+                description: filter.description,
                 field: field,
                 filterId: filter.id,
                 id: sourceId ++,
                 parent: false,
-                fieldName: filter.fieldName,
             };
             switch (filter.fieldType) {
                 case 'selection':
@@ -250,6 +213,7 @@ odoo.define('web.SearchBar', function (require) {
                     source.filterId,
                     source.value || label,
                     label,
+                    Boolean(source.label)
                 );
                 this.state.inputValue = "";
                 this.searchInputRef.el.value = "";
