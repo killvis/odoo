@@ -1,10 +1,11 @@
 odoo.define('web.TimeRangeMenu', function (require) {
     "use strict";
 
-    const { COMPARISON_TIME_RANGE_OPTIONS, DEFAULT_TIMERANGE, DEFAULT_COMPARISON_TIME_RANGE, TIME_RANGE_OPTIONS } = require('web.controlPanelParameters');
     const DropdownMenu = require('web.DropdownMenu');
+    const { COMPARISON_TIME_RANGE_OPTIONS, DEFAULT_TIMERANGE,
+            DEFAULT_COMPARISON_TIME_RANGE, TIME_RANGE_OPTIONS} = require('web.controlPanelParameters');
 
-    const { useState } = owl;
+    const { useState } = owl.hooks;
 
     class TimeRangeMenu extends DropdownMenu {
         constructor() {

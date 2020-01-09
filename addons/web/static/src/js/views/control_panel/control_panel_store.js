@@ -28,11 +28,6 @@ odoo.define('web.ControlPanelStore', function (require) {
      *
      *  c. TimeRange
      *
-     * @param {*} comparisonTimeRangeId
-     * @param {*} fieldName
-     * @param {*} fieldType
-     * @param {*} timeRangeId
-     *
      *  d. Favorite
      *
      * @param {*} context
@@ -45,10 +40,28 @@ odoo.define('web.ControlPanelStore', function (require) {
      * @param {*} orderedBy
      * @param {*} serverSideId
      * @param {*} userId
+     * @param {*} [timeRanges]
      *
      *
      * 2. QUERY
      * --------
+     *
+     * queryElements format
+     *
+     * type 'filter', 'groupBy', 'favorite' without options
+     * { groupId, filterId }
+     *
+     * type 'filter' or 'groupBy' with hasOptions to true
+     * { groupId, filterId, optionId }
+     *
+     * type 'field'
+     * { groupId, filterId, value }
+     * { groupId, filterId, value, label }
+     *
+     * type 'timeRange'
+     * { groupId, filterId, fieldName, rangeId }
+     * { groupId, filterId, fieldName, rangeId, comparisonRangeId }
+     *
      */
 
     const dataManager = require('web.data_manager');
@@ -115,7 +128,6 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {string} fieldName
          * @param {string} rangeId
          * @param {string} [comparisonRangeId]
-         * @todo a single filter created before
          */
         activateTimeRange({ state }, fieldName, rangeId, comparisonRangeId) {
             const filter = Object.values(state.filters).find(f => f.type === 'timeRange');
@@ -126,6 +138,9 @@ odoo.define('web.ControlPanelStore', function (require) {
             const activity = state.query.find(queryElem => queryElem.filterId === filter.id);
             if (activity) {
                 Object.assign(activity, activityDetail);
+                if (!comparisonRangeId) {
+                    delete activity.comparisonRangeId;
+                }
             } else {
                 state.query.push(Object.assign({ groupId: filter.groupId, filterId: filter.id }, activityDetail));
             }
@@ -150,7 +165,6 @@ odoo.define('web.ControlPanelStore', function (require) {
             const filter = Object.assign(preFavorite, {
                 groupId,
                 id: filterId,
-                type: 'favorite',
             });
             state.filters[filterId] = filter;
             state.query.push({ groupId, filterId });
@@ -184,12 +198,12 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {Object} field
          */
         createNewGroupBy({ state, dispatch }, field) {
-            const groupBy = state.filters.find(f => f.type === 'groupBy');
+            const groupBy = Object.values(state.filters).find(f => f.type === 'groupBy');
             const filter = {
                 description: field.string || field.name,
                 fieldName: field.name,
                 fieldType: field.type,
-                groupId: groupBy ? groupBy.id : groupId++,
+                groupId: groupBy ? groupBy.groupId : groupId++,
                 groupNumber,
                 id: filterId,
                 type: 'groupBy',
@@ -335,8 +349,8 @@ odoo.define('web.ControlPanelStore', function (require) {
             const groups = this._getGroups();
             const facets = groups.reduce((acc, group) => {
                 const { activities, type, id } = group;
-                const filters = activities.map(({ filter, filterActivities}) => this._enrichFilterCopy(filter, filterActivities));
-                const facet = { group: { type , id }, filters };
+                const filters = activities.map(({ filter, filterActivities }) => this._enrichFilterCopy(filter, filterActivities));
+                const facet = { group: { type, id }, filters };
                 acc.push(facet);
                 return acc;
             }, []);
@@ -386,22 +400,23 @@ odoo.define('web.ControlPanelStore', function (require) {
          *      context, orderedBy.
          */
         getQuery() {
-            // if (!this.withSearchBar) {
+            if (!this.withSearchBar) {
+                return {
+                    context: {},
+                    domain: [],
+                    groupBy: [],
+                    timeRanges: {},
+                };
+            }
+            const requireEvaluation = true;
+            const groups = this._getGroups();
             return {
-                context: {},
-                domain: [],
-                groupBy: [],
-                timeRanges: {},
+                context: this._getContext(groups),
+                domain: this._getDomain(groups, requireEvaluation),
+                groupBy: this._getGroupBy(groups),
+                orderedBy: this._getOrderedBy(groups),
+                timeRanges: this._getTimeRanges(requireEvaluation) || {},
             };
-            // }
-            // const requireEvaluation = true;
-            // return {
-            //     context: this._getContext(),
-            //     domain: this._getDomain(requireEvaluation),
-            //     groupBy: this._getGroupBy(),
-            //     orderedBy: this._getOrderedBy(),
-            //     timeRanges: this._getTimeRanges(requireEvaluation),
-            // };
         }
 
         /**
@@ -514,6 +529,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          */
         _createGroupOfFavorites() {
             this.favoriteFilters.forEach(favorite => {
+                debugger
                 const userId = favorite.user_id ? favorite.user_id[0] : false;
                 const groupNumber = userId ? 1 : 2;
                 const context = pyUtils.eval('context', favorite.context, this.env.session.user_context);
@@ -522,10 +538,10 @@ odoo.define('web.ControlPanelStore', function (require) {
                     groupBys = context.group_by;
                     delete context.group_by;
                 }
-                let timeRanges = {};
+                let timeRanges;
                 if (context.time_ranges) {
                     const { field, range, comparisonRange } = context.time_ranges;
-                    timeRanges = this._extractTimeRange(field, range, comparisonRange);
+                    timeRanges = this._extractTimeRange({ fieldName: field, rangeId: range, comparisonRangeId: comparisonRange });
                     delete context.time_ranges;
                 }
                 const sort = JSON.parse(favorite.sort);
@@ -547,7 +563,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                         name: fieldName,
                     };
                 });
-                const pregroup = [{
+                const filter = {
                     context: favorite.context,
                     description: favorite.name,
                     domain: favorite.domain,
@@ -558,11 +574,13 @@ odoo.define('web.ControlPanelStore', function (require) {
                     editable: true,
                     orderedBy,
                     serverSideId: favorite.id,
-                    timeRanges,
                     userId,
                     type: 'favorite',
-                }];
-                this._createGroupOfFilters(pregroup);
+                };
+                if (timeRanges) {
+                    filter.timeRanges = timeRanges;
+                }
+                this._createGroupOfFilters([filter]);
             });
         }
 
@@ -645,13 +663,7 @@ odoo.define('web.ControlPanelStore', function (require) {
         }
 
         _createGroupOfTimeRanges() {
-            const pregroup = [{
-                groupId,
-                id: filterId,
-                type: 'timeRange',
-            }]
-            groupId++;
-            filterId++;
+            const pregroup = [{ type: 'timeRange' }];
             this._createGroupOfFilters(pregroup);
         }
 
@@ -718,8 +730,10 @@ odoo.define('web.ControlPanelStore', function (require) {
                     });
                     break;
                 case 'timeRange':
-                    const { fieldName, rangeId, comparisonRangeId } = activities[0];
-                    Object.assign(f, this._extractTimeRange(fieldName, rangeId, comparisonRangeId));
+                    if (activities.length) {
+                        const { fieldName, rangeId, comparisonRangeId } = activities[0];
+                        Object.assign(f, this._extractTimeRange({ fieldName, rangeId, comparisonRangeId }));
+                    }
                     break;
             }
 
@@ -735,6 +749,7 @@ odoo.define('web.ControlPanelStore', function (require) {
             if (child.attrs.context) {
                 try {
                     const context = pyUtils.eval('context', child.attrs.context);
+                    child.attrs.context = context;
                     if (context.group_by) {
                         // let us extract basic data since we just evaluated context
                         // and use a correct tag!
@@ -754,14 +769,15 @@ odoo.define('web.ControlPanelStore', function (require) {
          */
         _extractAttributes(filter, attrs) {
             filter.isDefault = this.searchDefaults[attrs.name] ? true : false;
-            filter.description = attrs.string || attrs.help || attrs.name || attrs.domain ||'Ω';
+            filter.description = attrs.string || attrs.help || attrs.name || attrs.domain || 'Ω';
             if (attrs.invisible) {
                 filter.invisible = true;
             }
             switch (filter.type) {
                 case 'filter':
-                    // todo is is good to evaluate the context here?
-                    filter.context = pyUtils.eval('context', attrs.context);
+                    if (attrs.context) {
+                        filter.context = attrs.context;
+                    }
                     if (attrs.date) {
                         filter.hasOptions = true;
                         filter.fieldName = attrs.date;
@@ -794,6 +810,15 @@ odoo.define('web.ControlPanelStore', function (require) {
                     if (attrs.domain) {
                         filter.domain = attrs.domain;
                     }
+                    if (attrs.filter_domain) {
+                        filter.filterDomain = attrs.filter_domain;
+                    }
+                    if (attrs.operator) {
+                        filter.operator = attrs.operator;
+                    }
+                    if (attrs.context) {
+                        filter.context = attrs.context;
+                    }
                     if (filter.isDefault) {
                         filter.defaultRank = -10;
                         filter.defaultValue = this.searchDefaults[attrs.name];
@@ -808,7 +833,7 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {number} rangeId
          * @param {number} comparisonRangeId
          */
-        _extractTimeRange(fieldName, rangeId, comparisonRangeId) {
+        _extractTimeRange({ fieldName, rangeId, comparisonRangeId }) {
             const field = this.fields[fieldName];
             const timeRange = {
                 fieldName,
@@ -833,14 +858,15 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {string} type field type
          * @returns {string}
          */
-        _getAutoCompletionFilterDomain(filter) {
-            const domains = filter.autoCompleteValues.map(({ label, value }) => {
+        _getAutoCompletionFilterDomain(filter, filterActivities) {
+            // don't work yet!
+            const domains = filterActivities.map(({ label, value }) => {
                 let domain;
                 if (value) {
-                    domain = [[filter.attrs.name, '=', value]];
-                } else if (filter.attrs.filter_domain) {
+                    domain = [[filter.fieldName, '=', value]];
+                } else if (filter.filterDomain) {
                     domain = Domain.prototype.stringToArray(
-                        filter.attrs.filter_domain,
+                        filter.filterDomain,
                         {
                             self: label,
                             raw_value: value,
@@ -849,12 +875,12 @@ odoo.define('web.ControlPanelStore', function (require) {
                 } else {
                     // Create new domain
                     let operator = '=';
-                    if (filter.attrs.operator) {
-                        operator = filter.attrs.operator;
+                    if (filter.operator) {
+                        operator = filter.operator;
                     } else if (['char', 'text', 'many2many', 'one2many', 'html'].includes(filter.fieldType)) {
                         operator = 'ilike';
                     }
-                    domain = [[filter.attrs.name, operator, value]];
+                    domain = [[filter.fieldNname, operator, value]];
                 }
                 return Domain.prototype.arrayToString(domain);
             });
@@ -865,10 +891,9 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          * @returns {Object}
          */
-        _getContext() {
+        _getContext(groups) {
             const types = ['filter', 'favorite', 'field'];
-            const filterContexts = this.state.query.reduce((acc, groupId) => {
-                const group = this.state.groups[groupId];
+            const filterContexts = groups.reduce((acc, group) => {
                 if (types.includes(group.type)) {
                     acc.concat(this._getGroupContexts(group));
                 }
@@ -937,11 +962,11 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {Object} filter
          * @returns {string}
          */
-        _getDateFilterDomain(filter) {
+        _getDateFilterDomain(filter, filterActivities) {
             const domains = [];
             const yearIds = [];
             const otherOptionIds = [];
-            filter.currentOptionIds.forEach(optionId => {
+            filterActivities.forEach(({ optionId }) => {
                 if (YEAR_OPTIONS[optionId]) {
                     yearIds.push(optionId);
                 } else {
@@ -972,10 +997,9 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {boolean} [evaluation=true]
          * @returns {string} the string representation of a domain
          */
-        _getDomain(evaluation = true) {
+        _getDomain(groups, evaluation = true) {
             const types = ['filter', 'favorite', 'field'];
-            const domains = this.state.query.reduce((acc, groupId) => {
-                const group = this.state.groups[groupId];
+            const domains = groups.reduce((acc, group) => {
                 if (types.includes(group.type)) {
                     acc.push(this._getGroupDomain(group));
                 }
@@ -1005,17 +1029,14 @@ odoo.define('web.ControlPanelStore', function (require) {
         * @param {Object} filter
         * @returns {Object} context
         */
-        _getFilterContext(filterId) {
-            const filter = this.state.filters[filterId];
+        _getFilterContext(filter, filterActivities) {
             let context = filter.context || {};
             // for <field> nodes, a dynamic context (like context="{'field1': self}")
             // should set {'field1': [value1, value2]} in the context
-            if (filter.type === 'field' && filter.attrs.context) {
+            if (filter.type === 'field' && filter.context) {
                 context = pyUtils.eval('context',
-                    filter.attrs.context,
-                    {
-                        self: filter.autoCompleteValues.map(autoCompleteValue => autoCompleteValue.value)
-                    },
+                    filter.context,
+                    { self: filterActivities.map(({ value }) => value) },
                 );
             }
             // the following code aims to restore this:
@@ -1024,16 +1045,14 @@ odoo.define('web.ControlPanelStore', function (require) {
             // this seems weird to only do that for m2o fields, but a test fails if
             // we do it for other fields (my guess being that the test should simply
             // be adapted)
-            if (filter.type === 'field' && filter.isDefault) {
-                if (this.fields[filter.attrs.name].type === 'many2one') {
-                    let value = filter.defaultValue;
-                    // the following if required to make the main_flow_tour pass (see
-                    // https://github.com/odoo/odoo/blob/12.0/addons/web/static/src/js/views/search/search_inputs.js#L461)
-                    if (filter.defaultValue instanceof Array) {
-                        value = filter.defaultValue[0];
-                    }
-                    context[`default_${filter.attrs.name}`] = value;
+            if (filter.type === 'field' && filter.isDefault && filter.fieldType === 'many2one') {
+                let value = filter.defaultValue;
+                // the following if required to make the main_flow_tour pass (see
+                // https://github.com/odoo/odoo/blob/12.0/addons/web/static/src/js/views/search/search_inputs.js#L461)
+                if (filter.defaultValue instanceof Array) {
+                    value = filter.defaultValue[0];
                 }
+                context[`default_${filter.fieldName}`] = value;
             }
             return context;
         }
@@ -1044,9 +1063,11 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {Object} filter
          * @returns {string} domain, string representation of a domain
          */
-        _getFilterDomain(filter) {
+        _getFilterDomain(filter, filterActivities) {
             if (filter.type === 'filter' && filter.hasOptions) {
-                return this._getDateFilterDomain(filter);
+                return this._getDateFilterDomain(filter, filterActivities);
+            } else if (filter.type === 'field') {
+                return this._getAutoCompletionFilterDomain(filter, filterActivities);
             }
             return filter.domain;
         }
@@ -1058,10 +1079,10 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @param {Array} [optionId]
          * @returns {string[]} groupBys
          */
-        _getFilterGroupBys(filterId, optionId) {
-            const filter = this.state.filters[filterId];
+        _getFilterGroupBys(filter, filterActivities) {
             if (filter.type === 'groupBy') {
                 let groupBy = filter.fieldName;
+                const { optionId } = filterActivities[0];
                 if (optionId) {
                     groupBy = `${groupBy}:${optionId}`;
                 }
@@ -1080,21 +1101,16 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          * @returns {string[]}
          */
-        _getGroupBy() {
-            const groupBys = this.state.query.reduce(
-                (acc, groupId) => {
-                    const group = this.state.groups[groupId];
-                    if (['groupBy', 'favorite'].includes(group.type)) {
-                        acc = acc.concat(this._getGroupGroupBys(group));
-                    }
-                    return acc;
-                },
-                []
-            );
+        _getGroupBy(groups) {
+            const groupBys = groups.reduce((acc, group) => {
+                if (['groupBy', 'favorite'].includes(group.type)) {
+                    acc = acc.concat(this._getGroupGroupBys(group));
+                }
+                return acc;
+            }, []);
             const groupBy = groupBys.length ? groupBys : (this.actionContext.group_by || []);
             return typeof groupBy === 'string' ? [groupBy] : groupBy;
         }
-
 
         /**
          * Return the list of the contexts of the filters acitve in the given
@@ -1104,11 +1120,9 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @returns {Object[]}
          */
         _getGroupContexts(group) {
-            const contexts = group.activeFilterIds.reduce((acc, { filterId }) => {
-                const filterContext = this._getFilterContext(filterId);
-                if (filterContext) {
-                    acc.push(filterContext);
-                }
+            const contexts = group.activities.reduce((acc, { filter, filterActivities }) => {
+                const filterContext = this._getFilterContext(filter, filterActivities);
+                acc.push(filterContext);
                 return acc;
             }, []);
             return contexts;
@@ -1123,9 +1137,8 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @returns {string} string representation of a domain
          */
         _getGroupDomain(group) {
-            const domains = group.activeFilterIds.map(o => {
-                const filter = this.state.filters[o.filterId];
-                return this._getFilterDomain(filter);
+            const domains = group.activities.map(({ filter, filterActivities }) => {
+                return this._getFilterDomain(filter, filterActivities);
             });
             return pyUtils.assembleDomains(domains, 'OR');
         }
@@ -1137,13 +1150,11 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @returns {string[]}
          */
         _getGroupGroupBys(group) {
-            return group.activeFilterIds.reduce(
-                (acc, { filterId, optionId }) => {
-                    acc = acc.concat(this._getFilterGroupBys(filterId, optionId));
-                    return acc;
-                },
-                []
-            );
+            const groupBys = group.activities.reduce((acc, { filter, filterActivities }) => {
+                acc = acc.concat(this._getFilterGroupBys(filter, filterActivities));
+                return acc;
+            }, []);
+            return groupBys;
         }
 
         _getGroups() {
@@ -1152,7 +1163,7 @@ odoo.define('web.ControlPanelStore', function (require) {
                 let group = acc.find(group => group.id === groupId);
                 const filter = this.state.filters[filterId];
                 if (!group) {
-                    const { type }  = filter;
+                    const { type } = filter;
                     group = {
                         id: groupId,
                         type,
@@ -1174,20 +1185,18 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @private
          * @returns {(Object[]|undefined)} orderedBy
          */
-        _getOrderedBy() {
+        _getOrderedBy(groups) {
             let orderedBy;
-            const lastFavoriteGroup = this.state.query.reduce((acc, groupId) => {
-                const group = this.state.groups[groupId];
+            const lastFavoriteGroup = groups.reduce((last, group) => {
                 if (group.type === 'favorite') {
-                    acc = group;
+                    last = group;
                 }
-                return acc;
+                return last;
             }, false);
             if (lastFavoriteGroup) {
-                const favoriteId = lastFavoriteGroup.activeFilterIds[0].filterId;
-                const favorite = this.state.filters[favoriteId];
-                if (favorite.orderedBy && favorite.orderedBy.length) {
-                    orderedBy = favorite.orderedBy;
+                const { filter } = lastFavoriteGroup.activities[0];
+                if (filter.orderedBy && filter.orderedBy.length) {
+                    orderedBy = filter.orderedBy;
                 }
             }
             return orderedBy;
@@ -1205,33 +1214,28 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @returns {Object}
          */
         _getTimeRanges(evaluation = false) {
-            // groupOfTimeRanges can be undefined in case withSearchBar is false
-            const groupId = this._getGroupIdOfType('timeRange');
-            const groupOfTimeRanges = this.state.groups[groupId];
-            if (groupOfTimeRanges && groupOfTimeRanges.activeFilterIds.length) {
-                const { filterId } = groupOfTimeRanges.activeFilterIds[0];
+            let timeRanges = this.state.query.reduce((last, queryElem) => {
+                const { filterId } = queryElem;
                 const filter = this.state.filters[filterId];
-                let timeRanges;
-                if (evaluation) {
-                    timeRanges = {
-                        comparisonField: filter.fieldName,
-                        range: Domain.prototype.stringToArray(filter.range),
-                        rangeDescription: filter.rangeDescription,
-                    };
-                    if (filter.comparisonRangeId) {
-                        timeRanges.comparisonRange = Domain.prototype.stringToArray(filter.comparisonRange);
-                        timeRanges.comparisonRangeDescription = filter.comparisonRangeDescription;
-                    }
-                    return timeRanges;
-                } else {
-                    return {
-                        field: filter.fieldName,
-                        range: filter.rangeId,
-                        comparisonRange: filter.comparisonRangeId,
-                    };
+                if (filter.type === 'timeRange') {
+                    last = this._extractTimeRange(queryElem);
+                } else if (filter.type === 'favorite' && filter.timeRanges) {
+                    // we want to make sure that last is not observed! (it is change below in case of evaluation)
+                    const { fieldName, rangeId, comparisonRangeId }  = filter.timeRanges;
+                    last = this._extractTimeRange({ fieldName, rangeId, comparisonRangeId });
                 }
+                return last;
+            }, false);
+
+            if (timeRanges) {
+                if (evaluation) {
+                    timeRanges.range = Domain.prototype.stringToArray(timeRanges.range);
+                    if (timeRanges.comparisonRangeId) {
+                        timeRanges.comparisonRange = Domain.prototype.stringToArray(timeRanges.comparisonRange);
+                    }
+                }
+                return timeRanges;
             }
-            return {};
         }
 
         _mergeActivities(group) {
@@ -1299,12 +1303,14 @@ odoo.define('web.ControlPanelStore', function (require) {
          * @returns {Object}
          */
         async _saveQuery(preFilter) {
+            const groups = this._getGroups();
+
             const userContext = this.env.session.user_context;
             const controllerQueryParams = await new Promise(resolve => {
                 this.trigger('get_controller_query_params', resolve);
             });
 
-            const queryContext = this._getContext();
+            const queryContext = this._getContext(groups);
             const context = pyUtils.eval(
                 'contexts',
                 [userContext, controllerQueryParams.context, queryContext]
@@ -1314,21 +1320,22 @@ odoo.define('web.ControlPanelStore', function (require) {
             });
 
             const requireEvaluation = false;
-            const domain = this._getDomain(requireEvaluation);
+            const domain = this._getDomain(groups, requireEvaluation);
 
-            const groupBys = this._getGroupBy();
+            const groupBys = this._getGroupBy(groups);
             if (groupBys.length) {
                 context.group_by = groupBys;
             }
 
-            const { field, range, comparisonRange } = this._getTimeRanges(requireEvaluation);
-            let timeRanges = {};
-            if (field && range) {
-                context.time_ranges = { field, range, comparisonRange };
-                timeRanges = this._extractTimeRange(field, range, comparisonRange);
+            const timeRanges = this._getTimeRanges(requireEvaluation);
+            if (timeRanges) {
+                const { fieldName, rangeId, comparisonRangeId } = timeRanges;
+                context.time_ranges = {
+                    field: fieldName, range: rangeId, comparisonRange: comparisonRangeId
+                };
             }
 
-            let orderedBy = this._getOrderedBy() || [];
+            let orderedBy = this._getOrderedBy(groups) || [];
             if (controllerQueryParams.orderedBy) {
                 orderedBy = controllerQueryParams.orderedBy;
             }
@@ -1364,9 +1371,11 @@ odoo.define('web.ControlPanelStore', function (require) {
                 groupBys,
                 domain,
                 orderedBy,
-                timeRanges,
                 userId
             });
+            if (timeRanges) {
+                preFilter.timeRanges = timeRanges;
+            }
             return preFilter;
         }
 
