@@ -108,6 +108,10 @@ QUnit.test('add an emoji', async function (assert) {
         "😊",
         "emoji should be inserted in the composer text input"
     );
+    // ensure popover is closed
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+    await nextAnimationFrame();
 });
 
 QUnit.test('add an emoji after some text', async function (assert) {
