@@ -4,6 +4,7 @@ odoo.define('mail.component.ChatterTopBarTests', function (require) {
 const ChatterTopBar = require('mail.component.ChatterTopbar');
 const {
     afterEach: utilsAfterEach,
+    afterNextRender,
     beforeEach: utilsBeforeEach,
     pause,
     start: utilsStart,
@@ -47,12 +48,163 @@ QUnit.module('ChatterTopbar', {
     }
 });
 
-QUnit.test('base rendering', async function (assert) {
+QUnit.test('base rendering (forever loading attachments)', async function (assert) {
     assert.expect(10);
 
     await this.start({
         async mockRPC(route) {
             if (route.includes('ir.attachment/search_read')) {
+                return new Promise(() => {});
+            }
+            return this._super(...arguments);
+        }
+    });
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadId: 100,
+        initialThreadModel: 'res.partner',
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
+
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar`).length,
+        1,
+        "should have a chatter topbar"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonSendMessage`).length,
+        1,
+        "should have a send message button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonLogNote`).length,
+        1,
+        "should have a log note button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonScheduleActivity`).length,
+        1,
+        "should have a schedule activity button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachments`).length,
+        1,
+        "should have an attachments button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
+        1,
+        "attachments button should have a loader"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
+        0,
+        "attachments button should not have a counter"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollow`).length,
+        1,
+        "should have a follow button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollowers`).length,
+        1,
+        "should have a followers button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollowersCount`).length,
+        1,
+        "followers button should have a counter"
+    );
+});
+
+QUnit.test('base rendering (directly loaded attachments)', async function (assert) {
+    assert.expect(10);
+
+    let attachmentPromiseResolve;
+    const attachmentPromise = new Promise(function (resolve) {
+        attachmentPromiseResolve = resolve;
+    });
+    await this.start({
+        async mockRPC(route) {
+            if (route.includes('ir.attachment/search_read')) {
+                attachmentPromiseResolve();
+                return [];
+            }
+            return this._super(...arguments);
+        }
+    });
+    const chatterLocalId = this.env.store.dispatch('createChatter', {
+        initialThreadId: 100,
+        initialThreadModel: 'res.partner',
+    });
+    await this.createChatterTopbar(chatterLocalId, { isDisabled: false });
+
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar`).length,
+        1,
+        "should have a chatter topbar"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonSendMessage`).length,
+        1,
+        "should have a send message button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonLogNote`).length,
+        1,
+        "should have a log note button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonScheduleActivity`).length,
+        1,
+        "should have a schedule activity button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachments`).length,
+        1,
+        "should have an attachments button in chatter menu"
+    );
+    await attachmentPromise;
+    await afterNextRender();
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
+        0,
+        "attachments button should not have a loader"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
+        1,
+        "attachments button should have a counter"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollow`).length,
+        1,
+        "should have a follow button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollowers`).length,
+        1,
+        "should have a followers button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonFollowersCount`).length,
+        1,
+        "followers button should have a counter"
+    );
+});
+
+QUnit.test('base rendering (attachments loading transition)', async function (assert) {
+    assert.expect(13);
+
+    let attachmentPromiseResolve;
+    const attachmentPromise = new Promise(function (resolve) {
+        attachmentPromiseResolve = resolve;
+    });
+    await this.start({
+        debug: true,
+        async mockRPC(route) {
+            if (route.includes('ir.attachment/search_read')) {
+                await attachmentPromise;
                 return [];
             }
             return this._super(...arguments);
@@ -84,21 +236,6 @@ QUnit.test('base rendering', async function (assert) {
         "should have a schedule activity button in chatter menu"
     );
     assert.strictEqual(
-        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachments`).length,
-        1,
-        "should have an attachments button in chatter menu"
-    );
-    assert.strictEqual(
-        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
-        0,
-        "attachments button should not have a loader"
-    );
-    assert.strictEqual(
-        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
-        1,
-        "attachments button should have a counter"
-    );
-    assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonFollow`).length,
         1,
         "should have a follow button in chatter menu"
@@ -112,6 +249,39 @@ QUnit.test('base rendering', async function (assert) {
         document.querySelectorAll(`.o_ChatterTopbar_buttonFollowersCount`).length,
         1,
         "followers button should have a counter"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachments`).length,
+        1,
+        "should have an attachments button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
+        1,
+        "attachments button should have a loader"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
+        0,
+        "attachments button should not have a counter"
+    );
+
+    attachmentPromiseResolve(); // Simulates attachments are loaded
+    await afterNextRender();
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachments`).length,
+        1,
+        "should have an attachments button in chatter menu"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCountLoader`).length,
+        0,
+        "attachments button should not have a loader"
+    );
+    assert.strictEqual(
+        document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
+        1,
+        "attachments button should have a counter"
     );
 });
 
@@ -208,6 +378,7 @@ QUnit.test('attachment count without attachments', async function (assert) {
         1,
         "should have an attachments button in chatter menu"
     );
+    await afterNextRender(); // wait the attachments to be fetched
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
         1,
@@ -257,6 +428,7 @@ QUnit.test('attachment count with attachments', async function (assert) {
         1,
         "should have an attachments button in chatter menu"
     );
+    await afterNextRender(); // wait the attachments to be fetched
     assert.strictEqual(
         document.querySelectorAll(`.o_ChatterTopbar_buttonAttachmentsCount`).length,
         1,
