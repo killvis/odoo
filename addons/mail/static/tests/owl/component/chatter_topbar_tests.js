@@ -4,7 +4,6 @@ odoo.define('mail.component.ChatterTopBarTests', function (require) {
 const ChatterTopBar = require('mail.component.ChatterTopbar');
 const {
     afterEach: utilsAfterEach,
-    afterNextRender,
     beforeEach: utilsBeforeEach,
     pause,
     start: utilsStart,
@@ -243,7 +242,7 @@ QUnit.test('attachment count with attachments', async function (assert) {
         }
     });
     const chatterLocalId = this.env.store.dispatch('createChatter', {
-        initialThreadId:100,
+        initialThreadId: 100,
         initialThreadModel: 'res.partner',
     });
     await this.createChatterTopbar(chatterLocalId, { isDisabled: false });

@@ -40,8 +40,7 @@ class ChatterTopbar extends Component {
     _onClickAttachments(ev) {
         if (this.storeProps.chatter.isAttachmentBoxVisible) {
             this.storeDispatch('hideChatterAttachments', this.props.chatterLocalId);
-        }
-        else {
+        } else {
             this.storeDispatch('showChatterAttachments', this.props.chatterLocalId);
         }
     }
@@ -71,8 +70,7 @@ class ChatterTopbar extends Component {
     _onClickLogNote(ev) {
         if (this.storeProps.chatter.isComposerVisible && this.storeProps.chatter.isComposerLog) {
             this.storeDispatch('hideChatterComposer', this.props.chatterLocalId);
-        }
-        else {
+        } else {
             this.storeDispatch('showChatterLogNote', this.props.chatterLocalId);
         }
     }
@@ -93,8 +91,7 @@ class ChatterTopbar extends Component {
     _onClickSendMessage(ev) {
         if (this.storeProps.chatter.isComposerVisible && !this.storeProps.chatter.isComposerLog) {
             this.storeDispatch('hideChatterComposer', this.props.chatterLocalId);
-        }
-        else {
+        } else {
             this.storeDispatch('showChatterSendMessage', this.props.chatterLocalId);
         }
     }
