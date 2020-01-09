@@ -40,15 +40,11 @@ FormRenderer.include({
         this._chatterLocalId = undefined;
         /**
          * Determine where the chatter will be appended in the DOM
-         * @type {Node}
-         * @private
          */
         this._chatterContainerTarget = undefined;
         /**
          * Determine if the form view has a chatter
          * (i.e. if a div .oe-chatter is detected in the arch)
-         * @type {boolean}
-         * @private
          */
         this._hasChatter = false;
     },
