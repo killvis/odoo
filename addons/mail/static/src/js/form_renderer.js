@@ -91,9 +91,7 @@ FormRenderer.include({
      */
     async _forceMountChatterComponent() {
         this._chatterComponent.__owl__.isMounted = false;
-        if (this._chatterContainerTarget) {
-            await this._mountChatterComponent();
-        }
+        await this._mountChatterComponent();
     },
     /**
      * Mount the chatter
@@ -131,7 +129,7 @@ FormRenderer.include({
             Chatter.env = this.env;
             if (!this._chatterComponent) {
                 await this._createChatter();
-                if (this._chatterContainerTarget && this._isInDom) {
+                if (this._isInDom) {
                     await this._mountChatterComponent();
                 }
             } else {
