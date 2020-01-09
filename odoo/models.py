@@ -71,7 +71,6 @@ regex_pg_name = re.compile(r'^[a-z_][a-z0-9_$]*$', re.I)
 regex_field_agg = re.compile(r'(\w+)(?::(\w+)(?:\((\w+)\))?)?')
 
 AUTOINIT_RECALCULATE_STORED_FIELDS = 1000
-PROTECTED_FIELDS = ["id", "create_date", "write_date", "create_uid", "write_uid"]
 
 def check_object_name(name):
     """ Check if the given name is a valid model name.
@@ -3683,48 +3682,25 @@ Record ids: %(records)s
         data_list = []
         inversed_fields = set()
 
+        stored_computed_fields = [
+            fname for fname,field in self._fields.items()
+            if field.store and field.compute and field.column_type
+        ]
+
         for vals in vals_list:
             # add missing defaults
             vals = self._add_missing_default_values(vals)
 
-            # VFE compute fields before creating the record
-            # s.t. required and sql constraints works on
-            # computed fields.
-            new_obj = self.with_context(pre_compute=True).new(vals)
-            # VFE TODO ensure no real objects having a potential dependency on new_obj are recomputed
-            # self.env.norecompute ?
-            true_vals = dict()
-            for fname, field in new_obj._fields.items():
-                if fname in vals:
-                    true_vals[fname] = vals[fname]
-                    continue
-                if field.store and field.compute:
-                    # VFE TODO also compute related fields ?
-                    # if we do not use the related here, account tests crashes
-                    # (virtual and real records are accessed in their tests and crashes)
-                    if field.relational:
-                        if field.type == 'many2one':
-                            temp_vals = new_obj[fname]
-                            if temp_vals.id:
-                                true_vals[fname] = temp_vals.id
-                        else:
-                            # many2many and one2many
-                            # shouldn't be computed before create.
-                            continue
-                    elif field.required or new_obj[fname]:
-                        # Do not update falsy values
-                        # if the field value isn't required
-                        # to avoid creating noise in the db.
-                        true_vals[fname] = new_obj[fname]
-                    # VFE TODO update the value even if falsy ?
-                    # if it is computed based on true_vals/vals
-                    # fields to avoid later useless recomputation ?
-                    # or define some fields as post-computed ?
+            missing_vals = [fname for fname in stored_computed_fields if fname not in vals]
 
-            # VFE how to avoid the virtual new_obj to be present in relationals ?
+            if missing_vals:
+                new_obj = self.new(vals)
 
-            # VFE FIXME computes based on one2m or m2m may receive recordsets with new and not new ids... ?
-            # make a recursive computed field label to know whether they depends on 2m relational, or on a field depending on it ?
+                for fname in missing_vals:
+                    # computed stored fields with a column
+                    # have to be computed before create
+                    # s.t. required and constraints can be applied on those fields.
+                    vals[fname] = self._fields.get(fname).convert_to_write(new_obj[fname], self)
 
             # distribute fields into sets for various purposes
             data = {}
@@ -3732,7 +3708,7 @@ Record ids: %(records)s
             data['inversed'] = inversed = {}
             data['inherited'] = inherited = defaultdict(dict)
             data['protected'] = protected = set()
-            for key, val in true_vals.items():
+            for key, val in vals.items():
                 if key in bad_names:
                     continue
                 field = self._fields.get(key)
@@ -3750,9 +3726,10 @@ Record ids: %(records)s
                         continue
                 if field.store:
                     stored[key] = val
-                if key in vals:
+                if key not in missing_vals:
                     # Do not trigger inverse application
                     # for fields computed through the new() call.
+                    # (compute or related)
                     if field.inherited:
                         inherited[field.related_field.model_name][key] = val
                     elif field.inverse:
@@ -3768,7 +3745,6 @@ Record ids: %(records)s
         for model_name, parent_name in self._inherits.items():
             parent_data_list = []
             for data in data_list:
-                # VFE FIXME some things could maybe be removed here...
                 if not data['stored'].get(parent_name):
                     parent_data_list.append(data)
                 elif data['inherited'][model_name]:
