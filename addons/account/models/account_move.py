@@ -2314,7 +2314,10 @@ class AccountMove(models.Model):
                         'debit' : line_vals['credit'],
                         'credit' : line_vals['debit']
                     })
-            move.write({'invoice_line_ids' : [(5, 0, 0)]})
+            # We're transforming an invoice to a refund: were we wanted the partner's bank account
+            # before, we now wants the company's one
+            company_bank = move.company_id.partner_id.bank_ids[:1]
+            move.write({'invoice_line_ids' : [(5, 0, 0)], 'invoice_partner_bank_id': company_bank and company_bank.id})
             move.write({'invoice_line_ids' : new_invoice_line_ids})
 
     def _get_report_base_filename(self):
