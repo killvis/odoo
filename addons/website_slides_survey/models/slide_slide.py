@@ -40,7 +40,7 @@ class Slide(models.Model):
 
     slide_type = fields.Selection(selection_add=[('certification', 'Certification')])
     survey_id = fields.Many2one('survey.survey', 'Certification')
-    nbr_certification = fields.Integer("Number of Certifications", compute='_compute_slides_statistics', store=True)
+    nbr_certification = fields.Integer("Number of Certifications", compute='_compute_slides_statistics', store=True, pre_compute=False)
 
     _sql_constraints = [
         ('check_survey_id', "CHECK(slide_type != 'certification' OR survey_id IS NOT NULL)", "A slide of type 'certification' requires a certification."),
@@ -56,6 +56,7 @@ class Slide(models.Model):
     def create(self, values):
         rec = super(Slide, self).create(values)
         if rec.survey_id:
+            # VFE make the slide_type compute ?
             rec.slide_type = 'certification'
         if 'survey_id' in values:
             rec._ensure_challenge_category()
