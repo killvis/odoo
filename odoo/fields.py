@@ -2301,10 +2301,8 @@ class _Relational(Field):
         # base case: do the regular access
         if records is None or len(records._ids) <= 1:
             return super().__get__(records, owner)
-        # multirecord case: return the union of the values of 'self' on records
-        get = super().__get__
-        comodel = records.env[self.comodel_name]
-        return comodel.union(*[get(record, owner) for record in records])
+        # multirecord case: use mapped
+        return self.convert_to_record_multi(self.mapped(records), records)
 
     def _setup_regular_base(self, model):
         super(_Relational, self)._setup_regular_base(model)
