@@ -1,16 +1,20 @@
-odoo.define('survey.form', function(require) {
+odoo.define('survey.form', function (require) {
 'use strict';
 
 var field_utils = require('web.field_utils');
 var publicWidget = require('web.public.widget');
 var time = require('web.time');
+var core = require('web.core');
+var _t = core._t;
 
 publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     selector: '.o_survey_form',
     events: {
         'change .o_survey_form_choice_item': '_onChangeChoiceItem',
         'click button[type="submit"]': '_onSubmit',
-        'click .o_survey_header .breadcrumb-item a': '_onBreadcrumbClick',
+    },
+    custom_events: {
+        'breadcrumb_click': '_onBreadcrumbClick',
     },
 
     //--------------------------------------------------------------------------
@@ -22,7 +26,8 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     */
     start: function () {
         var self = this;
-        return this._super.apply(this, arguments).then(function() {
+        this.fadeInOutDelay = 400;
+        return this._super.apply(this, arguments).then(function () {
             self.options = self.$target.find('form').data();
             var $timer = $('.o_survey_timer');
             if ($timer.length) {
@@ -37,6 +42,10 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
                     self.$el.find('button[type="submit"]').click();
                 });
             }
+            if (!self.options.isStartScreen) {
+                self._initTimer();
+                self._initBreadcrumb();
+            }
             self.$('div.o_survey_form_date').each(function () {
                 self._initDateTimePicker($(this));
             });
@@ -50,7 +59,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     // Handlers
     // -------------------------------------------------------------------------
 
-    /*
+    /**
     * Checks, if the 'other' choice is checked. Applies only if the comment count as answer.
     *   If not checked : Clear the comment textarea and disable it
     *   If checked : enable the comment textarea and focus on it
@@ -74,70 +83,233 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
         }
     },
 
-    /*
-    * When clicking on a breadcrumb enabled item, redirect to the target page.
-    * Uses the submit flow to validate and save the answer before going to the specified page.
-    *
-    * @private
-    * @param {Event} event
-    */
-    _onBreadcrumbClick: function (event) {
-        event.preventDefault();
-        this._submitForm({'previous_page_id': $(event.currentTarget).data('previousPageId')});
-    },
-
     _onSubmit: function (event) {
         event.preventDefault();
-        if ($(event.currentTarget).val() === 'previous') {
-            this._submitForm({'previous_id': $(event.currentTarget).data('previousId')});
-        } else {
-            this._submitForm({});
-        }
+        this._submitForm($(event.currentTarget));
     },
 
-    _submitForm: function (params) {
+    // Custom Events
+    // -------------------------------------------------------------------------
+
+    _onBreadcrumbClick: function (event) {
+        this._submitForm(event.data);
+    },
+
+    // SUBMIT
+    // -------------------------------------------------------------------------
+
+    /**
+    * This function will send a json rpc call to the server to
+    * - start the survey (if we are on start screen)
+    * - submit the answers of the current page
+    * Before submitting the answers, they are first validated to avoid latency from the server
+    * and allow a fade out/fade in transition of the next question.
+    * Depending of the target, the next page will be
+    * - For 'Continue' button: the next page
+    * - For 'Back' button or Breadcrumb items: the page with the given 'previous_page_id'.
+    */
+    _submitForm: function ($target) {
         var self = this;
-        var $form = this.$('form');
-        var formData = new FormData($form[0]);
+        var params = {};
+        var route = "/survey/submit";
 
-        this._prepareSubmitValues(formData, params);
+        if (this.options.isStartScreen) {
+            route = "/survey/begin";
+            this.options.isStartScreen = false;
+        } else {
+            if ($target.hasClass('breadcrumb-item')) {
+                params = {'previous_page_id': $target.data('pageId')};
+            } else {
+                params = $target.val() === 'previous' ? {'previous_page_id': $target.data('previousPageId')} : {};
+            }
+            var $form = this.$('form');
+            var formData = new FormData($form[0]);
 
-        this._resetErrors();
+            if ($target.hasClass('o_survey_timer')) {
+                $target.val('finish');
+            } else {
+                // Validation pre submit
+                if (!this._validateForm($form, formData)) {
+                    return;
+                }
+            }
 
-        return self._rpc({
-            route: '/survey/submit/' + self.options.surveyToken + '/' + self.options.answerToken ,
+            this._prepareSubmitValues(formData, params);
+        }
+
+        var resolveFadeOut;
+        var fadeOutPromise = new Promise(function (resolve, reject) {resolveFadeOut = resolve;});
+
+        var selectorsToFadeout = ['.o_survey_form_content'];
+        if ($target.val() === 'finish') {
+            selectorsToFadeout.push('.breadcrumb', '.o_survey_timer');
+        }
+        self.$(selectorsToFadeout.join(',')).fadeOut(this.fadeInOutDelay, function () {
+            resolveFadeOut();
+        });
+        var submitPromise = self._rpc({
+            route: _.str.sprintf('%s/%s/%s', route, self.options.surveyToken, self.options.answerToken),
             params: params,
-        }).then(function (result) {
-            return self._onSubmitDone(result, params);
+        });
+        Promise.all([fadeOutPromise, submitPromise]).then(function (results) {
+            return self._onSubmitDone(results[1], $target);
         });
     },
 
-    _onSubmitDone: function (result, params) {
+    /**
+    * Follow the submit and handle the transition from one screen to another
+    * Also handle server side validation and displays eventual error messages.
+    */
+    _onSubmitDone: function (result, $target) {
         var self = this;
+
         if (result && !result.error) {
-            window.location = result;
+            this.$(".o_survey_form_content").empty();
+            this.$(".o_survey_form_content").html(result);
+            this.$('div.o_survey_form_date').each(function () {
+                self._initDateTimePicker($(this));
+            });
+            this._initTimer();
+            this._updateBreadcrumb();
+            if ($target.val() === 'finish') {
+                this._initResultWidget();
+            }
+            this.$('.o_survey_form_content').fadeIn(this.fadeInOutDelay);
+            $("html, body").animate({ scrollTop: 0 }, this.fadeInOutDelay);
         }
         else if (result && result.fields && result.error === 'validation') {
-            var fieldKeys = _.keys(result.fields);
-            _.each(fieldKeys, function (key) {
-                self.$("#" + key + '>.o_survey_question_error').append($('<p>', {text: result.fields[key]})).toggleClass('d-none', false);
-                if (fieldKeys[fieldKeys.length - 1] === key) {
-                    self._scrollToError(self.$('.o_survey_question_error:visible:first').closest('.js_question-wrapper'));
-                }
-            });
+            this.$('.o_survey_form_content').fadeIn(0);
+            this._showErrors(result.fields);
+        } else {
+            var $errorTarget = this.$('.o_survey_error');
+            $errorTarget.addClass("slide_in");
+            this._scrollToError($errorTarget);
+        }
+    },
+
+    // VALIDATION TOOLS
+    // -------------------------------------------------------------------------
+    /**
+    * Validation is done in frontend before submit to avoid latency from the server.
+    * If the validation is incorrect, the errors are displayed before submitting and
+    * fade in / out of submit is avoided.
+    *
+    * Each question type gets its own validation process.
+    *
+    * There is a special use case for the 'required' questions, where we use the constraint
+    * error message that comes from the question configuration ('constr_error_msg' field).
+    *
+    * @private
+    */
+    _validateForm: function ($form, formData) {
+        var self = this;
+        var errors = {};
+        var validationEmailMsg = _t("This answer must be an email address.");
+        var validationDateMsg = _t("This is not a date");
+
+        this._resetErrors();
+
+        var data = {};
+        formData.forEach(function (value, key) {
+            data[key] = value;
+        });
+
+        $form.find('[data-question-type]').each(function () {
+            var $input = $(this);
+            var $questionWrapper = $input.closest(".js_question-wrapper");
+            var constrErrorMsg = $questionWrapper.data('constrErrorMsg');
+            var validationErrorMsg = $questionWrapper.data('validationErrorMsg');
+            var questionId = $questionWrapper.attr('id');
+            var questionRequired = $questionWrapper.data('required');
+            switch ($input.data('questionType')) {
+                case 'char_box':
+                    if (questionRequired && !$input.val()) {
+                        errors[questionId] = constrErrorMsg;
+                    } else if ($input.val() && $input.attr('type') === 'email' && !self._validateEmail($input.val())) {
+                        errors[questionId] = validationEmailMsg;
+                    } else {
+                        var lengthMin = $input.data('validationLengthMin');
+                        var lengthMax = $input.data('validationLengthMax');
+                        var length = $input.val().length;
+                        if (lengthMin && (lengthMin > length || length > lengthMax)) {
+                            errors[questionId] = validationErrorMsg;
+                        }
+                    }
+                    break;
+                case 'numerical_box':
+                    if (questionRequired && !data[questionId]) {
+                        errors[questionId] = constrErrorMsg;
+                    } else {
+                        var floatMin = $input.data('validationFloatMin');
+                        var floatMax = $input.data('validationFloatMax');
+                        var value = parseFloat($input.val());
+                        if (floatMin && (floatMin > value || value > floatMax)) {
+                            errors[questionId] = validationErrorMsg;
+                        }
+                    }
+                    break;
+                case 'date':
+                case 'datetime':
+                    if (questionRequired && !data[questionId]) {
+                        errors[questionId] = constrErrorMsg;
+                    } else if (data[questionId]) {
+                        var momentDate = moment($input.val());
+                        if (!momentDate.isValid()) {
+                            errors[questionId] = validationDateMsg;
+                        } else {
+                            var $dateDiv = $questionWrapper.find('.o_survey_form_date');
+                            var maxDate = $dateDiv.data('maxdate');
+                            var minDate = $dateDiv.data('mindate');
+                            if ((maxDate && momentDate.isAfter(moment(maxDate)))
+                                    || (minDate && momentDate.isBefore(moment(minDate)))) {
+                                errors[questionId] = validationErrorMsg;
+                            }
+                        }
+                    }
+                    break;
+                case 'simple_choice_radio':
+                case 'multiple_choice':
+                    if (questionRequired) {
+                        var $textarea = $questionWrapper.find('textarea');
+                        if (!data[questionId]) {
+                            errors[questionId] = constrErrorMsg;
+                        } else if (data[questionId] === '-1' && !$textarea.val()) {
+                            // if other has been checked and value is null
+                            errors[questionId] = constrErrorMsg;
+                        }
+                    }
+                    break;
+                case 'matrix':
+                    if (questionRequired) {
+                        var subQuestionsIds = $questionWrapper.find('table').data('subQuestions');
+                        subQuestionsIds.forEach(function (id) {
+                            if (!((questionId + '_' + id) in data)) {
+                                errors[questionId] = constrErrorMsg;
+                            }
+                        });
+                    }
+                    break;
+            }
+        });
+        if (_.keys(errors).length > 0) {
+            this._showErrors(errors);
             return false;
         }
-        else {
-            var $target = self.$('.o_survey_error');
-            $target.toggleClass('d-none', false);
-            self._scrollToError($target);
-            return false;
-        }
+        return true;
+    },
+
+    /**
+    * Check if the email has an '@', a left part and a right part
+    * @private
+    */
+    _validateEmail: function (email) {
+        var emailParts = email.split('@');
+        return emailParts.length === 2 && emailParts[0] && emailParts[1];
     },
 
     // PREPARE SUBMIT TOOLS
     // -------------------------------------------------------------------------
-    /*
+    /**
     * For each type of question, extract the answer from inputs or textarea (comment or answer)
     *
     *
@@ -147,7 +319,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     _prepareSubmitValues: function (formData, params) {
         var self = this;
         // Get all context params -- TODO : Use formData instead (test if input with no name are in formData)
-        formData.forEach(function(value, key){
+        formData.forEach(function (value, key){
             switch (key) {
                 case 'csrf_token':
                 case 'token':
@@ -188,7 +360,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     *   Convert date value from client current timezone to UTC Date to correspond to the server format.
     *   return params = { 'dateQuestionId' : '2019-05-23', 'datetimeQuestionId' : '2019-05-23 14:05:12' }
     */
-    _prepareSubmitDates: function(params, questionId, value, isDateTime) {
+    _prepareSubmitDates: function (params, questionId, value, isDateTime) {
         var momentDate = isDateTime ? field_utils.parse.datetime(value, null, {timezone: true}) : field_utils.parse.date(value);
         var formattedDate = momentDate ? momentDate.toJSON() : '';
         params[questionId] = formattedDate;
@@ -248,7 +420,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     *   Lonely answer are directly assigned to questionId. Multiple answers are regrouped in an array:
     *   params = { 'questionId1' : lonelyAnswer, 'questionId2' : [multipleAnswer1, multipleAnswer2, ...] }
     */
-    _prepareSubmitAnswer: function(params, questionId, value) {
+    _prepareSubmitAnswer: function (params, questionId, value) {
         if (questionId in params) {
             if (params[questionId].constructor === Array) {
                 params[questionId].push(value);
@@ -267,7 +439,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     *   with the new value. At the end, the result looks like :
     *   params = { 'questionId1' : {'comment': commentValue}, 'questionId2' : [multipleAnswer1, {'comment': commentValue}, ...] }
     */
-    _prepareSubmitComment: function(params, $parent, questionId, isMatrix) {
+    _prepareSubmitComment: function (params, $parent, questionId, isMatrix) {
         var self = this;
         $parent.find('textarea').each(function () {
             if (this.value) {
@@ -286,6 +458,60 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     // -------------------------------------------------------------------------
 
     /**
+     * Will initialize the breadcrumb widget that handles navigation to a previously filled in page.
+     *
+     * @private
+     */
+    _initBreadcrumb: function () {
+        var $breadcrumb = this.$('.o_survey_breadcrumb_container');
+        var pageId = this.$('input[name=page_id]').val();
+        if ($breadcrumb.length) {
+            this.surveyBreadcrumbWidget = new publicWidget.registry.SurveyBreadcrumbWidget(this, {
+                'canGoBack': $breadcrumb.data('canGoBack'),
+                'currentPageId': pageId ? parseInt(pageId) : 0,
+                'pages': $breadcrumb.data('pages'),
+            });
+            this.surveyBreadcrumbWidget.appendTo($breadcrumb);
+            $breadcrumb.removeClass('d-none');  // hidden by default to avoid having ghost div in start screen
+        }
+    },
+
+    /**
+     * Called after survey submit to update the breadcrumb to the right page.
+     * If we have no "page_id", it means we're on the 'end screen', meaning no breadcrumb.
+     */
+    _updateBreadcrumb: function () {
+        if (this.surveyBreadcrumbWidget) {
+            var pageId = this.$('input[name=page_id]').val();
+            if (!pageId) {
+                this.$('.o_survey_breadcrumb_container').addClass('d-none');
+            } else {
+                this.surveyBreadcrumbWidget.updateBreadcrumb(parseInt(pageId));
+            }
+        } else {
+            this._initBreadcrumb();
+        }
+    },
+
+    _initTimer: function () {
+        var self = this;
+        var $timer = this.$('.o_survey_timer');
+        if ($timer.length) {
+            var timeLimitMinutes = this.options.timeLimitMinutes;
+            var timer = this.options.timer;
+            this.surveyTimerWidget = new publicWidget.registry.SurveyTimerWidget(this, {
+                'timer': timer,
+                'timeLimitMinutes': timeLimitMinutes
+            });
+            this.surveyTimerWidget.attachTo($timer);
+            this.surveyTimerWidget.on('time_up', this, function (ev) {
+                self._submitForm($timer);
+            });
+            $timer.removeClass('d-none');
+        }
+    },
+
+    /**
     * Initialize datetimepicker in correct format and with constraints
     */
     _initDateTimePicker: function ($dateGroup) {
@@ -296,7 +522,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
         var maxDateData = $dateGroup.data('maxdate');
         var maxDate = maxDateData ? this._formatDateTime(maxDateData) : moment().add(200, "y");
 
-        var datetimepickerFormat = time.getLangDateFormat()
+        var datetimepickerFormat = time.getLangDateFormat();
         if ($dateGroup.find('input').data('questionType') === 'datetime') {
             datetimepickerFormat = time.getLangDatetimeFormat();
         } else {
@@ -330,12 +556,32 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
         });
     },
 
-    _formatDateTime: function (datetimeValue){
+    _formatDateTime: function (datetimeValue) {
         return field_utils.format.datetime(moment(datetimeValue), null, {timezone: true});
+    },
+
+    _initResultWidget: function () {
+        var $result = this.$('.o_survey_result');
+        if ($result.length) {
+            this.surveyResultWidget = new publicWidget.registry.SurveyResultWidget(this);
+            this.surveyResultWidget.attachTo($result);
+            $result.fadeIn(this.fadeInOutDelay);
+        }
     },
 
     // ERRORS TOOLS
     // -------------------------------------------------------------------------
+
+    _showErrors: function (errors) {
+        var self = this;
+        var errorKeys = _.keys(errors);
+        _.each(errorKeys, function (key) {
+            self.$("#" + key + '>.o_survey_question_error').append($('<p>', {text: errors[key]})).addClass("slide_in");
+            if (errorKeys[0] === key) {
+                self._scrollToError(self.$('.js_question-wrapper#' + key));
+            }
+        });
+    },
 
     _scrollToError: function ($target) {
         var scrollLocation = $target.offset().top;
@@ -352,8 +598,8 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend({
     * Clean all form errors in order to clean DOM before a new validation
     */
     _resetErrors: function () {
-        this.$('.o_survey_question_error').empty().toggleClass("d-none", true);
-        this.$('.o_survey_error').toggleClass("d-none", true);
+        this.$('.o_survey_question_error').empty().removeClass('slide_in');
+        this.$('.o_survey_error').removeClass('slide_in');
     },
 
 });
